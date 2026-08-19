@@ -1452,30 +1452,42 @@ public class EngineService: ObservableObject {
         }
 
         let configVdfPath = steamDir + "/config/config.vdf"
-        if !FileManager.default.fileExists(atPath: configVdfPath) {
-            let vdfContent = """
-            "InstallConfigStore"
-            {
-            \t"Software"
-            \t{
-            \t\t"Valve"
-            \t\t{
-            \t\t\t"Steam"
-            \t\t\t{
-            \t\t\t\t"AutoUpdateWindowEnabled"\t\t"0"
-            \t\t\t\t"GPUAcceleratedWebViews"\t\t"0"
-            \t\t\t\t"DirectWrite"\t\t"0"
-            \t\t\t\t"SmoothScrollWebViews"\t\t"0"
-            \t\t\t\t"HiresLibrary"\t\t"0"
-            \t\t\t\t"ipv6check_http_state"\t\t"bad"
-            \t\t\t\t"ipv6check_udp_state"\t\t"bad"
-            \t\t\t}
-            \t\t}
-            \t}
-            }
-            """
-            try? vdfContent.write(toFile: configVdfPath, atomically: true, encoding: .utf8)
+        let vdfContent = """
+        "InstallConfigStore"
+        {
+        \t"Software"
+        \t{
+        \t\t"Valve"
+        \t\t{
+        \t\t\t"Steam"
+        \t\t\t{
+        \t\t\t\t"AutoUpdateWindowEnabled"\t\t"0"
+        \t\t\t\t"GPUAcceleratedWebViews"\t\t"0"
+        \t\t\t\t"DirectWrite"\t\t"0"
+        \t\t\t\t"DWrite"\t\t"0"
+        \t\t\t\t"SmoothScrollWebViews"\t\t"0"
+        \t\t\t\t"HiresLibrary"\t\t"0"
+        \t\t\t\t"ipv6check_http_state"\t\t"bad"
+        \t\t\t\t"ipv6check_udp_state"\t\t"bad"
+        \t\t\t}
+        \t\t}
+        \t}
         }
+        """
+        try? vdfContent.write(toFile: configVdfPath, atomically: true, encoding: .utf8)
+
+        // 2. Clear corrupted CEF HTML and GPU cache to eliminate black window / blank screen issues
+        let usersDir = prefixPath + "/drive_c/users"
+        if let userList = try? FileManager.default.contentsOfDirectory(atPath: usersDir) {
+            for user in userList {
+                let htmlCache = usersDir + "/\(user)/AppData/Local/Steam/htmlcache"
+                let widevine = usersDir + "/\(user)/AppData/Local/Steam/widevine"
+                try? FileManager.default.removeItem(atPath: htmlCache)
+                try? FileManager.default.removeItem(atPath: widevine)
+            }
+        }
+        let appHttpCache = steamDir + "/appcache/httpcache"
+        try? FileManager.default.removeItem(atPath: appHttpCache)
 
         var env = ProcessInfo.processInfo.environment
         env["WINEPREFIX"] = prefixPath
@@ -1490,8 +1502,12 @@ public class EngineService: ObservableObject {
             "-no-cef-sandbox",
             "-allprocesscounter",
             "-cef-disable-gpu",
+            "-cef-disable-d3d11",
             "-cef-disable-breakpad",
             "-cef-force-32bit",
+            "-cef-enable-software-rasterizer",
+            "-disable-gpu-compositing",
+            "-disable-gpu",
             "-tcp",
             "-vgui",
             "-allosarches"
