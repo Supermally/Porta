@@ -38,13 +38,14 @@ public struct LibraryView: View {
                 Spacer(minLength: 8)
 
                 // View Mode Toggle (Grid vs List)
-                Picker("View Mode", selection: $engine.libraryViewMode) {
+                Picker("", selection: $engine.libraryViewMode) {
                     ForEach(ViewMode.allCases) { mode in
                         Image(systemName: mode.icon).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 76)
+                .labelsHidden()
+                .frame(width: 72)
 
                 // Import Menu
                 Menu {

@@ -82,20 +82,24 @@ public struct MainContentView: View {
             }
             .frame(minWidth: 220, idealWidth: 240)
             .background(.ultraThinMaterial)
+            .resizeCursorOnTrailingEdge()
         } content: {
-            switch engine.activeTab {
-            case .library:
-                LibraryView(engine: engine)
-                    .frame(minWidth: 320, idealWidth: 380)
-            case .discover:
-                MacNativeSpotlightView(engine: engine)
-            case .compatibility:
-                UniversalSearchView(engine: engine)
-            case .downloads:
-                DownloadsView(engine: engine)
-            case .settings:
-                SettingsView(engine: engine)
+            Group {
+                switch engine.activeTab {
+                case .library:
+                    LibraryView(engine: engine)
+                        .frame(minWidth: 320, idealWidth: 380)
+                case .discover:
+                    MacNativeSpotlightView(engine: engine)
+                case .compatibility:
+                    UniversalSearchView(engine: engine)
+                case .downloads:
+                    DownloadsView(engine: engine)
+                case .settings:
+                    SettingsView(engine: engine)
+                }
             }
+            .resizeCursorOnTrailingEdge()
         } detail: {
             if let game = engine.selectedGame, engine.activeTab == .library {
                 GameDetailView(engine: engine, game: game)
