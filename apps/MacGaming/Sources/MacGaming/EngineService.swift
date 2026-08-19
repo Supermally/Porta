@@ -1415,7 +1415,7 @@ public class EngineService: ObservableObject {
         }
     }
 
-    public func launchWindowsSteamSandbox(appId: String? = nil) {
+    public func launchWindowsSteamSandbox(appId: String? = nil, mode: SteamLaunchMode = .standard) {
         let runnerPaths = [
             "/opt/homebrew/bin/wine64",
             "/usr/local/bin/wine64",
@@ -1443,13 +1443,28 @@ public class EngineService: ObservableObject {
         let steamDir = prefixPath + "/drive_c/Program Files (x86)/Steam"
         let steamExe = steamDir + "/Steam.exe"
         try? FileManager.default.createDirectory(atPath: steamDir + "/config", withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(atPath: steamDir + "/bin/cef/cef.win64", withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(atPath: steamDir + "/bin/cef/cef.win7x64", withIntermediateDirectories: true)
 
         // 1. Pre-configure Steam configuration to disable CEF GPU crashes in Wine
         let steamCfgPath = steamDir + "/steam.cfg"
-        if !FileManager.default.fileExists(atPath: steamCfgPath) {
-            let cfgContent = "BootStrapperInhibitAll=Enable\nBootStrapperForceSelfUpdate=Disable\n"
-            try? cfgContent.write(toFile: steamCfgPath, atomically: true, encoding: .utf8)
-        }
+        let cfgContent = "BootStrapperInhibitAll=Enable\nBootStrapperForceSelfUpdate=Disable\n"
+        try? cfgContent.write(toFile: steamCfgPath, atomically: true, encoding: .utf8)
+
+        // 2. Write CEF flags file to directly force software rendering across all steamwebhelper child processes
+        let cefFlagsContent = """
+        --disable-gpu
+        --disable-gpu-compositing
+        --disable-direct-composition
+        --disable-gpu-rasterization
+        --disable-software-rasterizer=false
+        --no-sandbox
+        --in-process-gpu=false
+        --disable-features=TouchpadAndWheelScrollLatching,AsyncWheelEvents,DirectComposition,CanvasOopRasterization
+        """
+        try? cefFlagsContent.write(toFile: steamDir + "/bin/cef/cef.win64/steamwebhelper.exe.flags", atomically: true, encoding: .utf8)
+        try? cefFlagsContent.write(toFile: steamDir + "/bin/cef/cef.win7x64/steamwebhelper.exe.flags", atomically: true, encoding: .utf8)
+        try? cefFlagsContent.write(toFile: steamDir + "/steamwebhelper.exe.flags", atomically: true, encoding: .utf8)
 
         let configVdfPath = steamDir + "/config/config.vdf"
         let vdfContent = """
@@ -1476,7 +1491,7 @@ public class EngineService: ObservableObject {
         """
         try? vdfContent.write(toFile: configVdfPath, atomically: true, encoding: .utf8)
 
-        // 2. Clear corrupted CEF HTML and GPU cache to eliminate black window / blank screen issues
+        // 3. Clear corrupted CEF HTML and GPU cache to eliminate black window / blank screen issues
         let usersDir = prefixPath + "/drive_c/users"
         if let userList = try? FileManager.default.contentsOfDirectory(atPath: usersDir) {
             for user in userList {
@@ -1498,20 +1513,43 @@ public class EngineService: ObservableObject {
         env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;d3d9=n,b;d3dcompiler_47=n,b;dwrite=b,n;riched20=b,n"
 
         let isNativeSteamRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: "com.valvesoftware.steam").isEmpty
-        let steamLaunchFlags = [
-            "-no-cef-sandbox",
-            "-allprocesscounter",
-            "-cef-disable-gpu",
-            "-cef-disable-d3d11",
-            "-cef-disable-breakpad",
-            "-cef-force-32bit",
-            "-cef-enable-software-rasterizer",
-            "-disable-gpu-compositing",
-            "-disable-gpu",
-            "-tcp",
-            "-vgui",
-            "-allosarches"
-        ]
+        
+        var steamLaunchFlags: [String] = []
+        switch mode {
+        case .standard:
+            steamLaunchFlags = [
+                "-no-cef-sandbox",
+                "-allprocesscounter",
+                "-cef-disable-gpu",
+                "-cef-disable-d3d11",
+                "-cef-disable-breakpad",
+                "-cef-force-32bit",
+                "-cef-enable-software-rasterizer",
+                "-disable-gpu-compositing",
+                "-disable-gpu",
+                "-tcp",
+                "-vgui",
+                "-allosarches"
+            ]
+        case .miniLibrary:
+            steamLaunchFlags = [
+                "-minigameslist",
+                "-no-cef-sandbox",
+                "-allprocesscounter",
+                "-cef-disable-gpu",
+                "-cef-disable-d3d11",
+                "-tcp",
+                "-allosarches"
+            ]
+        case .gamepadUI:
+            steamLaunchFlags = [
+                "-gamepadui",
+                "-no-cef-sandbox",
+                "-allprocesscounter",
+                "-tcp",
+                "-allosarches"
+            ]
+        }
 
         // Case 1: Steam.exe already installed
         if FileManager.default.fileExists(atPath: steamExe) {
@@ -1528,9 +1566,9 @@ public class EngineService: ObservableObject {
             self.activeProcesses.append(proc)
             self.isGameModeActive = true
 
-            var msg = "🟢 Launched Windows Steam Sandbox Container! (Prefix: \(prefixPath))"
+            var msg = "🟢 Launched Windows Steam (\(mode.rawValue))! (Prefix: \(prefixPath))"
             if isNativeSteamRunning {
-                msg += "\n⚠️ Notice: Native Mac Steam is running. If Windows Steam hangs on login, quit Mac Steam to resolve port 27060 sharing."
+                msg += "\n⚠️ Notice: Native Mac Steam is running in the Dock. If Windows Steam cannot connect, quit Mac Steam to prevent port 27060 contention."
             }
             launchOutputMessage = msg
             return

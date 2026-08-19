@@ -42,9 +42,23 @@ public struct DownloadsView: View {
                     Divider()
 
                     HStack(spacing: 12) {
-                        Button(action: {
-                            engine.launchWindowsSteamSandbox()
-                        }) {
+                        Menu {
+                            Button {
+                                engine.launchWindowsSteamSandbox(mode: .standard)
+                            } label: {
+                                Label("Launch Standard (Full UI)", systemImage: "app.window.checkmark")
+                            }
+                            Button {
+                                engine.launchWindowsSteamSandbox(mode: .miniLibrary)
+                            } label: {
+                                Label("Launch Mini Library (Fast)", systemImage: "list.bullet.rectangle")
+                            }
+                            Button {
+                                engine.launchWindowsSteamSandbox(mode: .gamepadUI)
+                            } label: {
+                                Label("Launch Big Picture UI", systemImage: "gamecontroller")
+                            }
+                        } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "play.fill")
                                 Text("Launch Container")

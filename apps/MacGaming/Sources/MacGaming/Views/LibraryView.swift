@@ -95,10 +95,22 @@ public struct LibraryView: View {
                         Label("Import Executable (.exe / .app)...", systemImage: "gamecontroller")
                     }
                     Divider()
-                    Button {
-                        engine.launchWindowsSteamSandbox()
-                    } label: {
-                        Label("Launch Windows Steam Sandbox...", systemImage: "shippingbox.fill")
+                    Menu("Launch Windows Steam Sandbox") {
+                        Button {
+                            engine.launchWindowsSteamSandbox(mode: .standard)
+                        } label: {
+                            Label("Standard Client (Full UI)", systemImage: "app.window.checkmark")
+                        }
+                        Button {
+                            engine.launchWindowsSteamSandbox(mode: .miniLibrary)
+                        } label: {
+                            Label("Mini Library Mode (Ultra-Fast)", systemImage: "list.bullet.rectangle")
+                        }
+                        Button {
+                            engine.launchWindowsSteamSandbox(mode: .gamepadUI)
+                        } label: {
+                            Label("Big Picture / Gamepad UI", systemImage: "gamecontroller")
+                        }
                     }
                 } label: {
                     Image(systemName: "plus")
