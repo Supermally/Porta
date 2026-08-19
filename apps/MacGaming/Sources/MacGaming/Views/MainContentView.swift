@@ -4,123 +4,147 @@ public struct MainContentView: View {
     @StateObject var engine = EngineService()
 
     public var body: some View {
-        NavigationSplitView {
-            VStack(alignment: .leading, spacing: 0) {
-                // Native macOS App Header
-                HStack(spacing: 8) {
-                    Image(systemName: "apple.logo")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.primary)
-                    Text("Mac Gaming")
-                        .font(.system(size: 15, weight: .bold))
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
-                .padding(.bottom, 12)
+        LiquidGlassCanvas(engine: engine) {
+            NavigationSplitView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Floating Liquid Glass App Brand Header
+                    HStack(spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.accentColor.gradient)
+                                .frame(width: 28, height: 28)
+                            Image(systemName: "apple.logo")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .shadow(color: Color.accentColor.opacity(0.4), radius: 6, x: 0, y: 2)
 
-                Divider()
-                    .padding(.horizontal, 12)
+                        Text("Mac Gaming")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.primary)
 
-                // Native Sidebar Sections (Finder / Apple Music Style)
-                List {
-                    Section {
-                        SidebarTabRow(tab: .library, currentTab: $engine.activeTab, badgeCount: engine.games.count)
-                            .keyboardShortcut("1", modifiers: .command)
-
-                        SidebarTabRow(tab: .discover, currentTab: $engine.activeTab)
-                            .keyboardShortcut("2", modifiers: .command)
-
-                        SidebarTabRow(tab: .compatibility, currentTab: $engine.activeTab)
-                            .keyboardShortcut("3", modifiers: .command)
-
-                        SidebarTabRow(tab: .downloads, currentTab: $engine.activeTab)
-                            .keyboardShortcut("4", modifiers: .command)
+                        Spacer()
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 12)
 
-                    Section("Game Providers") {
-                        ForEach(StorefrontFilter.allCases) { sf in
-                            Button(action: {
-                                engine.selectedStorefront = sf
-                                engine.activeTab = .library
-                            }) {
-                                HStack {
-                                    Label(sf.rawValue, systemImage: sf.icon)
-                                        .font(.system(size: 13))
-                                    Spacer()
-                                    let count = engine.games.filter {
-                                        switch sf {
-                                        case .all: return true
-                                        case .steam: return $0.storefront == "Steam"
-                                        case .gog: return $0.storefront == "GOG Galaxy"
-                                        case .epic: return $0.storefront == "Epic Games"
-                                        case .itch: return $0.storefront == "itch.io"
-                                        case .ubisoft: return $0.storefront == "Ubisoft"
-                                        case .ea: return $0.storefront == "EA App"
-                                        case .battlenet: return $0.storefront == "Battle.net"
-                                        case .universalApp: return $0.isUniversalApp
-                                        case .local: return $0.storefront.contains("Local")
+                    Divider()
+                        .opacity(0.3)
+                        .padding(.horizontal, 12)
+
+                    // Native Sidebar Glass Bubble Rows
+                    List {
+                        Section {
+                            SidebarTabRow(tab: .library, currentTab: $engine.activeTab, badgeCount: engine.games.count, engine: engine)
+                                .keyboardShortcut("1", modifiers: .command)
+
+                            SidebarTabRow(tab: .discover, currentTab: $engine.activeTab, engine: engine)
+                                .keyboardShortcut("2", modifiers: .command)
+
+                            SidebarTabRow(tab: .compatibility, currentTab: $engine.activeTab, engine: engine)
+                                .keyboardShortcut("3", modifiers: .command)
+
+                            SidebarTabRow(tab: .downloads, currentTab: $engine.activeTab, engine: engine)
+                                .keyboardShortcut("4", modifiers: .command)
+                        }
+
+                        Section("Game Providers") {
+                            ForEach(StorefrontFilter.allCases) { sf in
+                                Button(action: {
+                                    engine.selectedStorefront = sf
+                                    engine.activeTab = .library
+                                }) {
+                                    HStack {
+                                        Label(sf.rawValue, systemImage: sf.icon)
+                                            .font(.system(size: 13, weight: engine.activeTab == .library && engine.selectedStorefront == sf ? .semibold : .regular))
+                                        Spacer()
+                                        let count = engine.games.filter {
+                                            switch sf {
+                                            case .all: return true
+                                            case .steam: return $0.storefront == "Steam"
+                                            case .gog: return $0.storefront == "GOG Galaxy"
+                                            case .epic: return $0.storefront == "Epic Games"
+                                            case .itch: return $0.storefront == "itch.io"
+                                            case .ubisoft: return $0.storefront == "Ubisoft"
+                                            case .ea: return $0.storefront == "EA App"
+                                            case .battlenet: return $0.storefront == "Battle.net"
+                                            case .universalApp: return $0.isUniversalApp
+                                            case .local: return $0.storefront.contains("Local")
+                                            }
+                                        }.count
+                                        if count > 0 {
+                                            Text("\(count)")
+                                                .font(.system(size: 11, weight: .bold))
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+                                                .foregroundColor(.secondary)
                                         }
-                                    }.count
-                                    if count > 0 {
-                                        Text("\(count)")
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundColor(.secondary)
                                     }
+                                    .padding(.vertical, 3)
                                 }
+                                .buttonStyle(.plain)
+                                .listRowBackground(engine.activeTab == .library && engine.selectedStorefront == sf ? Color.accentColor.opacity(0.18) : Color.clear)
                             }
-                            .buttonStyle(.plain)
-                            .listRowBackground(engine.activeTab == .library && engine.selectedStorefront == sf ? Color.accentColor.opacity(0.15) : Color.clear)
+                        }
+
+                        Section {
+                            SidebarTabRow(tab: .settings, currentTab: $engine.activeTab, engine: engine)
+                                .keyboardShortcut(",", modifiers: .command)
                         }
                     }
-
-                    Section {
-                        SidebarTabRow(tab: .settings, currentTab: $engine.activeTab)
-                            .keyboardShortcut(",", modifiers: .command)
+                    .listStyle(.sidebar)
+                    .scrollContentBackground(.hidden)
+                }
+                .frame(minWidth: 220, idealWidth: 240)
+                .background(.ultraThinMaterial.opacity(0.4))
+                .resizeCursorOnTrailingEdge()
+            } content: {
+                Group {
+                    switch engine.activeTab {
+                    case .library:
+                        LibraryView(engine: engine)
+                            .frame(minWidth: 320, idealWidth: 380)
+                    case .discover:
+                        MacNativeSpotlightView(engine: engine)
+                    case .compatibility:
+                        UniversalSearchView(engine: engine)
+                    case .downloads:
+                        DownloadsView(engine: engine)
+                    case .settings:
+                        SettingsView(engine: engine)
                     }
                 }
-                .listStyle(.sidebar)
-            }
-            .frame(minWidth: 220, idealWidth: 240)
-            .background(.ultraThinMaterial)
-            .resizeCursorOnTrailingEdge()
-        } content: {
-            Group {
-                switch engine.activeTab {
-                case .library:
-                    LibraryView(engine: engine)
-                        .frame(minWidth: 320, idealWidth: 380)
-                case .discover:
-                    MacNativeSpotlightView(engine: engine)
-                case .compatibility:
-                    UniversalSearchView(engine: engine)
-                case .downloads:
-                    DownloadsView(engine: engine)
-                case .settings:
-                    SettingsView(engine: engine)
+                .scrollContentBackground(.hidden)
+                .resizeCursorOnTrailingEdge()
+            } detail: {
+                Group {
+                    if let game = engine.selectedGame, engine.activeTab == .library {
+                        GameDetailView(engine: engine, game: game)
+                    } else if engine.activeTab == .discover {
+                        DeveloperDemandView(engine: engine)
+                    } else if engine.activeTab == .compatibility {
+                        LibraryAuditView(engine: engine)
+                    } else {
+                        VStack(spacing: 16) {
+                            Image(systemName: engine.activeTab.icon)
+                                .font(.system(size: 52))
+                                .foregroundColor(.accentColor.opacity(0.8))
+                                .padding(24)
+                                .liquidGlassBubble(cornerRadius: 30, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+
+                            Text(engine.activeTab == .library ? "Select a game from your library to view details and launch" : engine.activeTab.rawValue)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                 }
+                .scrollContentBackground(.hidden)
             }
-            .resizeCursorOnTrailingEdge()
-        } detail: {
-            if let game = engine.selectedGame, engine.activeTab == .library {
-                GameDetailView(engine: engine, game: game)
-            } else if engine.activeTab == .discover {
-                DeveloperDemandView(engine: engine)
-            } else if engine.activeTab == .compatibility {
-                LibraryAuditView(engine: engine)
-            } else {
-                VStack(spacing: 12) {
-                    Image(systemName: engine.activeTab.icon)
-                        .font(.system(size: 44))
-                        .foregroundColor(.secondary.opacity(0.6))
-                    Text(engine.activeTab == .library ? "Select a game from your library to view details and launch" : engine.activeTab.rawValue)
-                        .font(.system(size: 14))
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(NSColor.windowBackgroundColor))
-            }
+            .frame(minWidth: 960, minHeight: 620)
         }
-        .frame(minWidth: 960, minHeight: 620)
     }
 }
 
@@ -128,23 +152,32 @@ struct SidebarTabRow: View {
     let tab: NavigationTab
     @Binding var currentTab: NavigationTab
     var badgeCount: Int? = nil
+    var engine: EngineService
 
     var body: some View {
         Button(action: { currentTab = tab }) {
-            HStack {
-                Label(tab.rawValue, systemImage: tab.icon)
+            HStack(spacing: 10) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 14, weight: currentTab == tab ? .bold : .regular))
+                    .foregroundColor(currentTab == tab ? .accentColor : .primary)
+                    .frame(width: 20)
+
+                Text(tab.rawValue)
                     .font(.system(size: 13, weight: currentTab == tab ? .semibold : .regular))
+                    .foregroundColor(.primary)
+
                 Spacer()
+
                 if let count = badgeCount, count > 0 {
                     Text("\(count)")
-                        .font(.system(size: 11, weight: .semibold))
-                        .padding(.horizontal, 6)
+                        .font(.system(size: 11, weight: .bold))
+                        .padding(.horizontal, 7)
                         .padding(.vertical, 2)
-                        .background(Color.primary.opacity(0.08))
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
                         .foregroundColor(.secondary)
-                        .cornerRadius(10)
                 }
             }
+            .padding(.vertical, 4)
         }
         .buttonStyle(.plain)
         .listRowBackground(currentTab == tab ? Color.accentColor.opacity(0.18) : Color.clear)

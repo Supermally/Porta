@@ -5,49 +5,52 @@ public struct LibraryView: View {
     @ObservedObject var engine: EngineService
 
     private let gridColumns = [
-        GridItem(.adaptive(minimum: 150, maximum: 190), spacing: 16)
+        GridItem(.adaptive(minimum: 155, maximum: 195), spacing: 20)
     ]
 
     public var body: some View {
         VStack(spacing: 0) {
-            // Liquid Glass Top Navigation & Controls Toolbar
+            // Floating Liquid Glass Navigation Toolbar
             HStack(spacing: 12) {
-                // Search Field (Non-crammed, flexible layout)
+                // Floating Glass Search Capsule
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.secondary)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13, weight: .medium))
                     TextField("Search library...", text: $engine.searchText)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                     if !engine.searchText.isEmpty {
                         Button(action: { engine.searchText = "" }) {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(.secondary)
-                                .font(.system(size: 11))
+                                .font(.system(size: 12))
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.primary.opacity(0.06))
-                .cornerRadius(8)
-                .frame(minWidth: 160)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+                .frame(minWidth: 170)
 
                 Spacer(minLength: 8)
 
-                // View Mode Toggle (Grid vs List)
-                Picker("", selection: $engine.libraryViewMode) {
-                    ForEach(ViewMode.allCases) { mode in
-                        Image(systemName: mode.icon).tag(mode)
+                // Floating Glass View Mode Switcher
+                HStack(spacing: 0) {
+                    Picker("", selection: $engine.libraryViewMode) {
+                        ForEach(ViewMode.allCases) { mode in
+                            Image(systemName: mode.icon).tag(mode)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 72)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 72)
+                .padding(3)
+                .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
 
-                // Import Menu
+                // Floating Glass Import Menu
                 Menu {
                     Button(action: { engine.openNativeFilePicker(chooseFolder: true) }) {
                         Label("Import Game Folder...", systemImage: "folder.badge.plus")
@@ -61,74 +64,78 @@ public struct LibraryView: View {
                     }
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 12, weight: .semibold))
-                        .padding(6)
-                        .background(Color.primary.opacity(0.06))
-                        .cornerRadius(8)
+                        .font(.system(size: 13, weight: .bold))
+                        .padding(8)
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
 
-                // Rescan Library Button
+                // Floating Glass Rescan Button
                 Button(action: { engine.scanAllLaunchers() }) {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 13, weight: .bold))
                         .rotationEffect(Angle(degrees: engine.isScanning ? 360 : 0))
                         .animation(engine.isScanning ? Animation.linear(duration: 1).repeatForever(autoreverses: false) : .default, value: engine.isScanning)
-                        .padding(6)
-                        .background(Color.primary.opacity(0.06))
-                        .cornerRadius(8)
+                        .padding(8)
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
                 }
                 .buttonStyle(.plain)
                 .disabled(engine.isScanning)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .liquidGlass(cornerRadius: 0, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
 
             Divider()
+                .opacity(0.2)
 
             // Library Content Area
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // Recently Played Shelf (Apple Music Style)
+                VStack(alignment: .leading, spacing: 26) {
+                    // Recently Played Shelf (Liquid Glass Floating Pods)
                     if engine.searchText.isEmpty && engine.selectedFilter == nil && engine.selectedStorefront == .all {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Recently Played")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.primary)
+                        VStack(alignment: .leading, spacing: 14) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .foregroundColor(.accentColor)
+                                    .font(.system(size: 15, weight: .bold))
+                                Text("Recently Played")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundColor(.primary)
+                            }
 
                             ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 14) {
+                                HStack(spacing: 16) {
                                     ForEach(Array(engine.games.prefix(4))) { game in
-                                        RecentGamePosterCard(game: game, engine: engine, isSelected: engine.selectedGame?.id == game.id) {
+                                        RecentGameGlassCard(game: game, engine: engine, isSelected: engine.selectedGame?.id == game.id) {
                                             engine.selectedGame = game
                                         } onPlay: {
                                             engine.launchGame(game)
                                         }
                                     }
                                 }
-                                .padding(.horizontal, 1)
+                                .padding(.horizontal, 2)
+                                .padding(.vertical, 4)
                             }
                         }
                     }
 
                     // All Games Section
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 14) {
                         HStack {
                             Text(engine.selectedStorefront == .all ? "All Games" : engine.selectedStorefront.rawValue)
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 17, weight: .bold))
                             Spacer()
                             Text("\(engine.filteredGames.count) titles")
-                                .font(.system(size: 12))
+                                .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.secondary)
                         }
 
                         if engine.libraryViewMode == .grid {
-                            // Grid Mode (Posters)
-                            LazyVGrid(columns: gridColumns, spacing: 16) {
+                            // Floating Liquid Glass Posters Grid
+                            LazyVGrid(columns: gridColumns, spacing: 20) {
                                 ForEach(engine.filteredGames) { game in
-                                    GameGridPosterCard(game: game, engine: engine, isSelected: engine.selectedGame?.id == game.id) {
+                                    GameGridGlassCard(game: game, engine: engine, isSelected: engine.selectedGame?.id == game.id) {
                                         engine.selectedGame = game
                                     } onPlay: {
                                         engine.launchGame(game)
@@ -136,30 +143,27 @@ public struct LibraryView: View {
                                 }
                             }
                         } else {
-                            // List Mode (Apple Music Rows)
-                            VStack(spacing: 4) {
+                            // Floating Liquid Glass List Rows
+                            VStack(spacing: 8) {
                                 ForEach(engine.filteredGames) { game in
-                                    GameListRow(game: game, isSelected: engine.selectedGame?.id == game.id) {
+                                    GameListGlassRow(game: game, engine: engine, isSelected: engine.selectedGame?.id == game.id) {
                                         engine.selectedGame = game
                                     } onPlay: {
                                         engine.launchGame(game)
                                     }
                                 }
                             }
-                            .background(Color(NSColor.controlBackgroundColor).opacity(0.4))
-                            .cornerRadius(10)
                         }
                     }
                 }
-                .padding(16)
+                .padding(20)
             }
         }
-        .background(Color(NSColor.windowBackgroundColor))
         .onHover { _ in NSCursor.arrow.set() }
     }
 }
 
-// MARK: - Game Image Loader Component (Local Steam cache / Native .app bundle / Fallback)
+// MARK: - Game Image Loader Component
 public struct GameArtworkView: View {
     let game: GameItem
     let cornerRadius: CGFloat
@@ -177,8 +181,8 @@ public struct GameArtworkView: View {
                 Image(nsImage: icon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .padding(14)
-                    .background(Color.black.opacity(0.1))
+                    .padding(16)
+                    .background(Color.black.opacity(0.15))
             } else if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
                 AsyncImage(url: url) { phase in
                     switch phase {
@@ -196,30 +200,30 @@ public struct GameArtworkView: View {
                 proceduralArtwork
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 
     private var proceduralArtwork: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: cornerRadius)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(game.bannerColor.gradient)
-            VStack(spacing: 6) {
+            VStack(spacing: 8) {
                 Image(systemName: game.isNative ? "apple.logo" : (game.isUnityGame ? "cube.fill" : "gamecontroller.fill"))
-                    .font(.system(size: 26))
+                    .font(.system(size: 28))
                     .foregroundColor(.white.opacity(0.9))
                 Text(game.title)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 6)
+                    .padding(.horizontal, 8)
                     .lineLimit(2)
             }
         }
     }
 }
 
-// MARK: - Recently Played Poster Card
-struct RecentGamePosterCard: View {
+// MARK: - Recently Played Glass Bubble Card
+struct RecentGameGlassCard: View {
     let game: GameItem
     @ObservedObject var engine: EngineService
     let isSelected: Bool
@@ -228,49 +232,49 @@ struct RecentGamePosterCard: View {
 
     var body: some View {
         Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 ZStack(alignment: .bottomLeading) {
-                    GameArtworkView(game: game, cornerRadius: 10)
-                        .frame(width: 175, height: 110)
+                    GameArtworkView(game: game, cornerRadius: 18)
+                        .frame(width: 185, height: 118)
 
-                    // Glass Bottom Title Tag
+                    // Floating Glass Badge
                     HStack {
                         Text(game.badge.rawValue)
-                            .font(.system(size: 9, weight: .bold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .liquidGlass(cornerRadius: 4, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+                            .font(.system(size: 10, weight: .bold))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, tint: game.badge.color)
                             .foregroundColor(.white)
                         Spacer()
                     }
-                    .padding(8)
+                    .padding(10)
                 }
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2.5)
                 )
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(game.title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
                         .foregroundColor(.primary)
                     Text(game.storefront)
-                        .font(.system(size: 10))
+                        .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
-                .frame(width: 175, alignment: .leading)
+                .padding(.horizontal, 4)
+                .frame(width: 185, alignment: .leading)
             }
+            .padding(8)
+            .liquidGlassBubble(cornerRadius: 22, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
         }
         .buttonStyle(.plain)
-        .onHover { hovering in
-            if hovering { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() }
-        }
     }
 }
 
-// MARK: - Grid Poster Card
-struct GameGridPosterCard: View {
+// MARK: - Grid Glass Poster Card
+struct GameGridGlassCard: View {
     let game: GameItem
     @ObservedObject var engine: EngineService
     let isSelected: Bool
@@ -279,58 +283,59 @@ struct GameGridPosterCard: View {
 
     var body: some View {
         Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 10) {
                 ZStack(alignment: .topTrailing) {
-                    GameArtworkView(game: game, cornerRadius: 10)
+                    GameArtworkView(game: game, cornerRadius: 18)
                         .aspectRatio(2/3, contentMode: .fit)
 
-                    // Compatibility Badge Pill
+                    // Floating Glass Compatibility Pill
                     Text(game.badge.rawValue)
-                        .font(.system(size: 9, weight: .bold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .liquidGlass(cornerRadius: 4, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+                        .font(.system(size: 10, weight: .bold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, tint: game.badge.color)
                         .foregroundColor(.white)
-                        .padding(6)
+                        .padding(8)
                 }
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(isSelected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: isSelected ? 2.5 : 1)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2.5)
                 )
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(game.title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
                         .foregroundColor(.primary)
                     Text(game.storefront)
-                        .font(.system(size: 10))
+                        .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
+                .padding(.horizontal, 4)
             }
+            .padding(10)
+            .liquidGlassBubble(cornerRadius: 24, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
         }
         .buttonStyle(.plain)
-        .onHover { hovering in
-            if hovering { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() }
-        }
     }
 }
 
-// MARK: - List Row (Apple Music Style)
-struct GameListRow: View {
+// MARK: - List Glass Row
+struct GameListGlassRow: View {
     let game: GameItem
+    @ObservedObject var engine: EngineService
     let isSelected: Bool
     let onSelect: () -> Void
     let onPlay: () -> Void
 
     var body: some View {
         Button(action: onSelect) {
-            HStack(spacing: 12) {
-                // Mini Artwork
-                GameArtworkView(game: game, cornerRadius: 6)
-                    .frame(width: 34, height: 34)
+            HStack(spacing: 14) {
+                // Mini Artwork Bubble
+                GameArtworkView(game: game, cornerRadius: 8)
+                    .frame(width: 38, height: 38)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(game.title)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.primary)
@@ -344,44 +349,42 @@ struct GameListRow: View {
 
                 // Storefront
                 Text(game.storefront)
-                    .font(.system(size: 11))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
                     .frame(width: 90, alignment: .leading)
 
-                // Compatibility Pill
+                // Compatibility Glass Pill
                 Text(game.badge.rawValue)
-                    .font(.system(size: 11, weight: .semibold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(game.badge.color.opacity(0.15))
+                    .font(.system(size: 11, weight: .bold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, tint: game.badge.color)
                     .foregroundColor(game.badge.color)
-                    .cornerRadius(5)
-                    .frame(width: 80)
+                    .frame(width: 85)
 
-                // Target FPS / Preset
+                // Target FPS
                 Text("\(game.targetFps) FPS")
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
                     .foregroundColor(.secondary)
                     .frame(width: 60, alignment: .trailing)
 
-                // Quick Play Button
+                // Quick Play Action Button
                 Button(action: onPlay) {
                     Image(systemName: "play.fill")
-                        .font(.system(size: 10))
-                        .padding(6)
-                        .background(Color.primary.opacity(0.06))
-                        .clipShape(Circle())
+                        .font(.system(size: 11))
+                        .padding(8)
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
-            .cornerRadius(8)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .liquidGlassBubble(cornerRadius: 16, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+            )
         }
         .buttonStyle(.plain)
-        .onHover { hovering in
-            if hovering { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() }
-        }
     }
 }
