@@ -32,7 +32,7 @@ public struct VisualEffectView: NSViewRepresentable {
     }
 }
 
-// MARK: - Liquid Glass Optical Modifier (Stateless & High-Performance)
+// MARK: - Native Liquid Glass Optical Subsystem
 public struct LiquidGlassCardModifier: ViewModifier {
     var cornerRadius: CGFloat
     var isEnabled: Bool
@@ -48,37 +48,37 @@ public struct LiquidGlassCardModifier: ViewModifier {
             content
                 .background(
                     ZStack {
-                        // 1. Translucent Native AppKit Glass Substrate
-                        VisualEffectView(material: .menu, blendingMode: .withinWindow)
-                            .opacity(0.65 + (intensity * 0.25))
+                        // 1. Apple Ultra-Thin Translucent Glass Material
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .opacity(0.70 + (intensity * 0.25))
 
-                        // 2. Chromatic Light Gradient
+                        // 2. Chromatic Light Gradient (Luminous & Clean)
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        (tintColor ?? Color.white).opacity(0.12 * intensity),
-                                        Color.white.opacity(0.03 * intensity),
-                                        Color.clear,
-                                        Color.black.opacity(0.15 * intensity)
+                                        (tintColor ?? Color.white).opacity(0.16 * intensity),
+                                        Color.white.opacity(0.04 * intensity),
+                                        Color.clear
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
 
-                        // 3. Specular Curved Glass Highlight (Liquid Lens Sheen)
+                        // 3. Specular Curved Top Glass Sheen
                         VStack {
                             LinearGradient(
                                 colors: [
                                     Color.white.opacity(0.35 * intensity),
-                                    Color.white.opacity(0.08 * intensity),
+                                    Color.white.opacity(0.06 * intensity),
                                     Color.clear
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
-                            .frame(height: max(16, cornerRadius * 1.2))
+                            .frame(height: max(14, cornerRadius * 1.1))
                             .clipShape(
                                 UnevenRoundedRectangle(
                                     topLeadingRadius: cornerRadius,
@@ -90,29 +90,29 @@ public struct LiquidGlassCardModifier: ViewModifier {
                             Spacer()
                         }
 
-                        // 4. Razor-Sharp Specular Glass Rim Bevel
+                        // 4. Razor Specular Glass Rim Bevel
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .strokeBorder(
                                 LinearGradient(
                                     stops: [
-                                        .init(color: Color.white.opacity(0.85 * intensity), location: 0.0),
-                                        .init(color: Color.white.opacity(0.30 * intensity), location: 0.3),
-                                        .init(color: Color.white.opacity(0.06 * intensity), location: 0.7),
-                                        .init(color: Color.white.opacity(0.25 * intensity), location: 1.0)
+                                        .init(color: Color.white.opacity(0.75 * intensity), location: 0.0),
+                                        .init(color: Color.white.opacity(0.25 * intensity), location: 0.3),
+                                        .init(color: Color.white.opacity(0.05 * intensity), location: 0.7),
+                                        .init(color: Color.white.opacity(0.20 * intensity), location: 1.0)
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 ),
-                                lineWidth: 1.2
+                                lineWidth: 1.0
                             )
                     }
                 )
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                 .shadow(
-                    color: Color.black.opacity(0.14 * intensity),
+                    color: Color.black.opacity(0.08 * intensity),
                     radius: 8,
                     x: 0,
-                    y: 4
+                    y: 3
                 )
         }
     }
@@ -121,7 +121,7 @@ public struct LiquidGlassCardModifier: ViewModifier {
 // MARK: - View Extension for Liquid Glass
 public extension View {
     func liquidGlassBubble(
-        cornerRadius: CGFloat = 20,
+        cornerRadius: CGFloat = 18,
         isEnabled: Bool = true,
         intensity: Double = 0.85,
         tint: Color? = nil
@@ -148,7 +148,7 @@ public extension View {
     }
 }
 
-// MARK: - Native Liquid Glass Button Style (Pure ButtonStyle)
+// MARK: - Native Liquid Glass Button Style
 public struct LiquidGlassButtonStyle: ButtonStyle {
     var isProminent: Bool = false
     var isEnabled: Bool = true
@@ -169,12 +169,15 @@ public struct LiquidGlassButtonStyle: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, 18)
-            .padding(.vertical, 9)
+            .font(.system(size: 13, weight: .semibold))
+            .lineLimit(1)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .frame(height: 34)
             .background(
                 ZStack {
                     if isProminent {
-                        // Vibrant Glass Capsule with Internal Glow
+                        // Vibrant Glass Capsule
                         Capsule()
                             .fill((customTint ?? Color.accentColor).gradient)
                             .opacity(configuration.isPressed ? 0.85 : 1.0)
@@ -184,8 +187,8 @@ public struct LiquidGlassButtonStyle: ButtonStyle {
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(0.50 * intensity),
-                                        Color.white.opacity(0.10),
+                                        Color.white.opacity(0.45 * intensity),
+                                        Color.white.opacity(0.08),
                                         Color.clear
                                     ],
                                     startPoint: .top,
@@ -194,17 +197,17 @@ public struct LiquidGlassButtonStyle: ButtonStyle {
                             )
                     } else if isEnabled {
                         // Translucent Glass Substrate
-                        VisualEffectView(material: .menu, blendingMode: .withinWindow)
-                            .opacity(0.7)
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .opacity(0.85)
 
                         Capsule()
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(0.28 * intensity),
-                                        Color.white.opacity(0.04),
-                                        Color.clear,
-                                        Color.black.opacity(0.10 * intensity)
+                                        Color.white.opacity(0.22 * intensity),
+                                        Color.white.opacity(0.03),
+                                        Color.clear
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
@@ -220,25 +223,25 @@ public struct LiquidGlassButtonStyle: ButtonStyle {
                         .strokeBorder(
                             LinearGradient(
                                 stops: [
-                                    .init(color: Color.white.opacity(isProminent ? 0.95 : 0.85 * intensity), location: 0.0),
-                                    .init(color: Color.white.opacity(0.30), location: 0.35),
-                                    .init(color: Color.white.opacity(0.06), location: 0.75),
-                                    .init(color: Color.white.opacity(0.30), location: 1.0)
+                                    .init(color: Color.white.opacity(isProminent ? 0.90 : 0.75 * intensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.22), location: 0.35),
+                                    .init(color: Color.white.opacity(0.05), location: 0.75),
+                                    .init(color: Color.white.opacity(0.20), location: 1.0)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
                             ),
-                            lineWidth: 1.2
+                            lineWidth: 1.0
                         )
                 }
             )
             .foregroundColor(isProminent ? .white : .primary)
             .clipShape(Capsule())
             .shadow(
-                color: isProminent ? (customTint ?? Color.accentColor).opacity(0.35) : Color.black.opacity(0.12 * intensity),
-                radius: configuration.isPressed ? 2 : 6,
+                color: isProminent ? (customTint ?? Color.accentColor).opacity(0.3) : Color.black.opacity(0.08 * intensity),
+                radius: configuration.isPressed ? 2 : 5,
                 x: 0,
-                y: configuration.isPressed ? 1 : 3
+                y: configuration.isPressed ? 1 : 2
             )
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
             .animation(.easeInOut(duration: 0.12), value: configuration.isPressed)

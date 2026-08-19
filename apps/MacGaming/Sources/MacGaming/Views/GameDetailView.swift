@@ -76,7 +76,7 @@ public struct GameDetailView: View {
                 .liquidGlassBubble(cornerRadius: 26, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
 
                 // Floating Liquid Glass Action Controls
-                HStack(spacing: 14) {
+                HStack(spacing: 10) {
                     Button(action: {
                         if engine.isGameModeActive {
                             engine.stopGame()
@@ -86,11 +86,10 @@ public struct GameDetailView: View {
                     }) {
                         HStack(spacing: 8) {
                             Image(systemName: engine.isGameModeActive ? "stop.fill" : "play.fill")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                             Text(engine.isGameModeActive ? "Stop Session" : "Play")
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.system(size: 14, weight: .bold))
                         }
-                        .frame(minWidth: 160)
                     }
                     .buttonStyle(LiquidGlassButtonStyle(
                         isProminent: true,
@@ -98,55 +97,56 @@ public struct GameDetailView: View {
                         intensity: engine.liquidGlassIntensity,
                         customTint: engine.isGameModeActive ? Color.red : Color.accentColor
                     ))
+                    .fixedSize()
 
                     Button(action: {
                         engine.runBenchmark(for: game)
                     }) {
-                        HStack(spacing: 6) {
+                        HStack(spacing: 5) {
                             Image(systemName: "gauge.with.needle")
                             Text("Benchmark")
                         }
-                        .font(.system(size: 13, weight: .semibold))
                     }
                     .buttonStyle(LiquidGlassButtonStyle(
                         isProminent: false,
                         isEnabled: engine.liquidGlassEnabled,
                         intensity: engine.liquidGlassIntensity
                     ))
+                    .fixedSize()
 
                     Button(action: {
                         engine.runTroubleshooter(for: game)
                         showingTroubleshootSheet = true
                     }) {
-                        HStack(spacing: 6) {
+                        HStack(spacing: 5) {
                             Image(systemName: "wrench.and.screwdriver")
                             Text("Troubleshoot")
                         }
-                        .font(.system(size: 13, weight: .semibold))
                     }
                     .buttonStyle(LiquidGlassButtonStyle(
                         isProminent: false,
                         isEnabled: engine.liquidGlassEnabled,
                         intensity: engine.liquidGlassIntensity
                     ))
-
-                    Spacer()
+                    .fixedSize()
 
                     if !game.installPath.isEmpty {
                         Button(action: {
                             NSWorkspace.shared.selectFile(game.executablePath.isEmpty ? game.installPath : game.executablePath, inFileViewerRootedAtPath: game.installPath)
                         }) {
                             Image(systemName: "folder.fill")
-                                .font(.system(size: 13))
-                                .padding(10)
+                                .font(.system(size: 12))
                         }
                         .buttonStyle(LiquidGlassButtonStyle(
                             isProminent: false,
                             isEnabled: engine.liquidGlassEnabled,
                             intensity: engine.liquidGlassIntensity
                         ))
+                        .fixedSize()
                         .help("Show game files in Finder")
                     }
+
+                    Spacer()
                 }
 
                 // Launch Diagnostics / Status Telemetry Box

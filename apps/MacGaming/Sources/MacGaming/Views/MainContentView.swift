@@ -3,6 +3,23 @@ import SwiftUI
 public struct MainContentView: View {
     @StateObject var engine = EngineService()
 
+    private func countForStorefront(_ sf: StorefrontFilter) -> Int {
+        engine.games.filter { game in
+            switch sf {
+            case .all: return true
+            case .steam: return game.storefront == "Steam"
+            case .gog: return game.storefront == "GOG Galaxy"
+            case .epic: return game.storefront == "Epic Games"
+            case .itch: return game.storefront == "itch.io"
+            case .ubisoft: return game.storefront == "Ubisoft"
+            case .ea: return game.storefront == "EA App"
+            case .battlenet: return game.storefront == "Battle.net"
+            case .universalApp: return game.isUniversalApp
+            case .local: return game.storefront.contains("Local")
+            }
+        }.count
+    }
+
     public var body: some View {
         NavigationSplitView {
             VStack(alignment: .leading, spacing: 0) {
@@ -58,20 +75,7 @@ public struct MainContentView: View {
                                     Label(sf.rawValue, systemImage: sf.icon)
                                         .font(.system(size: 13, weight: engine.activeTab == .library && engine.selectedStorefront == sf ? .semibold : .regular))
                                     Spacer()
-                                    let count = engine.games.filter {
-                                        switch sf {
-                                        case .all: return true
-                                        case .steam: return $0.storefront == "Steam"
-                                        case .gog: return $0.storefront == "GOG Galaxy"
-                                        case .epic: return $0.storefront == "Epic Games"
-                                        case .itch: return $0.storefront == "itch.io"
-                                        case .ubisoft: return $0.storefront == "Ubisoft"
-                                        case .ea: return $0.storefront == "EA App"
-                                        case .battlenet: return $0.storefront == "Battle.net"
-                                        case .universalApp: return $0.isUniversalApp
-                                        case .local: return $0.storefront.contains("Local")
-                                        }
-                                    }.count
+                                    let count = countForStorefront(sf)
                                     if count > 0 {
                                         Text("\(count)")
                                             .font(.system(size: 11, weight: .bold))

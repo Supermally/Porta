@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "xcode": {
+      "command": "/usr/bin/xcrun",
+      "args": [
+        "mcpbridge"
+      ],
+      "env": {
+        "DEVELOPER_DIR": "/Applications/Xcode.app/Contents/Developer"
+      }
+    }
+  }
+}

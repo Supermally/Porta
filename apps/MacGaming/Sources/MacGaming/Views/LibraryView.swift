@@ -232,42 +232,41 @@ struct RecentGameGlassCard: View {
 
     var body: some View {
         Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 ZStack(alignment: .bottomLeading) {
-                    GameArtworkView(game: game, cornerRadius: 18)
-                        .frame(width: 185, height: 118)
+                    GameArtworkView(game: game, cornerRadius: 14)
+                        .frame(width: 175, height: 110)
 
                     // Floating Glass Badge
                     HStack {
                         Text(game.badge.rawValue)
-                            .font(.system(size: 10, weight: .bold))
-                            .padding(.horizontal, 8)
+                            .font(.system(size: 9, weight: .bold))
+                            .padding(.horizontal, 7)
                             .padding(.vertical, 3)
                             .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, tint: game.badge.color)
                             .foregroundColor(.white)
                         Spacer()
                     }
-                    .padding(10)
+                    .padding(8)
                 }
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2.5)
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
                 )
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(game.title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
                         .foregroundColor(.primary)
                     Text(game.storefront)
-                        .font(.system(size: 11))
+                        .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }
-                .padding(.horizontal, 4)
-                .frame(width: 185, alignment: .leading)
+                .frame(width: 175, alignment: .leading)
             }
-            .padding(8)
-            .liquidGlassBubble(cornerRadius: 22, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+            .padding(6)
+            .liquidGlassBubble(cornerRadius: 18, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
         }
         .buttonStyle(.plain)
     }
