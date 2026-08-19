@@ -16,7 +16,7 @@ public struct FloatingGlassSidebarView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [Color.blue.opacity(0.8), Color.indigo.opacity(0.9)],
+                                colors: [Color.blue.opacity(0.85), Color.indigo.opacity(0.95)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -39,7 +39,7 @@ public struct FloatingGlassSidebarView: View {
             .padding(.top, 14)
 
             Divider()
-                .opacity(0.2)
+                .opacity(0.15)
                 .padding(.horizontal, 10)
 
             // Primary Navigation Items
@@ -117,7 +117,7 @@ public struct FloatingGlassSidebarView: View {
             Spacer(minLength: 0)
 
             Divider()
-                .opacity(0.2)
+                .opacity(0.15)
                 .padding(.horizontal, 10)
 
             // Footer Settings
@@ -137,7 +137,7 @@ public struct FloatingGlassSidebarView: View {
         }
         .frame(width: 220)
         .frame(maxHeight: .infinity)
-        .glassEffect(.regular, in: .rect(cornerRadius: 22))
+        .crystalClearSidebarGlass(cornerRadius: 22)
         .padding(.leading, 14)
         .padding(.vertical, 14)
     }
@@ -204,7 +204,7 @@ private struct SidebarNavItem: View {
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [Color.blue, Color(red: 0.05, green: 0.40, blue: 0.90)],
+                                    colors: [Color(red: 0.05, green: 0.48, blue: 0.98), Color(red: 0.02, green: 0.35, blue: 0.85)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -214,9 +214,9 @@ private struct SidebarNavItem: View {
                                     .strokeBorder(
                                         LinearGradient(
                                             stops: [
-                                                .init(color: Color.white.opacity(0.90), location: 0.0),
-                                                .init(color: Color.white.opacity(0.20), location: 0.5),
-                                                .init(color: Color.white.opacity(0.50), location: 1.0)
+                                                .init(color: Color.white.opacity(0.95), location: 0.0),
+                                                .init(color: Color.white.opacity(0.25), location: 0.5),
+                                                .init(color: Color.white.opacity(0.60), location: 1.0)
                                             ],
                                             startPoint: .topLeading,
                                             endPoint: .bottomTrailing
@@ -227,10 +227,10 @@ private struct SidebarNavItem: View {
                             .shadow(color: Color.blue.opacity(0.35), radius: 6, y: 2)
                     } else if isHovered {
                         Capsule()
-                            .fill(Color.white.opacity(0.08))
+                            .fill(Color.white.opacity(0.09))
                             .overlay(
                                 Capsule()
-                                    .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.8)
+                                    .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.8)
                             )
                     } else {
                         Color.clear
@@ -294,12 +294,12 @@ private struct SidebarStorefrontItem: View {
                             .fill(Color.blue)
                             .overlay(
                                 Capsule()
-                                    .strokeBorder(Color.white.opacity(0.8), lineWidth: 1.0)
+                                    .strokeBorder(Color.white.opacity(0.85), lineWidth: 1.0)
                             )
                             .shadow(color: Color.blue.opacity(0.3), radius: 5, y: 2)
                     } else if isHovered {
                         Capsule()
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.white.opacity(0.08))
                     } else {
                         Color.clear
                     }

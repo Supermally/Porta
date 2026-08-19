@@ -3,7 +3,7 @@ import AppKit
 
 // =============================================================================
 // MARK: - Crystal Clear Apple Liquid Glass Design System
-// 100% Crystal Clear Optics • Zero Milky Frosting • 3D Refractive Specular Edges
+// True Behind-Window Optical Transparency • 3D Refractive Specular Edges
 // =============================================================================
 
 // MARK: - 1. Liquid Glass Configuration Environment
@@ -27,7 +27,39 @@ public extension EnvironmentValues {
     }
 }
 
-// MARK: - 2. Liquid Glass Style & Shape Specifications
+// MARK: - 2. Native AppKit Visual Effect Blur (Behind-Window Glass)
+public struct VisualEffectBlurView: NSViewRepresentable {
+    public var material: NSVisualEffectView.Material
+    public var blendingMode: NSVisualEffectView.BlendingMode
+    public var state: NSVisualEffectView.State
+
+    public init(
+        material: NSVisualEffectView.Material = .hudWindow,
+        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
+        state: NSVisualEffectView.State = .active
+    ) {
+        self.material = material
+        self.blendingMode = blendingMode
+        self.state = state
+    }
+
+    public func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = state
+        view.isEmphasized = true
+        return view
+    }
+
+    public func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
+        nsView.state = state
+    }
+}
+
+// MARK: - 3. Liquid Glass Style & Shape Specifications
 public enum GlassShapeOption {
     case capsule
     case rect(cornerRadius: CGFloat)
@@ -60,8 +92,78 @@ public struct GlassConfiguration {
     }
 }
 
-// MARK: - 3. GlassEffectContainer (Crystal Clear Group Container)
-/// Combines multiple Liquid Glass views in a crystal-clear unified pod
+// MARK: - 4. Crystal-Clear Sidebar Glass Modifier
+public struct CrystalClearSidebarGlassModifier: ViewModifier {
+    @Environment(\.liquidGlassEnabled) private var isGlassEnabled
+    @Environment(\.liquidGlassIntensity) private var glassIntensity
+
+    public let cornerRadius: CGFloat
+
+    public init(cornerRadius: CGFloat = 22) {
+        self.cornerRadius = cornerRadius
+    }
+
+    public func body(content: Content) -> some View {
+        content
+            .background(
+                ZStack {
+                    if isGlassEnabled {
+                        // 1. Native Behind-Window Optical Glass Layer
+                        VisualEffectBlurView(
+                            material: .hudWindow,
+                            blendingMode: .behindWindow,
+                            state: .active
+                        )
+                        .opacity(0.85 + (glassIntensity * 0.15))
+
+                        // 2. Optical Glass Transparency Substrate (Zero milky frosting)
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(Color.white.opacity(0.04 * glassIntensity))
+
+                        // 3. Top-Rim Curved Specular Glare (Glossy Lens Highlight)
+                        VStack {
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.35 * glassIntensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.05 * glassIntensity), location: 0.4),
+                                    .init(color: Color.clear, location: 1.0)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .frame(height: 18)
+                            Spacer()
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+
+                        // 4. 3D Refractive Specular Rim Bevel (Sharp High-Gloss Border)
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .strokeBorder(
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: Color.white.opacity(0.95 * glassIntensity), location: 0.0),
+                                        .init(color: Color.white.opacity(0.35 * glassIntensity), location: 0.30),
+                                        .init(color: Color.white.opacity(0.06 * glassIntensity), location: 0.65),
+                                        .init(color: Color.white.opacity(0.30 * glassIntensity), location: 0.90),
+                                        .init(color: Color.white.opacity(0.60 * glassIntensity), location: 1.0)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.2
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(Color(NSColor.windowBackgroundColor))
+                    }
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .shadow(color: Color.black.opacity(isGlassEnabled ? 0.12 * glassIntensity : 0.04), radius: 14, x: 0, y: 6)
+    }
+}
+
+// MARK: - 5. GlassEffectContainer (Crystal Clear Group Container)
 public struct GlassEffectContainer<Content: View>: View {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -83,11 +185,16 @@ public struct GlassEffectContainer<Content: View>: View {
         .background(
             ZStack {
                 if isGlassEnabled {
-                    // 1. Pure Crystal Clear Base (No milky frosting)
-                    Capsule()
-                        .fill(Color.white.opacity(0.06 * glassIntensity))
+                    VisualEffectBlurView(
+                        material: .hudWindow,
+                        blendingMode: .behindWindow,
+                        state: .active
+                    )
+                    .opacity(0.85)
 
-                    // 2. Upper Specular Lens Reflection
+                    Capsule()
+                        .fill(Color.white.opacity(0.05 * glassIntensity))
+
                     VStack {
                         Capsule()
                             .fill(
@@ -106,7 +213,6 @@ public struct GlassEffectContainer<Content: View>: View {
                     }
                     .clipShape(Capsule())
 
-                    // 3. Razor-Sharp 3D Specular Rim Bevel
                     Capsule()
                         .strokeBorder(
                             LinearGradient(
@@ -134,7 +240,7 @@ public struct GlassEffectContainer<Content: View>: View {
 
 public typealias GlassActionGroup = GlassEffectContainer
 
-// MARK: - 4. Liquid Glass Modifier (Crystal Clear Pane)
+// MARK: - 6. Liquid Glass Modifier (Crystal Clear Pane)
 public struct LiquidGlassViewModifier: ViewModifier {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -173,16 +279,21 @@ public struct LiquidGlassViewModifier: ViewModifier {
         switch shape {
         case .capsule:
             ZStack {
-                // Crystal Clear Substrate
+                VisualEffectBlurView(
+                    material: .hudWindow,
+                    blendingMode: .behindWindow,
+                    state: .active
+                )
+                .opacity(0.85)
+
                 Capsule()
-                    .fill(Color.white.opacity((isHovered ? 0.10 : 0.05) * glassIntensity))
+                    .fill(Color.white.opacity((isHovered ? 0.09 : 0.04) * glassIntensity))
 
                 if let tint = config.tintColor {
                     Capsule()
                         .fill(tint.opacity(0.12 * glassIntensity))
                 }
 
-                // Top Specular Sheen
                 VStack {
                     Capsule()
                         .fill(
@@ -201,7 +312,6 @@ public struct LiquidGlassViewModifier: ViewModifier {
                 }
                 .clipShape(Capsule())
 
-                // 3D Glass Rim
                 Capsule()
                     .strokeBorder(
                         LinearGradient(
@@ -222,7 +332,13 @@ public struct LiquidGlassViewModifier: ViewModifier {
 
         case .rect(let radius):
             ZStack {
-                // Crystal Clear Substrate
+                VisualEffectBlurView(
+                    material: .hudWindow,
+                    blendingMode: .behindWindow,
+                    state: .active
+                )
+                .opacity(0.85)
+
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .fill(Color.white.opacity((isHovered ? 0.08 : 0.04) * glassIntensity))
 
@@ -231,7 +347,6 @@ public struct LiquidGlassViewModifier: ViewModifier {
                         .fill(tint.opacity(0.10 * glassIntensity))
                 }
 
-                // Top Curved Lens Highlight
                 VStack {
                     LinearGradient(
                         stops: [
@@ -247,7 +362,6 @@ public struct LiquidGlassViewModifier: ViewModifier {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
 
-                // 3D Specular Rim
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .strokeBorder(
                         LinearGradient(
@@ -269,6 +383,13 @@ public struct LiquidGlassViewModifier: ViewModifier {
 
         case .circle:
             ZStack {
+                VisualEffectBlurView(
+                    material: .hudWindow,
+                    blendingMode: .behindWindow,
+                    state: .active
+                )
+                .opacity(0.85)
+
                 Circle()
                     .fill(Color.white.opacity((isHovered ? 0.10 : 0.05) * glassIntensity))
 
@@ -310,8 +431,13 @@ public struct LiquidGlassViewModifier: ViewModifier {
     }
 }
 
-// MARK: - 5. View Extensions (Skill API Surface)
+// MARK: - 7. View Extensions (Skill API Surface)
 public extension View {
+    /// Applies true behind-window crystal clear liquid glass to a floating sidebar
+    func crystalClearSidebarGlass(cornerRadius: CGFloat = 22) -> some View {
+        self.modifier(CrystalClearSidebarGlassModifier(cornerRadius: cornerRadius))
+    }
+
     /// Applies Liquid Glass with configuration and shape
     func glassEffect(_ config: GlassConfiguration = .regular, in shape: GlassShapeOption = .capsule) -> some View {
         self.modifier(LiquidGlassViewModifier(config: config, shape: shape))
@@ -335,7 +461,7 @@ public extension View {
     }
 }
 
-// MARK: - 6. Ambient Chromatic Background (For Liquid Glass Refraction)
+// MARK: - 8. Ambient Chromatic Background (For Liquid Glass Refraction)
 public struct AmbientChromaticBackdrop: View {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -388,7 +514,7 @@ public struct AmbientChromaticBackdrop: View {
     }
 }
 
-// MARK: - 7. Morphing Launch Glass Control
+// MARK: - 9. Morphing Launch Glass Control
 public struct MorphingLaunchGlassControl: View {
     @ObservedObject var engine: EngineService
     let game: GameItem
@@ -524,7 +650,7 @@ public struct MorphingLaunchGlassControl: View {
     }
 }
 
-// MARK: - 8. Compatibility Badge View (Crystal Clear Semantic Glass)
+// MARK: - 10. Compatibility Badge View (Crystal Clear Semantic Glass)
 public struct CompatibilityBadgeView: View {
     public let badge: CompatibilityBadge
 
@@ -548,7 +674,7 @@ public struct CompatibilityBadgeView: View {
     }
 }
 
-// MARK: - 9. Play Button (Crystal Sapphire Glass Action)
+// MARK: - 11. Play Button (Crystal Sapphire Glass Action)
 public struct PlayButton: View {
     public let isPlaying: Bool
     public let action: () -> Void
@@ -575,7 +701,7 @@ public struct PlayButton: View {
     }
 }
 
-// MARK: - 10. Liquid Glass Button Style (Crystal Clear Standard & Prominent Glass)
+// MARK: - 12. Liquid Glass Button Style (Crystal Clear Standard & Prominent Glass)
 public struct LiquidGlassButtonStyle: ButtonStyle {
     public var isProminent: Bool
     public var customTint: Color?
@@ -650,6 +776,13 @@ private struct GlassButtonView: View {
                         }
                     } else if isGlassEnabled {
                         // 100% Crystal Clear Glass Button (No milkiness)
+                        VisualEffectBlurView(
+                            material: .hudWindow,
+                            blendingMode: .behindWindow,
+                            state: .active
+                        )
+                        .opacity(0.85)
+
                         Capsule()
                             .fill(Color.white.opacity((isHovered ? 0.12 : 0.06) * glassIntensity))
 
