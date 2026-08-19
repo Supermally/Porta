@@ -66,7 +66,7 @@ public struct LibraryView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 13, weight: .bold))
                         .padding(8)
-                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
@@ -78,7 +78,7 @@ public struct LibraryView: View {
                         .rotationEffect(Angle(degrees: engine.isScanning ? 360 : 0))
                         .animation(engine.isScanning ? Animation.linear(duration: 1).repeatForever(autoreverses: false) : .default, value: engine.isScanning)
                         .padding(8)
-                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
                 }
                 .buttonStyle(.plain)
                 .disabled(engine.isScanning)
@@ -267,7 +267,7 @@ struct RecentGameGlassCard: View {
                 .frame(width: 185, alignment: .leading)
             }
             .padding(8)
-            .liquidGlassBubble(cornerRadius: 22, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
+            .liquidGlassBubble(cornerRadius: 22, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
         }
         .buttonStyle(.plain)
     }
@@ -314,7 +314,7 @@ struct GameGridGlassCard: View {
                 .padding(.horizontal, 4)
             }
             .padding(10)
-            .liquidGlassBubble(cornerRadius: 24, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
+            .liquidGlassBubble(cornerRadius: 24, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
         }
         .buttonStyle(.plain)
     }
@@ -373,13 +373,13 @@ struct GameListGlassRow: View {
                     Image(systemName: "play.fill")
                         .font(.system(size: 11))
                         .padding(8)
-                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .liquidGlassBubble(cornerRadius: 16, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, isInteractive: true)
+            .liquidGlassBubble(cornerRadius: 16, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
