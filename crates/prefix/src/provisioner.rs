@@ -134,8 +134,13 @@ impl SteamWindowsProvisioner {
             installer_url: Self::OFFICIAL_INSTALLER_URL.to_string(),
             launch_flags: vec![
                 "-no-cef-sandbox".to_string(),
-                "-allosarches".to_string(),
+                "-allprocesscounter".to_string(),
+                "-cef-disable-gpu".to_string(),
+                "-cef-disable-breakpad".to_string(),
+                "-cef-force-32bit".to_string(),
+                "-tcp".to_string(),
                 "-vgui".to_string(),
+                "-allosarches".to_string(),
             ],
         }
     }
@@ -175,5 +180,14 @@ mod tests {
         let updated_plan = PrefixProvisioner::check_dependencies(&prefix, "game_1", &["vcrun2022".to_string()]);
         assert!(updated_plan.is_ready);
         assert!(updated_plan.missing_dependencies.is_empty());
+    }
+
+    #[test]
+    fn test_steam_windows_provisioner_inspection() {
+        let temp = tempdir().unwrap();
+        let status = SteamWindowsProvisioner::inspect_container(temp.path());
+        assert!(!status.is_installed);
+        assert!(status.launch_flags.contains(&"-no-cef-sandbox".to_string()));
+        assert!(status.launch_flags.contains(&"-cef-disable-gpu".to_string()));
     }
 }

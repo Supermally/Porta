@@ -1440,19 +1440,68 @@ public class EngineService: ObservableObject {
         }
 
         let prefixPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/launchers/steam"
-        let steamExe = prefixPath + "/drive_c/Program Files (x86)/Steam/Steam.exe"
-        try? FileManager.default.createDirectory(atPath: prefixPath + "/drive_c/Program Files (x86)/Steam", withIntermediateDirectories: true)
+        let steamDir = prefixPath + "/drive_c/Program Files (x86)/Steam"
+        let steamExe = steamDir + "/Steam.exe"
+        try? FileManager.default.createDirectory(atPath: steamDir + "/config", withIntermediateDirectories: true)
+
+        // 1. Pre-configure Steam configuration to disable CEF GPU crashes in Wine
+        let steamCfgPath = steamDir + "/steam.cfg"
+        if !FileManager.default.fileExists(atPath: steamCfgPath) {
+            let cfgContent = "BootStrapperInhibitAll=Enable\nBootStrapperForceSelfUpdate=Disable\n"
+            try? cfgContent.write(toFile: steamCfgPath, atomically: true, encoding: .utf8)
+        }
+
+        let configVdfPath = steamDir + "/config/config.vdf"
+        if !FileManager.default.fileExists(atPath: configVdfPath) {
+            let vdfContent = """
+            "InstallConfigStore"
+            {
+            \t"Software"
+            \t{
+            \t\t"Valve"
+            \t\t{
+            \t\t\t"Steam"
+            \t\t\t{
+            \t\t\t\t"AutoUpdateWindowEnabled"\t\t"0"
+            \t\t\t\t"GPUAcceleratedWebViews"\t\t"0"
+            \t\t\t\t"DirectWrite"\t\t"0"
+            \t\t\t\t"SmoothScrollWebViews"\t\t"0"
+            \t\t\t\t"HiresLibrary"\t\t"0"
+            \t\t\t\t"ipv6check_http_state"\t\t"bad"
+            \t\t\t\t"ipv6check_udp_state"\t\t"bad"
+            \t\t\t}
+            \t\t}
+            \t}
+            }
+            """
+            try? vdfContent.write(toFile: configVdfPath, atomically: true, encoding: .utf8)
+        }
 
         var env = ProcessInfo.processInfo.environment
         env["WINEPREFIX"] = prefixPath
         env["WINE_D3D_METAL"] = "1"
-        env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;d3d9=n,b;d3dcompiler_47=n,b"
+        env["WINE_LARGE_ADDRESS_AWARE"] = "1"
+        env["WINE_ENABLE_FAST_SYNC"] = "1"
+        env["WINEESYNC"] = "1"
+        env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;d3d9=n,b;d3dcompiler_47=n,b;dwrite=b,n;riched20=b,n"
+
+        let isNativeSteamRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: "com.valvesoftware.steam").isEmpty
+        let steamLaunchFlags = [
+            "-no-cef-sandbox",
+            "-allprocesscounter",
+            "-cef-disable-gpu",
+            "-cef-disable-breakpad",
+            "-cef-force-32bit",
+            "-tcp",
+            "-vgui",
+            "-allosarches"
+        ]
 
         // Case 1: Steam.exe already installed
         if FileManager.default.fileExists(atPath: steamExe) {
             let proc = Process()
             proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
-            var args = ["-x86_64", runner, steamExe, "-no-cef-sandbox", "-allosarches"]
+            var args = ["-x86_64", runner, steamExe] + steamLaunchFlags
             if let id = appId {
                 args.append("-applaunch")
                 args.append(id)
@@ -1462,7 +1511,12 @@ public class EngineService: ObservableObject {
             try? proc.run()
             self.activeProcesses.append(proc)
             self.isGameModeActive = true
-            launchOutputMessage = "🟢 Launched Windows Steam Sandbox Container! (Prefix: \(prefixPath))"
+
+            var msg = "🟢 Launched Windows Steam Sandbox Container! (Prefix: \(prefixPath))"
+            if isNativeSteamRunning {
+                msg += "\n⚠️ Notice: Native Mac Steam is running. If Windows Steam hangs on login, quit Mac Steam to resolve port 27060 sharing."
+            }
+            launchOutputMessage = msg
             return
         }
 
@@ -1492,7 +1546,7 @@ public class EngineService: ObservableObject {
                     if FileManager.default.fileExists(atPath: steamExe) {
                         let proc = Process()
                         proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
-                        var args = ["-x86_64", runner, steamExe, "-no-cef-sandbox", "-allosarches"]
+                        var args = ["-x86_64", runner, steamExe] + steamLaunchFlags
                         if let id = appId {
                             args.append("-applaunch")
                             args.append(id)
@@ -1502,7 +1556,11 @@ public class EngineService: ObservableObject {
                         try? proc.run()
                         self.activeProcesses.append(proc)
                         self.isGameModeActive = true
-                        self.launchOutputMessage = "🟢 Windows Steam setup complete and launched! Sign in with your Steam credentials to download and play Windows-only titles."
+                        var finishMsg = "🟢 Windows Steam setup complete and launched! Sign in with your Steam credentials to download and play Windows-only titles."
+                        if isNativeSteamRunning {
+                            finishMsg += "\n⚠️ Notice: If Steam hangs on login, quit Mac Native Steam to prevent port 27060 conflict."
+                        }
+                        self.launchOutputMessage = finishMsg
                     } else {
                         self.launchOutputMessage = "🟢 Steam container initialized. Ready at: \(prefixPath)"
                     }
