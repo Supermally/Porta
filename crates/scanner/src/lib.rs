@@ -1,4 +1,7 @@
+pub mod steam_deep;
 pub mod vdf;
+
+pub use steam_deep::{DeepSteamManager, SteamGameDetails, SteamLibraryFolder, SteamUserAccount};
 
 use mac_gaming_analyzer::{BinaryAnalysisReport, BinaryAnalyzer};
 use mac_gaming_profiles::CompatibilityStatus;

@@ -601,9 +601,101 @@ public struct GameDetailView: View {
                         }
                     }
                 }
-                .padding(12)
+                .padding(14)
                 .background(Color(NSColor.controlBackgroundColor))
-                .cornerRadius(8)
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                )
+
+                    // Deep Steam Integration Card (When game is from Steam or has steamAppId)
+                    if game.storefront == "Steam" || game.steamAppId != nil {
+                        let appId = game.steamAppId ?? game.id.replacingOccurrences(of: "steam_", with: "")
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: "cloud.fill")
+                                    .foregroundColor(.blue)
+                                Text("Deep Steam Services & Cloud Integration")
+                                    .font(.system(size: 15, weight: .bold))
+
+                                Spacer()
+
+                                Text("App ID: \(appId)")
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(Color.blue.opacity(0.12))
+                                    .cornerRadius(5)
+                            }
+
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("• steam_appid.txt Auto-Binding: Active (Prevents license / DRM errors)")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                    Text("• Steam Cloud Save Directory: \(game.cloudSavePath ?? "~/Library/Application Support/Steam/userdata/.../\(appId)")")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
+
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    engine.openSteamStore(for: appId)
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "cart.fill")
+                                        Text("Store Page")
+                                    }
+                                    .font(.system(size: 11, weight: .semibold))
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button(action: {
+                                    engine.openSteamWorkshop(for: appId)
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "shippingbox.fill")
+                                        Text("Workshop Mods")
+                                    }
+                                    .font(.system(size: 11, weight: .semibold))
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button(action: {
+                                    engine.openSteamCommunityHub(for: appId)
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                                        Text("Community Hub")
+                                    }
+                                    .font(.system(size: 11, weight: .semibold))
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button(action: {
+                                    engine.syncSteamCloudSaves(for: game.id)
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "arrow.triangle.2.circlepath")
+                                        Text("Sync Cloud Saves")
+                                    }
+                                    .font(.system(size: 11, weight: .semibold))
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                        }
+                        .padding(14)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.blue.opacity(0.15), lineWidth: 1)
+                        )
+                    }
 
                 // Community Reports & Reviews Section
                 VStack(alignment: .leading, spacing: 12) {

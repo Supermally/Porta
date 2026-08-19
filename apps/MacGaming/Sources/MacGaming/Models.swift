@@ -96,12 +96,23 @@ public struct GameItem: Identifiable, Hashable, Sendable {
     public var isUnityGame: Bool = false
     public var engineType: String = "Auto"
     public var analysisChecklist: [String] = []
+    public var steamAppId: String? = nil
+    public var steamHeaderImageURL: String? = nil
+    public var cloudSavePath: String? = nil
     
     // Runtime override options
     public var useD3DMetal: Bool = true
     public var enableHud: Bool = false
     public var enableEsync: Bool = true
     public var enableFsync: Bool = true
+}
+
+public struct SteamAccountSummary: Identifiable, Hashable, Sendable {
+    public var id: String { steamId }
+    public let steamId: String
+    public let accountName: String
+    public let personaName: String
+    public let isOnline: Bool
 }
 
 public enum AcquisitionType: String, CaseIterable, Hashable, Sendable {

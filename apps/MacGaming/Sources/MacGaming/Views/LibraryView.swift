@@ -133,6 +133,42 @@ public struct LibraryView: View {
                     }
                     .padding(.horizontal, 1)
                 }
+
+                // Steam Account Status & Quick Sync Bar
+                if let steam = engine.activeSteamAccount, engine.selectedStorefront == .steam || engine.selectedStorefront == .all {
+                    HStack(spacing: 6) {
+                        Image(systemName: "cloud.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.blue)
+                        Text("Steam Account: \(steam.personaName)")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+
+                        Spacer()
+
+                        Button(action: { engine.syncSteamLibrary() }) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .rotationEffect(Angle(degrees: engine.isSteamSyncing ? 360 : 0))
+                                    .animation(engine.isSteamSyncing ? Animation.linear(duration: 0.8).repeatForever(autoreverses: false) : .default, value: engine.isSteamSyncing)
+                                Text(engine.isSteamSyncing ? "Syncing..." : "Sync Steam")
+                            }
+                            .font(.system(size: 9, weight: .semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.12))
+                            .foregroundColor(.blue)
+                            .cornerRadius(4)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(engine.isSteamSyncing)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.primary.opacity(0.03))
+                    .cornerRadius(6)
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
