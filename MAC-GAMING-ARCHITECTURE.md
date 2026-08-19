@@ -29,6 +29,12 @@ Mac Gaming turns compatibility into a seamless, deterministic, one-click experie
 4. **Self-Healing Diagnostics**: Translates cryptic Windows/DirectX crashes into human-readable recommendations with 1-click auto-fixes.
 5. **Ecosystem Advocacy**: Aggregates verified user demand and hardware distribution to present actionable commercial data to game studios for native macOS ports.
 
+### Non-Negotiable Design Principle:
+> **"Mac Gaming should feel like Apple made it."**
+- **Finder + Apple Music + System Settings**: Native `NavigationSplitView`, SF Symbols, system typography, and intentional Liquid Glass materials.
+- **Simple by Default, Powerful When Requested**: The user must never be forced to understand Wine, prefixes, or DLL overrides. Technical complexity is hidden behind an optional Developer Mode.
+- **Calm, Native Motion**: Subtle spring transitions without garish gaming-industry neon effects or fake dashboard clutter.
+
 ### What Mac Gaming IS NOT:
 1. **Not a Piracy Tool or DRM Bypass**: Mac Gaming does not crack binaries or bypass ownership verification. It provides legitimate authentication paths (including in-prefix Windows Steam execution).
 2. **Not a Kernel Rootkit**: Mac Gaming will never compromise macOS system integrity to emulate Windows Ring 0 kernel-level anti-cheat drivers. Unsupported kernel anti-cheat games are explicitly classified as **🔴 Unsupported** with technical justifications.

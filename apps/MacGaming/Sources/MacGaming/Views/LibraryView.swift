@@ -3,236 +3,341 @@ import SwiftUI
 public struct LibraryView: View {
     @ObservedObject var engine: EngineService
 
+    private let gridColumns = [
+        GridItem(.adaptive(minimum: 140, maximum: 180), spacing: 16)
+    ]
+
     public var body: some View {
         VStack(spacing: 0) {
-            // Refined Liquid Glass Header Bar
-            VStack(spacing: 10) {
-                // Top Row: Storefront Dropdown & Action Buttons (Never cut off)
-                HStack(spacing: 8) {
-                    // Storefront Selector Menu
-                    Menu {
-                        ForEach(StorefrontFilter.allCases) { sf in
-                            Button(action: { engine.selectedStorefront = sf }) {
-                                Label(sf.rawValue, systemImage: sf.icon)
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: engine.selectedStorefront.icon)
-                                .foregroundColor(.accentColor)
-                                .font(.system(size: 11, weight: .semibold))
-                            Text(engine.selectedStorefront.rawValue)
-                                .font(.system(size: 12, weight: .semibold))
-                                .lineLimit(1)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 9))
+            // Liquid Glass Top Navigation & Controls Toolbar
+            HStack(spacing: 10) {
+                // Search Field
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 12))
+                    TextField("Search library...", text: $engine.searchText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                    if !engine.searchText.isEmpty {
+                        Button(action: { engine.searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(.secondary)
+                                .font(.system(size: 11))
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(Color.primary.opacity(0.06))
+                .cornerRadius(8)
+
+                Spacer()
+
+                // View Mode Toggle (Grid vs List)
+                Picker("View Mode", selection: $engine.libraryViewMode) {
+                    ForEach(ViewMode.allCases) { mode in
+                        Image(systemName: mode.icon).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 72)
+
+                // Import Menu
+                Menu {
+                    Button(action: { engine.openNativeFilePicker(chooseFolder: true) }) {
+                        Label("Import Game Folder...", systemImage: "folder.badge.plus")
+                    }
+                    Button(action: { engine.openNativeFilePicker(isUniversalApp: false, chooseFolder: false) }) {
+                        Label("Import Executable (.exe / .app)...", systemImage: "gamecontroller")
+                    }
+                    Divider()
+                    Button(action: { engine.launchWindowsSteamSandbox() }) {
+                        Label("Launch Windows Steam Sandbox...", systemImage: "shippingbox.fill")
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(6)
                         .background(Color.primary.opacity(0.06))
                         .cornerRadius(8)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .fixedSize()
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
 
-                    Spacer(minLength: 4)
-
-                    // Import Button with Menu
-                    Menu {
-                        Button(action: { engine.openNativeFilePicker(chooseFolder: true) }) {
-                            Label("Import Game Folder (Auto-runs All Files)...", systemImage: "folder.badge.plus")
-                        }
-                        Button(action: { engine.openNativeFilePicker(isUniversalApp: false, chooseFolder: false) }) {
-                            Label("Import Game (.exe / .app)...", systemImage: "gamecontroller")
-                        }
-                        Button(action: { engine.openNativeFilePicker(isUniversalApp: true, chooseFolder: false) }) {
-                            Label("Import Windows App...", systemImage: "macwindow.badge.plus")
-                        }
-                        Divider()
-                        Button(action: { engine.launchWindowsSteamSandbox() }) {
-                            Label("Launch Windows Steam Sandbox (Path ③)...", systemImage: "shippingbox.fill")
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 11, weight: .bold))
-                            Text("Import")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 6)
-                        .background(Color.accentColor.opacity(0.15))
-                        .foregroundColor(.accentColor)
+                // Rescan Library Button
+                Button(action: { engine.scanAllLaunchers() }) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .semibold))
+                        .rotationEffect(Angle(degrees: engine.isScanning ? 360 : 0))
+                        .animation(engine.isScanning ? Animation.linear(duration: 1).repeatForever(autoreverses: false) : .default, value: engine.isScanning)
+                        .padding(6)
+                        .background(Color.primary.opacity(0.06))
                         .cornerRadius(8)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .fixedSize()
-                    .help("Import external Windows executable or macOS app bundle")
-
-                    // Rescan Library Button
-                    Button(action: { engine.scanAllLaunchers() }) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .rotationEffect(Angle(degrees: engine.isScanning ? 360 : 0))
-                            .animation(engine.isScanning ? Animation.linear(duration: 1).repeatForever(autoreverses: false) : .default, value: engine.isScanning)
-                            .padding(6)
-                            .background(Color.primary.opacity(0.06))
-                            .cornerRadius(8)
-                    }
-                    .buttonStyle(.plain)
-                    .fixedSize()
-                    .disabled(engine.isScanning)
-                    .help("Rescan installed Steam, GOG, Epic, itch, Ubisoft, EA, and Battle.net libraries")
                 }
-
-                // Second Row: Horizontally Scrollable Status Filter Pills
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        Button(action: { engine.selectedFilter = nil }) {
-                            Text("All (\(engine.games.count))")
-                                .font(.system(size: 11, weight: engine.selectedFilter == nil ? .bold : .medium))
-                                .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: false)
-                                .padding(.horizontal, 9)
-                                .padding(.vertical, 4)
-                                .background(engine.selectedFilter == nil ? Color.accentColor : Color.primary.opacity(0.06))
-                                .foregroundColor(engine.selectedFilter == nil ? .white : .primary)
-                                .cornerRadius(6)
-                        }
-                        .buttonStyle(.plain)
-
-                        ForEach(CompatibilityBadge.allCases) { badge in
-                            let count = engine.games.filter { $0.badge == badge }.count
-                            if count > 0 || engine.selectedFilter == badge {
-                                Button(action: {
-                                    if engine.selectedFilter == badge {
-                                        engine.selectedFilter = nil
-                                    } else {
-                                        engine.selectedFilter = badge
-                                    }
-                                }) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: badge.iconName)
-                                            .font(.system(size: 9, weight: .bold))
-                                        Text("\(badge.rawValue) (\(count))")
-                                            .font(.system(size: 11, weight: engine.selectedFilter == badge ? .bold : .medium))
-                                            .lineLimit(1)
-                                            .fixedSize(horizontal: true, vertical: false)
-                                    }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(engine.selectedFilter == badge ? badge.color.opacity(0.2) : Color.primary.opacity(0.06))
-                                    .foregroundColor(engine.selectedFilter == badge ? badge.color : .primary)
-                                    .cornerRadius(6)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 1)
-                }
-
-                // Steam Account Status & Quick Sync Bar
-                if let steam = engine.activeSteamAccount, engine.selectedStorefront == .steam || engine.selectedStorefront == .all {
-                    HStack(spacing: 6) {
-                        Image(systemName: "cloud.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(.blue)
-                        Text("Steam Account: \(steam.personaName)")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-
-                        Spacer()
-
-                        Button(action: { engine.syncSteamLibrary() }) {
-                            HStack(spacing: 3) {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                    .rotationEffect(Angle(degrees: engine.isSteamSyncing ? 360 : 0))
-                                    .animation(engine.isSteamSyncing ? Animation.linear(duration: 0.8).repeatForever(autoreverses: false) : .default, value: engine.isSteamSyncing)
-                                Text(engine.isSteamSyncing ? "Syncing..." : "Sync Steam")
-                            }
-                            .font(.system(size: 9, weight: .semibold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.blue.opacity(0.12))
-                            .foregroundColor(.blue)
-                            .cornerRadius(4)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(engine.isSteamSyncing)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.primary.opacity(0.03))
-                    .cornerRadius(6)
-                }
+                .buttonStyle(.plain)
+                .disabled(engine.isScanning)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(.ultraThinMaterial)
 
             Divider()
 
-            // Game & Software Library List
-            List(selection: $engine.selectedGame) {
-                ForEach(engine.filteredGames) { game in
-                    HStack(spacing: 12) {
-                        Image(systemName: game.badge.iconName)
-                            .foregroundColor(game.badge.color)
-                            .font(.system(size: 14))
+            // Library Content Area
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Recently Played Shelf (Apple Music Style)
+                    if engine.searchText.isEmpty && engine.selectedFilter == nil && engine.selectedStorefront == .all {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Recently Played")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
 
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(game.title)
-                                .font(.system(size: 13, weight: .semibold))
-                                .lineLimit(1)
-
-                            HStack(spacing: 5) {
-                                Text(game.storefront)
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.secondary)
-
-                                Text("•")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-
-                                Text(game.isNative ? "Native macOS" : (game.isUniversalApp ? "Windows App" : "DirectX / Metal"))
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 14) {
+                                    ForEach(Array(engine.games.prefix(4))) { game in
+                                        RecentGamePosterCard(game: game, isSelected: engine.selectedGame?.id == game.id) {
+                                            engine.selectedGame = game
+                                        } onPlay: {
+                                            engine.launchGame(game)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 1)
                             }
                         }
-
-                        Spacer()
-
-                        StatusBadgeView(badge: game.badge)
                     }
-                    .padding(.vertical, 4)
-                    .tag(game)
+
+                    // All Games Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text(engine.selectedStorefront == .all ? "All Games" : engine.selectedStorefront.rawValue)
+                                .font(.system(size: 16, weight: .bold))
+                            Spacer()
+                            Text("\(engine.filteredGames.count) titles")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                        }
+
+                        if engine.libraryViewMode == .grid {
+                            // Grid Mode (Posters)
+                            LazyVGrid(columns: gridColumns, spacing: 16) {
+                                ForEach(engine.filteredGames) { game in
+                                    GameGridPosterCard(game: game, isSelected: engine.selectedGame?.id == game.id) {
+                                        engine.selectedGame = game
+                                    } onPlay: {
+                                        engine.launchGame(game)
+                                    }
+                                }
+                            }
+                        } else {
+                            // List Mode (Apple Music Rows)
+                            VStack(spacing: 4) {
+                                ForEach(engine.filteredGames) { game in
+                                    GameListRow(game: game, isSelected: engine.selectedGame?.id == game.id) {
+                                        engine.selectedGame = game
+                                    } onPlay: {
+                                        engine.launchGame(game)
+                                    }
+                                }
+                            }
+                            .background(Color(NSColor.controlBackgroundColor).opacity(0.4))
+                            .cornerRadius(10)
+                        }
+                    }
                 }
+                .padding(16)
             }
-            .listStyle(.sidebar)
         }
+        .background(Color(NSColor.windowBackgroundColor))
     }
 }
 
-public struct StatusBadgeView: View {
-    let badge: CompatibilityBadge
+// MARK: - Recently Played Poster Card
+struct RecentGamePosterCard: View {
+    let game: GameItem
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onPlay: () -> Void
 
-    public var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: badge.iconName)
-                .font(.system(size: 9, weight: .bold))
-            Text(badge.rawValue)
-                .font(.system(size: 10, weight: .semibold))
-                .lineLimit(1)
-                .fixedSize()
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: 8) {
+                ZStack(alignment: .bottomLeading) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(game.bannerColor.gradient.opacity(0.85))
+                        .frame(width: 170, height: 110)
+                        .overlay(
+                            VStack {
+                                Image(systemName: game.isNative ? "apple.logo" : (game.isUnityGame ? "cube.fill" : "gamecontroller.fill"))
+                                    .font(.system(size: 28))
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                        )
+
+                    // Glass Bottom Title Tag
+                    HStack {
+                        Text(game.badge.rawValue)
+                            .font(.system(size: 10, weight: .bold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.ultraThinMaterial)
+                            .foregroundColor(.white)
+                            .cornerRadius(4)
+                        Spacer()
+                    }
+                    .padding(8)
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2.5)
+                )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(game.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                        .foregroundColor(.primary)
+                    Text(game.storefront)
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+                .frame(width: 170, alignment: .leading)
+            }
         }
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(badge.color.opacity(0.14))
-        .foregroundColor(badge.color)
-        .cornerRadius(5)
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Grid Poster Card
+struct GameGridPosterCard: View {
+    let game: GameItem
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onPlay: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: 6) {
+                ZStack(alignment: .topTrailing) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(game.bannerColor.gradient.opacity(0.8))
+                        .aspectRatio(3/4, contentMode: .fit)
+                        .overlay(
+                            VStack(spacing: 6) {
+                                Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.white.opacity(0.85))
+                                Text(game.title)
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 8)
+                                    .lineLimit(2)
+                            }
+                        )
+
+                    // Compatibility Badge Pill
+                    Text(game.badge.rawValue)
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(.ultraThinMaterial)
+                        .foregroundColor(.white)
+                        .cornerRadius(4)
+                        .padding(6)
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(isSelected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: isSelected ? 2.5 : 1)
+                )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(game.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                        .foregroundColor(.primary)
+                    Text(game.storefront)
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - List Row (Apple Music Style)
+struct GameListRow: View {
+    let game: GameItem
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onPlay: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 12) {
+                // Mini Artwork
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(game.bannerColor.gradient)
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white)
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(game.title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    Text(game.developerName)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                // Storefront
+                Text(game.storefront)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .frame(width: 90, alignment: .leading)
+
+                // Compatibility Pill
+                Text(game.badge.rawValue)
+                    .font(.system(size: 11, weight: .semibold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(game.badge.color.opacity(0.15))
+                    .foregroundColor(game.badge.color)
+                    .cornerRadius(5)
+                    .frame(width: 80)
+
+                // Target FPS / Preset
+                Text("\(game.targetFps) FPS")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .frame(width: 60, alignment: .trailing)
+
+                // Quick Play Button
+                Button(action: onPlay) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 10))
+                        .padding(6)
+                        .background(Color.primary.opacity(0.06))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+            .cornerRadius(8)
+        }
+        .buttonStyle(.plain)
     }
 }

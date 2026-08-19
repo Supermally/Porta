@@ -71,6 +71,48 @@ public enum CompatibilityBadge: String, CaseIterable, Identifiable, Codable, Sen
     }
 }
 
+public enum ViewMode: String, CaseIterable, Identifiable, Sendable {
+    case grid = "Grid"
+    case list = "List"
+
+    public var id: String { rawValue }
+    public var icon: String {
+        switch self {
+        case .grid: return "square.grid.2x2"
+        case .list: return "list.bullet"
+        }
+    }
+}
+
+public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
+    case library = "Library"
+    case discover = "Discover"
+    case compatibility = "Compatibility"
+    case downloads = "Downloads"
+    case settings = "Settings"
+
+    public var id: String { rawValue }
+    public var icon: String {
+        switch self {
+        case .library: return "square.stack.3d.up.fill"
+        case .discover: return "sparkles"
+        case .compatibility: return "checklist.checked"
+        case .downloads: return "arrow.down.circle.fill"
+        case .settings: return "gearshape.fill"
+        }
+    }
+
+    public var keyboardShortcut: KeyEquivalent {
+        switch self {
+        case .library: return "1"
+        case .discover: return "2"
+        case .compatibility: return "3"
+        case .downloads: return "4"
+        case .settings: return ","
+        }
+    }
+}
+
 public struct GameItem: Identifiable, Hashable, Sendable {
     public let id: String
     public var title: String
@@ -99,6 +141,9 @@ public struct GameItem: Identifiable, Hashable, Sendable {
     public var steamAppId: String? = nil
     public var steamHeaderImageURL: String? = nil
     public var cloudSavePath: String? = nil
+    public var developerName: String = "Official Release"
+    public var lastPlayedText: String = "Recently"
+    public var supportsController: Bool = true
     
     // Runtime override options
     public var useD3DMetal: Bool = true

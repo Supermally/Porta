@@ -1,92 +1,148 @@
 import SwiftUI
 
-public enum NavigationTab: String, CaseIterable, Identifiable {
-    case library = "My Games"
-    case search = "Universal Search"
-    case audit = "Library Audit"
-    case spotlight = "Mac Native Spotlight"
-    case campaigns = "Studio Demand Campaigns"
-    case diagnostics = "Diagnostics & Hardware"
-    case settings = "Settings"
-
-    public var id: String { rawValue }
-
-    public var icon: String {
-        switch self {
-        case .library: return "gamecontroller.fill"
-        case .search: return "magnifyingglass.circle.fill"
-        case .audit: return "chart.pie.fill"
-        case .spotlight: return "applelogo"
-        case .campaigns: return "megaphone.fill"
-        case .diagnostics: return "waveform.path.ecg"
-        case .settings: return "gearshape.fill"
-        }
-    }
-}
-
 public struct MainContentView: View {
     @StateObject var engine = EngineService()
-    @State private var activeTab: NavigationTab = .library
 
     public var body: some View {
         NavigationSplitView {
             VStack(alignment: .leading, spacing: 0) {
-                // App Brand
+                // Native macOS App Header
                 HStack(spacing: 8) {
                     Image(systemName: "apple.logo")
-                        .font(.system(size: 16))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.primary)
                     Text("Mac Gaming")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 15, weight: .bold))
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
                 .padding(.bottom, 12)
 
                 Divider()
+                    .padding(.horizontal, 12)
 
-                // Sidebar Navigation
-                List(NavigationTab.allCases, id: \.self, selection: $activeTab) { tab in
-                    NavigationLink(value: tab) {
-                        Label(tab.rawValue, systemImage: tab.icon)
+                // Native Sidebar Sections (Finder / Apple Music Style)
+                List {
+                    Section {
+                        SidebarTabRow(tab: .library, currentTab: $engine.activeTab, badgeCount: engine.games.count)
+                            .keyboardShortcut("1", modifiers: .command)
+
+                        SidebarTabRow(tab: .discover, currentTab: $engine.activeTab)
+                            .keyboardShortcut("2", modifiers: .command)
+
+                        SidebarTabRow(tab: .compatibility, currentTab: $engine.activeTab)
+                            .keyboardShortcut("3", modifiers: .command)
+
+                        SidebarTabRow(tab: .downloads, currentTab: $engine.activeTab)
+                            .keyboardShortcut("4", modifiers: .command)
+                    }
+
+                    Section("Game Providers") {
+                        ForEach(StorefrontFilter.allCases) { sf in
+                            Button(action: {
+                                engine.selectedStorefront = sf
+                                engine.activeTab = .library
+                            }) {
+                                HStack {
+                                    Label(sf.rawValue, systemImage: sf.icon)
+                                        .font(.system(size: 13))
+                                    Spacer()
+                                    let count = engine.games.filter {
+                                        switch sf {
+                                        case .all: return true
+                                        case .steam: return $0.storefront == "Steam"
+                                        case .gog: return $0.storefront == "GOG Galaxy"
+                                        case .epic: return $0.storefront == "Epic Games"
+                                        case .itch: return $0.storefront == "itch.io"
+                                        case .ubisoft: return $0.storefront == "Ubisoft"
+                                        case .ea: return $0.storefront == "EA App"
+                                        case .battlenet: return $0.storefront == "Battle.net"
+                                        case .universalApp: return $0.isUniversalApp
+                                        case .local: return $0.storefront.contains("Local")
+                                        }
+                                    }.count
+                                    if count > 0 {
+                                        Text("\(count)")
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .listRowBackground(engine.activeTab == .library && engine.selectedStorefront == sf ? Color.accentColor.opacity(0.15) : Color.clear)
+                        }
+                    }
+
+                    Section {
+                        SidebarTabRow(tab: .settings, currentTab: $engine.activeTab)
+                            .keyboardShortcut(",", modifiers: .command)
                     }
                 }
                 .listStyle(.sidebar)
             }
-            .frame(minWidth: 210, idealWidth: 230)
+            .frame(minWidth: 220, idealWidth: 240)
+            .background(.ultraThinMaterial)
         } content: {
-            switch activeTab {
+            switch engine.activeTab {
             case .library:
                 LibraryView(engine: engine)
-                    .searchable(text: $engine.searchText, prompt: "Search games...")
-                    .frame(minWidth: 280, idealWidth: 320)
-            case .search:
-                UniversalSearchView(engine: engine)
-            case .audit:
-                LibraryAuditView(engine: engine)
-            case .spotlight:
+                    .frame(minWidth: 320, idealWidth: 380)
+            case .discover:
                 MacNativeSpotlightView(engine: engine)
-            case .campaigns:
-                DeveloperDemandView(engine: engine)
-            case .diagnostics:
-                DiagnosticsView(engine: engine)
+            case .compatibility:
+                UniversalSearchView(engine: engine)
+            case .downloads:
+                DownloadsView(engine: engine)
             case .settings:
                 SettingsView()
             }
         } detail: {
-            if let game = engine.selectedGame, activeTab == .library {
+            if let game = engine.selectedGame, engine.activeTab == .library {
                 GameDetailView(engine: engine, game: game)
+            } else if engine.activeTab == .discover {
+                DeveloperDemandView(engine: engine)
+            } else if engine.activeTab == .compatibility {
+                LibraryAuditView(engine: engine)
             } else {
                 VStack(spacing: 12) {
-                    Image(systemName: activeTab.icon)
-                        .font(.system(size: 48))
-                        .foregroundColor(.secondary)
-                    Text(activeTab == .library ? "Select a game from the library to view details and launch" : "Mac Gaming Platform")
+                    Image(systemName: engine.activeTab.icon)
+                        .font(.system(size: 44))
+                        .foregroundColor(.secondary.opacity(0.6))
+                    Text(engine.activeTab == .library ? "Select a game from your library to view details and launch" : engine.activeTab.rawValue)
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(NSColor.windowBackgroundColor))
             }
         }
-        .frame(minWidth: 900, minHeight: 600)
+        .frame(minWidth: 960, minHeight: 620)
+    }
+}
+
+struct SidebarTabRow: View {
+    let tab: NavigationTab
+    @Binding var currentTab: NavigationTab
+    var badgeCount: Int? = nil
+
+    var body: some View {
+        Button(action: { currentTab = tab }) {
+            HStack {
+                Label(tab.rawValue, systemImage: tab.icon)
+                    .font(.system(size: 13, weight: currentTab == tab ? .semibold : .regular))
+                Spacer()
+                if let count = badgeCount, count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.primary.opacity(0.08))
+                        .foregroundColor(.secondary)
+                        .cornerRadius(10)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(currentTab == tab ? Color.accentColor.opacity(0.18) : Color.clear)
     }
 }

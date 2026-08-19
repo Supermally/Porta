@@ -146,3 +146,75 @@ struct DiagRow: View {
         }
     }
 }
+
+public struct DiagnosticsSheetView: View {
+    let report: DiagnosticReportItem
+    @ObservedObject var engine: EngineService
+    let onDismiss: () -> Void
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Image(systemName: "wrench.and.screwdriver.fill")
+                    .foregroundColor(.accentColor)
+                    .font(.system(size: 20))
+                Text("Self-Healing Diagnostic Report")
+                    .font(.system(size: 18, weight: .bold))
+                Spacer()
+                Button("Done", action: onDismiss)
+                    .keyboardShortcut(.defaultAction)
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text(report.summary)
+                        .font(.system(size: 14, weight: .semibold))
+                    Spacer()
+                    Text(report.hasCriticalIssues ? "Issues Found" : "Optimal")
+                        .font(.system(size: 12, weight: .bold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(report.hasCriticalIssues ? Color.orange.opacity(0.15) : Color.green.opacity(0.15))
+                        .foregroundColor(report.hasCriticalIssues ? .orange : .green)
+                        .cornerRadius(6)
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Findings & Recommended Actions:")
+                        .font(.system(size: 13, weight: .semibold))
+
+                    ForEach(report.findings) { finding in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(finding.title)
+                                    .font(.system(size: 12, weight: .bold))
+                                Spacer()
+                                Text(finding.severity)
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(.secondary)
+                            }
+                            Text(finding.description)
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                            Text("Fix: \(finding.recommendedAction)")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.accentColor)
+                        }
+                        .padding(8)
+                        .background(Color.primary.opacity(0.03))
+                        .cornerRadius(6)
+                    }
+                }
+            }
+            .padding(16)
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(10)
+
+            Spacer()
+        }
+        .padding(24)
+        .frame(minWidth: 480, minHeight: 380)
+    }
+}

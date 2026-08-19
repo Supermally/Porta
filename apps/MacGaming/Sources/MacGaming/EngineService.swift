@@ -25,6 +25,11 @@ public class EngineService: ObservableObject {
     @Published public var demandCampaigns: [DemandCampaignItem] = []
     @Published public var activeSteamAccount: SteamAccountSummary? = nil
     @Published public var isSteamSyncing: Bool = false
+    @Published public var activeTab: NavigationTab = .library
+    @Published public var libraryViewMode: ViewMode = .grid
+    @Published public var isDeveloperModeEnabled: Bool = false
+    @Published public var preparingGameItem: GameItem? = nil
+    @Published public var preparationStep: Int = 0
 
     private var activeActivityToken: NSObjectProtocol?
     private var activeProcesses: [Process] = []
