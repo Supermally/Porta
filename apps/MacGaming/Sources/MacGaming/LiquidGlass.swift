@@ -3,8 +3,29 @@ import AppKit
 
 // =============================================================================
 // MARK: - Mac Gaming Liquid Glass Design System
-// Apple Native First • Restrained Glass for Interactive Controls • High Performance
+// Apple Native First • Restrained Glass for Interactive Controls • Configurable Optics
 // =============================================================================
+
+// MARK: - Environment Keys for Liquid Glass Configuration
+private struct LiquidGlassEnabledKey: EnvironmentKey {
+    static let defaultValue: Bool = true
+}
+
+private struct LiquidGlassIntensityKey: EnvironmentKey {
+    static let defaultValue: Double = 0.85
+}
+
+public extension EnvironmentValues {
+    var liquidGlassEnabled: Bool {
+        get { self[LiquidGlassEnabledKey.self] }
+        set { self[LiquidGlassEnabledKey.self] = newValue }
+    }
+
+    var liquidGlassIntensity: Double {
+        get { self[LiquidGlassIntensityKey.self] }
+        set { self[LiquidGlassIntensityKey.self] = newValue }
+    }
+}
 
 // MARK: - 1. Play Button (Signature Prominent Action)
 public struct PlayButton: View {
@@ -36,6 +57,9 @@ public struct PlayButton: View {
 // MARK: - 2. Glass Action Group (GlassEffectContainer)
 /// Groups multiple interactive glass controls into a unified glass cluster
 public struct GlassActionGroup<Content: View>: View {
+    @Environment(\.liquidGlassEnabled) private var isGlassEnabled
+    @Environment(\.liquidGlassIntensity) private var glassIntensity
+
     public let spacing: CGFloat
     public let content: Content
 
@@ -51,32 +75,40 @@ public struct GlassActionGroup<Content: View>: View {
         .padding(6)
         .background(
             ZStack {
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .opacity(0.85)
+                if isGlassEnabled {
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .opacity(0.60 + (glassIntensity * 0.30))
 
-                Capsule()
-                    .strokeBorder(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.white.opacity(0.40), location: 0.0),
-                                .init(color: Color.white.opacity(0.10), location: 0.5),
-                                .init(color: Color.white.opacity(0.20), location: 1.0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 1.0
-                    )
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.45 * glassIntensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.10 * glassIntensity), location: 0.5),
+                                    .init(color: Color.white.opacity(0.25 * glassIntensity), location: 1.0)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1.0
+                        )
+                } else {
+                    Capsule()
+                        .fill(Color(NSColor.controlBackgroundColor))
+                }
             }
         )
         .clipShape(Capsule())
-        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+        .shadow(color: Color.black.opacity(isGlassEnabled ? 0.08 * glassIntensity : 0.04), radius: 6, x: 0, y: 3)
     }
 }
 
 // MARK: - 3. Compatibility Badge View (Restrained Semantic Glass)
 public struct CompatibilityBadgeView: View {
+    @Environment(\.liquidGlassEnabled) private var isGlassEnabled
+    @Environment(\.liquidGlassIntensity) private var glassIntensity
+
     public let badge: CompatibilityBadge
 
     public init(_ badge: CompatibilityBadge) {
@@ -97,22 +129,28 @@ public struct CompatibilityBadgeView: View {
         .padding(.vertical, 4)
         .background(
             ZStack {
-                Capsule()
-                    .fill(.ultraThinMaterial)
+                if isGlassEnabled {
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .opacity(0.70 + (glassIntensity * 0.25))
 
-                Capsule()
-                    .strokeBorder(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.white.opacity(0.35), location: 0.0),
-                                .init(color: Color.white.opacity(0.08), location: 0.5),
-                                .init(color: Color.white.opacity(0.18), location: 1.0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.8
-                    )
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.40 * glassIntensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.08 * glassIntensity), location: 0.5),
+                                    .init(color: Color.white.opacity(0.20 * glassIntensity), location: 1.0)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.8
+                        )
+                } else {
+                    Capsule()
+                        .fill(Color(NSColor.controlBackgroundColor))
+                }
             }
         )
         .clipShape(Capsule())
@@ -135,6 +173,9 @@ public struct LiquidGlassButtonStyle: ButtonStyle {
 }
 
 private struct GlassButtonView: View {
+    @Environment(\.liquidGlassEnabled) private var isGlassEnabled
+    @Environment(\.liquidGlassIntensity) private var glassIntensity
+
     let configuration: ButtonStyle.Configuration
     let isProminent: Bool
     let customTint: Color?
@@ -156,30 +197,32 @@ private struct GlassButtonView: View {
                             .fill((customTint ?? Color.accentColor).gradient)
                             .opacity(configuration.isPressed ? 0.85 : 1.0)
 
-                        // Top Specular Curved Sheen
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(isHovered ? 0.50 : 0.35),
-                                        Color.white.opacity(0.06),
-                                        Color.clear
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
+                        if isGlassEnabled {
+                            // Top Specular Curved Sheen
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(isHovered ? 0.55 * glassIntensity : 0.40 * glassIntensity),
+                                            Color.white.opacity(0.06),
+                                            Color.clear
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
                                 )
-                            )
-                    } else {
+                        }
+                    } else if isGlassEnabled {
                         // Standard Translucent Liquid Glass
                         Capsule()
                             .fill(.ultraThinMaterial)
-                            .opacity(isHovered ? 0.95 : 0.80)
+                            .opacity(isHovered ? 0.95 : (0.65 + (glassIntensity * 0.25)))
 
                         Capsule()
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(isHovered ? 0.25 : 0.12),
+                                        Color.white.opacity(isHovered ? 0.28 * glassIntensity : 0.14 * glassIntensity),
                                         Color.white.opacity(0.02),
                                         Color.clear
                                     ],
@@ -187,6 +230,9 @@ private struct GlassButtonView: View {
                                     endPoint: .bottom
                                 )
                             )
+                    } else {
+                        Capsule()
+                            .fill(Color(NSColor.controlColor))
                     }
 
                     // Refractive Specular Rim Bevel
@@ -194,10 +240,10 @@ private struct GlassButtonView: View {
                         .strokeBorder(
                             LinearGradient(
                                 stops: [
-                                    .init(color: Color.white.opacity(isProminent ? (isHovered ? 1.0 : 0.85) : (isHovered ? 0.80 : 0.50)), location: 0.0),
+                                    .init(color: Color.white.opacity(isProminent ? (isHovered ? 1.0 : 0.85) : (isHovered ? 0.85 * glassIntensity : 0.50 * glassIntensity)), location: 0.0),
                                     .init(color: Color.white.opacity(0.20), location: 0.4),
                                     .init(color: Color.white.opacity(0.04), location: 0.75),
-                                    .init(color: Color.white.opacity(isHovered ? 0.35 : 0.15), location: 1.0)
+                                    .init(color: Color.white.opacity(isHovered ? 0.35 * glassIntensity : 0.15 * glassIntensity), location: 1.0)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -209,7 +255,7 @@ private struct GlassButtonView: View {
             .foregroundColor(isProminent ? .white : .primary)
             .clipShape(Capsule())
             .shadow(
-                color: isProminent ? (customTint ?? Color.accentColor).opacity(isHovered ? 0.40 : 0.20) : Color.black.opacity(0.06),
+                color: isProminent ? (customTint ?? Color.accentColor).opacity(isHovered ? 0.40 : 0.20) : Color.black.opacity(isGlassEnabled ? 0.06 * glassIntensity : 0.02),
                 radius: isHovered ? 6 : 3,
                 x: 0,
                 y: isHovered ? 2 : 1
@@ -225,6 +271,13 @@ private struct GlassButtonView: View {
 
 // MARK: - 5. View Extensions
 public extension View {
+    /// Injects liquid glass configuration environment values
+    func liquidGlassEnvironment(enabled: Bool, intensity: Double) -> some View {
+        self
+            .environment(\.liquidGlassEnabled, enabled)
+            .environment(\.liquidGlassIntensity, intensity)
+    }
+
     /// Applies the standard Liquid Glass button style
     func glassButton(isProminent: Bool = false, tint: Color? = nil) -> some View {
         self.buttonStyle(LiquidGlassButtonStyle(isProminent: isProminent, customTint: tint))

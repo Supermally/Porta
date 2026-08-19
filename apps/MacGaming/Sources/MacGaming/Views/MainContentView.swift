@@ -95,6 +95,7 @@ public struct MainContentView: View {
                 }
             }
         }
+        .liquidGlassEnvironment(enabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
         .frame(minWidth: 920, minHeight: 600)
     }
 }
