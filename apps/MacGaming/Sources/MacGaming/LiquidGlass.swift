@@ -3,7 +3,7 @@ import AppKit
 
 // =============================================================================
 // MARK: - Crystal Clear Apple Liquid Glass Design System
-// True Behind-Window Optical Transparency • 3D Refractive Specular Edges
+// In-App Layer Refraction • Sliding Content Underflow • 3D Specular Edges
 // =============================================================================
 
 // MARK: - 1. Liquid Glass Configuration Environment
@@ -27,15 +27,15 @@ public extension EnvironmentValues {
     }
 }
 
-// MARK: - 2. Native AppKit Visual Effect Blur (Behind-Window Glass)
+// MARK: - 2. Native AppKit Visual Effect Blur (In-App Within-Window Glass)
 public struct VisualEffectBlurView: NSViewRepresentable {
     public var material: NSVisualEffectView.Material
     public var blendingMode: NSVisualEffectView.BlendingMode
     public var state: NSVisualEffectView.State
 
     public init(
-        material: NSVisualEffectView.Material = .hudWindow,
-        blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
+        material: NSVisualEffectView.Material = .sidebar,
+        blendingMode: NSVisualEffectView.BlendingMode = .withinWindow,
         state: NSVisualEffectView.State = .active
     ) {
         self.material = material
@@ -92,7 +92,7 @@ public struct GlassConfiguration {
     }
 }
 
-// MARK: - 4. Crystal-Clear Sidebar Glass Modifier
+// MARK: - 4. Crystal-Clear Sidebar Glass Modifier (In-App Refraction)
 public struct CrystalClearSidebarGlassModifier: ViewModifier {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -108,24 +108,24 @@ public struct CrystalClearSidebarGlassModifier: ViewModifier {
             .background(
                 ZStack {
                     if isGlassEnabled {
-                        // 1. Native Behind-Window Optical Glass Layer
+                        // 1. In-App Within-Window Visual Effect (Refracts Sliding Content Behind It)
                         VisualEffectBlurView(
                             material: .hudWindow,
-                            blendingMode: .behindWindow,
+                            blendingMode: .withinWindow,
                             state: .active
                         )
                         .opacity(0.85 + (glassIntensity * 0.15))
 
-                        // 2. Optical Glass Transparency Substrate (Zero milky frosting)
+                        // 2. Optical Glass Clarity Substrate (Zero milky frosting)
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .fill(Color.white.opacity(0.04 * glassIntensity))
 
-                        // 3. Top-Rim Curved Specular Glare (Glossy Lens Highlight)
+                        // 3. Top Specular Convex Lens Highlight
                         VStack {
                             LinearGradient(
                                 stops: [
-                                    .init(color: Color.white.opacity(0.35 * glassIntensity), location: 0.0),
-                                    .init(color: Color.white.opacity(0.05 * glassIntensity), location: 0.4),
+                                    .init(color: Color.white.opacity(0.40 * glassIntensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.06 * glassIntensity), location: 0.4),
                                     .init(color: Color.clear, location: 1.0)
                                 ],
                                 startPoint: .top,
@@ -136,7 +136,7 @@ public struct CrystalClearSidebarGlassModifier: ViewModifier {
                         }
                         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
 
-                        // 4. 3D Refractive Specular Rim Bevel (Sharp High-Gloss Border)
+                        // 4. Razor-Sharp 3D Specular Rim Bevel
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .strokeBorder(
                                 LinearGradient(
@@ -159,11 +159,11 @@ public struct CrystalClearSidebarGlassModifier: ViewModifier {
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .shadow(color: Color.black.opacity(isGlassEnabled ? 0.12 * glassIntensity : 0.04), radius: 14, x: 0, y: 6)
+            .shadow(color: Color.black.opacity(isGlassEnabled ? 0.14 * glassIntensity : 0.04), radius: 14, x: 0, y: 6)
     }
 }
 
-// MARK: - 5. GlassEffectContainer (Crystal Clear Group Container)
+// MARK: - 5. GlassEffectContainer (In-App Blended Container)
 public struct GlassEffectContainer<Content: View>: View {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -187,7 +187,7 @@ public struct GlassEffectContainer<Content: View>: View {
                 if isGlassEnabled {
                     VisualEffectBlurView(
                         material: .hudWindow,
-                        blendingMode: .behindWindow,
+                        blendingMode: .withinWindow,
                         state: .active
                     )
                     .opacity(0.85)
@@ -240,7 +240,7 @@ public struct GlassEffectContainer<Content: View>: View {
 
 public typealias GlassActionGroup = GlassEffectContainer
 
-// MARK: - 6. Liquid Glass Modifier (Crystal Clear Pane)
+// MARK: - 6. Liquid Glass Modifier (Crystal Clear In-App Pane)
 public struct LiquidGlassViewModifier: ViewModifier {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -281,7 +281,7 @@ public struct LiquidGlassViewModifier: ViewModifier {
             ZStack {
                 VisualEffectBlurView(
                     material: .hudWindow,
-                    blendingMode: .behindWindow,
+                    blendingMode: .withinWindow,
                     state: .active
                 )
                 .opacity(0.85)
@@ -334,7 +334,7 @@ public struct LiquidGlassViewModifier: ViewModifier {
             ZStack {
                 VisualEffectBlurView(
                     material: .hudWindow,
-                    blendingMode: .behindWindow,
+                    blendingMode: .withinWindow,
                     state: .active
                 )
                 .opacity(0.85)
@@ -385,7 +385,7 @@ public struct LiquidGlassViewModifier: ViewModifier {
             ZStack {
                 VisualEffectBlurView(
                     material: .hudWindow,
-                    blendingMode: .behindWindow,
+                    blendingMode: .withinWindow,
                     state: .active
                 )
                 .opacity(0.85)
@@ -433,7 +433,7 @@ public struct LiquidGlassViewModifier: ViewModifier {
 
 // MARK: - 7. View Extensions (Skill API Surface)
 public extension View {
-    /// Applies true behind-window crystal clear liquid glass to a floating sidebar
+    /// Applies true in-app crystal clear liquid glass to a floating sidebar
     func crystalClearSidebarGlass(cornerRadius: CGFloat = 22) -> some View {
         self.modifier(CrystalClearSidebarGlassModifier(cornerRadius: cornerRadius))
     }
@@ -469,7 +469,7 @@ public struct AmbientChromaticBackdrop: View {
 
     public var body: some View {
         ZStack {
-            (colorScheme == .dark ? Color(red: 0.05, green: 0.08, blue: 0.13) : Color(red: 0.94, green: 0.96, blue: 0.99))
+            (colorScheme == .dark ? Color(red: 0.06, green: 0.09, blue: 0.14) : Color(red: 0.94, green: 0.96, blue: 0.99))
                 .ignoresSafeArea()
 
             GeometryReader { proxy in
@@ -478,8 +478,8 @@ public struct AmbientChromaticBackdrop: View {
                         .fill(
                             RadialGradient(
                                 colors: [
-                                    Color(red: 0.0, green: 0.45, blue: 0.95).opacity(0.18),
-                                    Color(red: 0.1, green: 0.6, blue: 0.9).opacity(0.08),
+                                    Color(red: 0.0, green: 0.45, blue: 0.95).opacity(0.22),
+                                    Color(red: 0.1, green: 0.6, blue: 0.9).opacity(0.10),
                                     Color.clear
                                 ],
                                 center: .center,
@@ -487,16 +487,16 @@ public struct AmbientChromaticBackdrop: View {
                                 endRadius: proxy.size.width * 0.45
                             )
                         )
-                        .frame(width: proxy.size.width * 0.8, height: proxy.size.width * 0.8)
-                        .position(x: proxy.size.width * 0.2, y: proxy.size.height * 0.15)
+                        .frame(width: proxy.size.width * 0.85, height: proxy.size.width * 0.85)
+                        .position(x: proxy.size.width * 0.15, y: proxy.size.height * 0.20)
                         .blur(radius: 60)
 
                     Circle()
                         .fill(
                             RadialGradient(
                                 colors: [
-                                    Color(red: 0.35, green: 0.20, blue: 0.85).opacity(0.15),
-                                    Color(red: 0.15, green: 0.35, blue: 0.80).opacity(0.06),
+                                    Color(red: 0.40, green: 0.20, blue: 0.90).opacity(0.18),
+                                    Color(red: 0.15, green: 0.35, blue: 0.80).opacity(0.08),
                                     Color.clear
                                 ],
                                 center: .center,
@@ -504,7 +504,7 @@ public struct AmbientChromaticBackdrop: View {
                                 endRadius: proxy.size.width * 0.40
                             )
                         )
-                        .frame(width: proxy.size.width * 0.7, height: proxy.size.width * 0.7)
+                        .frame(width: proxy.size.width * 0.75, height: proxy.size.width * 0.75)
                         .position(x: proxy.size.width * 0.85, y: proxy.size.height * 0.85)
                         .blur(radius: 70)
                 }
@@ -531,7 +531,6 @@ public struct MorphingLaunchGlassControl: View {
     public var body: some View {
         Group {
             if engine.isGameModeActive {
-                // Active Session State: Morphed Live Status Capsule
                 HStack(spacing: 12) {
                     HStack(spacing: 8) {
                         Circle()
@@ -595,7 +594,6 @@ public struct MorphingLaunchGlassControl: View {
                 )
                 .shadow(color: Color.green.opacity(0.25), radius: 10, y: 4)
             } else {
-                // Idle State: Prominent Play Button + Action Group
                 HStack(spacing: 12) {
                     PlayButton(isPlaying: false) {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
@@ -746,7 +744,6 @@ private struct GlassButtonView: View {
             .background(
                 ZStack {
                     if isProminent {
-                        // Vibrant Sapphire / Ruby Glass Capsule
                         Capsule()
                             .fill(
                                 LinearGradient(
@@ -775,10 +772,9 @@ private struct GlassButtonView: View {
                                 )
                         }
                     } else if isGlassEnabled {
-                        // 100% Crystal Clear Glass Button (No milkiness)
                         VisualEffectBlurView(
                             material: .hudWindow,
-                            blendingMode: .behindWindow,
+                            blendingMode: .withinWindow,
                             state: .active
                         )
                         .opacity(0.85)
@@ -803,7 +799,6 @@ private struct GlassButtonView: View {
                             .fill(Color(NSColor.controlColor))
                     }
 
-                    // 3D Specular Glass Rim
                     Capsule()
                         .strokeBorder(
                             LinearGradient(

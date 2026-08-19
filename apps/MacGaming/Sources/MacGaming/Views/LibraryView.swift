@@ -17,17 +17,20 @@ public struct LibraryView: View {
                         Text("Recently Played")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .padding(.horizontal, 20)
+                            .padding(.leading, 248)
+                            .padding(.trailing, 20)
 
+                        // Extends to leading 0 so scrolling cards slide UNDER the floating glass sidebar!
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 16) {
-                                ForEach(Array(engine.games.prefix(5))) { game in
+                                ForEach(Array(engine.games.prefix(6))) { game in
                                     RecentGamePosterCard(game: game, isSelected: engine.selectedGame?.id == game.id) {
                                         engine.selectedGame = game
                                     }
                                 }
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.leading, 248)
+                            .padding(.trailing, 20)
                             .padding(.vertical, 4)
                         }
                     }
@@ -65,14 +68,14 @@ public struct LibraryView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.leading, 248)
+                .padding(.trailing, 20)
             }
             .padding(.vertical, 20)
         }
         .searchable(text: $engine.searchText, prompt: "Search library...")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                // View Mode Switcher
                 Picker("View Mode", selection: $engine.libraryViewMode) {
                     ForEach(ViewMode.allCases) { mode in
                         Image(systemName: mode.icon).tag(mode)
@@ -80,7 +83,6 @@ public struct LibraryView: View {
                 }
                 .pickerStyle(.segmented)
 
-                // Import Menu
                 Menu {
                     Button {
                         engine.openNativeFilePicker(chooseFolder: true)
@@ -102,7 +104,6 @@ public struct LibraryView: View {
                     Image(systemName: "plus")
                 }
 
-                // Rescan Button
                 Button {
                     engine.scanAllLaunchers()
                 } label: {

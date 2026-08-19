@@ -4,44 +4,46 @@ public struct MainContentView: View {
     @StateObject var engine = EngineService()
 
     public var body: some View {
-        ZStack {
-            // Ambient Chromatic Backdrop for Liquid Glass Refraction
+        ZStack(alignment: .leading) {
+            // 1. Full-Window Ambient Backdrop (Canvas Background)
             AmbientChromaticBackdrop()
 
-            HStack(spacing: 0) {
-                // 1. Floating Crystal-Clear Liquid Glass Sidebar
-                FloatingGlassSidebarView(engine: engine)
+            // 2. Full-Bleed Content Canvas (Extends edge-to-edge behind the floating sidebar)
+            Group {
+                switch engine.activeTab {
+                case .library:
+                    HSplitView {
+                        LibraryView(engine: engine)
+                            .frame(minWidth: 340, idealWidth: 440)
 
-                // 2. Content & Detail Canvas
-                Group {
-                    switch engine.activeTab {
-                    case .library:
-                        HSplitView {
-                            LibraryView(engine: engine)
-                                .frame(minWidth: 340, idealWidth: 420)
-
-                            if let game = engine.selectedGame {
-                                GameDetailView(engine: engine, game: game)
-                                    .frame(minWidth: 400)
-                            } else {
-                                emptyStateView
-                            }
+                        if let game = engine.selectedGame {
+                            GameDetailView(engine: engine, game: game)
+                                .frame(minWidth: 400)
+                        } else {
+                            emptyStateView
                         }
-                    case .discover:
-                        MacNativeSpotlightView(engine: engine)
-                    case .compatibility:
-                        UniversalSearchView(engine: engine)
-                    case .downloads:
-                        DownloadsView(engine: engine)
-                    case .settings:
-                        SettingsView(engine: engine)
                     }
+                case .discover:
+                    MacNativeSpotlightView(engine: engine)
+                        .padding(.leading, 248)
+                case .compatibility:
+                    UniversalSearchView(engine: engine)
+                        .padding(.leading, 248)
+                case .downloads:
+                    DownloadsView(engine: engine)
+                        .padding(.leading, 248)
+                case .settings:
+                    SettingsView(engine: engine)
+                        .padding(.leading, 248)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .liquidGlassEnvironment(enabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // 3. Floating Crystal-Clear Liquid Glass Sidebar (Floats Over the Content Canvas)
+            FloatingGlassSidebarView(engine: engine)
         }
-        .frame(minWidth: 960, minHeight: 640)
+        .liquidGlassEnvironment(enabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+        .frame(minWidth: 980, minHeight: 640)
     }
 
     private var emptyStateView: some View {
