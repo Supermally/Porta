@@ -1460,7 +1460,8 @@ public class EngineService: ObservableObject {
         let downloadsDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Downloads"
         let localInstaller = downloadsDir + "/SteamSetup.exe"
 
-        let runInstaller: (String) -> Void = { installerPath in
+        let runInstaller: (String) -> Void = { [weak self] installerPath in
+            guard let self = self else { return }
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 guard let self = self else { return }
                 DispatchQueue.main.async {
@@ -1507,14 +1508,14 @@ public class EngineService: ObservableObject {
             let targetDownload = URL(fileURLWithPath: cacheDir + "/SteamSetup.exe")
 
             let steamUrl = URL(string: "https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe")!
-            let task = URLSession.shared.downloadTask(with: steamUrl) { tempURL, response, error in
+            let task = URLSession.shared.downloadTask(with: steamUrl) { [weak self] tempURL, response, error in
                 if let temp = tempURL {
                     try? FileManager.default.removeItem(at: targetDownload)
                     try? FileManager.default.moveItem(at: temp, to: targetDownload)
                     runInstaller(targetDownload.path)
                 } else {
                     DispatchQueue.main.async {
-                        self.launchOutputMessage = "❌ Failed to download SteamSetup.exe: \(error?.localizedDescription ?? "Network error"). You can drop SteamSetup.exe into ~/Downloads and click again!"
+                        self?.launchOutputMessage = "❌ Failed to download SteamSetup.exe: \(error?.localizedDescription ?? "Network error"). You can drop SteamSetup.exe into ~/Downloads and click again!"
                     }
                 }
             }
