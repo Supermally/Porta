@@ -94,7 +94,7 @@ public struct MainContentView: View {
             case .downloads:
                 DownloadsView(engine: engine)
             case .settings:
-                SettingsView()
+                SettingsView(engine: engine)
             }
         } detail: {
             if let game = engine.selectedGame, engine.activeTab == .library {

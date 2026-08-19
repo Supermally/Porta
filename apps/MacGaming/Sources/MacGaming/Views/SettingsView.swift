@@ -1,59 +1,109 @@
 import SwiftUI
 
 public struct SettingsView: View {
+    @ObservedObject var engine: EngineService
     @State private var isAdvancedMode: Bool = false
     @State private var performancePreset: String = "Balanced"
     @State private var graphicsPreset: String = "Recommended"
-    @State private var wineVersion: String = "Wine-CXP-23.7 (Default)"
+    @State private var wineVersion: String = "Apple D3DMetal + Wine-CX-23.7 (Default)"
     @State private var enableEsync: Bool = true
     @State private var enableFsync: Bool = true
     @State private var enableDxvkHud: Bool = false
     @State private var enableMetalHud: Bool = false
     @State private var shaderCacheEnabled: Bool = true
 
+    public init(engine: EngineService) {
+        self._engine = ObservedObject(wrappedValue: engine)
+    }
+
     public var body: some View {
-        Form {
-            Section {
-                Toggle("Enable Advanced Mode", isOn: $isAdvancedMode)
-                    .font(.system(size: 13, weight: .semibold))
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // Header
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Preferences")
+                        .font(.system(size: 24, weight: .bold))
+                    Text("Configure Liquid Glass materials, compatibility runtimes, and system integration.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                }
+
+                // Liquid Glass Section
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.accentColor)
+                        Text("Liquid Glass Materials & Appearance")
+                            .font(.system(size: 15, weight: .bold))
+                        Spacer()
+                    }
+
+                    Toggle("Enable Liquid Glass Materials", isOn: $engine.liquidGlassEnabled)
+                        .font(.system(size: 13, weight: .semibold))
+
+                    if engine.liquidGlassEnabled {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Refraction & Specular Intensity:")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text("\(Int(engine.liquidGlassIntensity * 100))%")
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            }
+
+                            Slider(value: $engine.liquidGlassIntensity, in: 0.1...1.0, step: 0.05)
+                        }
+
+                        // Live Liquid Glass Preview Card
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Live Glass Preview")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("Specular rim lighting, dynamic refraction, and ambient occlusion.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Button("Sample Action") {}
+                                .buttonStyle(LiquidGlassButtonStyle(isProminent: true, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity))
+                        }
+                        .padding(14)
+                        .liquidGlass(cornerRadius: 10, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+                    }
+                }
+                .padding(18)
+                .liquidGlass(cornerRadius: 12, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+
+                // Compatibility Engine & Runtimes
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        Image(systemName: "gearshape.2.fill")
+                            .foregroundColor(.accentColor)
+                        Text("Compatibility Runtime & Metal")
+                            .font(.system(size: 15, weight: .bold))
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Picker("Wine Runner", selection: $wineVersion) {
+                            Text("Apple D3DMetal + Wine-CX-23.7 (Default)").tag("Apple D3DMetal + Wine-CX-23.7 (Default)")
+                            Text("Whisky / CrossOver Wine-GE-Proton").tag("Whisky / CrossOver Wine-GE-Proton")
+                            Text("Wine-Staging 9.0 (Custom)").tag("Wine-Staging 9.0 (Custom)")
+                        }
+
+                        Toggle("Eventfd Synchronization (Esync)", isOn: $enableEsync)
+                        Toggle("Futex Synchronization (Fsync)", isOn: $enableFsync)
+                        Toggle("Persist Shader Pre-Caching on Disk", isOn: $shaderCacheEnabled)
+                        Toggle("Metal Performance HUD Overlay", isOn: $enableMetalHud)
+                    }
+                    .font(.system(size: 13))
+                }
+                .padding(18)
+                .liquidGlass(cornerRadius: 12, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
             }
-
-            if !isAdvancedMode {
-                // Simple Mode
-                Section(header: Text("Simple Mode Settings")) {
-                    Picker("Performance Profile", selection: $performancePreset) {
-                        Text("Battery Saver").tag("Battery Saver")
-                        Text("Balanced (Recommended)").tag("Balanced")
-                        Text("Max Performance").tag("Max Performance")
-                    }
-
-                    Picker("Graphics Settings", selection: $graphicsPreset) {
-                        Text("Automatic / Native").tag("Automatic")
-                        Text("Recommended for Hardware").tag("Recommended")
-                        Text("Low Latency").tag("Low Latency")
-                    }
-                }
-            } else {
-                // Advanced Mode
-                Section(header: Text("Compatibility Runtimes")) {
-                    Picker("Wine Runner", selection: $wineVersion) {
-                        Text("Wine-CXP-23.7 (Default)").tag("Wine-CXP-23.7 (Default)")
-                        Text("Wine-GE-Proton-8.26").tag("Wine-GE-Proton-8.26")
-                        Text("Wine-Staging 9.0").tag("Wine-Staging 9.0")
-                    }
-
-                    Toggle("Enable Esync (Eventfd Synchronization)", isOn: $enableEsync)
-                    Toggle("Enable Fsync (Futex Synchronization)", isOn: $enableFsync)
-                    Toggle("Persist Shader Pre-Caching", isOn: $shaderCacheEnabled)
-                }
-
-                Section(header: Text("Graphics & Overlays")) {
-                    Toggle("Enable Metal Performance HUD", isOn: $enableMetalHud)
-                    Toggle("Enable DXVK Frame Counter & HUD", isOn: $enableDxvkHud)
-                }
-            }
+            .padding(24)
+            .frame(maxWidth: 680)
         }
-        .padding(20)
-        .frame(maxWidth: 550)
+        .background(Color(NSColor.windowBackgroundColor))
     }
 }

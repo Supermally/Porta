@@ -28,6 +28,8 @@ public class EngineService: ObservableObject {
     @Published public var activeTab: NavigationTab = .library
     @Published public var libraryViewMode: ViewMode = .grid
     @Published public var isDeveloperModeEnabled: Bool = false
+    @Published public var liquidGlassEnabled: Bool = true
+    @Published public var liquidGlassIntensity: Double = 0.85
     @Published public var preparingGameItem: GameItem? = nil
     @Published public var preparationStep: Int = 0
 
@@ -703,6 +705,12 @@ public class EngineService: ObservableObject {
 
                     let saveDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/Steam/userdata/\(self.activeSteamAccount?.steamId ?? "default")/\(appid)/remote"
 
+                    // Check for offline cached images in Steam appcache/librarycache
+                    let cacheDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/Steam/appcache/librarycache/\(appid)"
+                    let posterPath = cacheDir + "/library_600x900.jpg"
+                    let heroPath = cacheDir + "/library_hero.jpg"
+                    let logoPath = cacheDir + "/logo.png"
+
                     let item = GameItem(
                         id: "steam_\(appid)",
                         title: name,
@@ -724,7 +732,11 @@ public class EngineService: ObservableObject {
                         engineType: isNativeApp ? "Native macOS" : "Direct3D",
                         steamAppId: appid,
                         steamHeaderImageURL: "https://cdn.cloudflare.steamstatic.com/steam/apps/\(appid)/header.jpg",
-                        cloudSavePath: FileManager.default.fileExists(atPath: saveDir) ? saveDir : nil
+                        localPosterPath: FileManager.default.fileExists(atPath: posterPath) ? posterPath : nil,
+                        localHeroPath: FileManager.default.fileExists(atPath: heroPath) ? heroPath : nil,
+                        localLogoPath: FileManager.default.fileExists(atPath: logoPath) ? logoPath : nil,
+                        cloudSavePath: FileManager.default.fileExists(atPath: saveDir) ? saveDir : nil,
+                        developerName: "Steam Title"
                     )
                     discoveredGames.append(item)
                 }
@@ -1380,180 +1392,9 @@ public class EngineService: ObservableObject {
                 installPath: prefixSteamDir,
                 acquisitionType: .windowsLauncherRuntime,
                 engineType: "Windows Application",
+                developerName: "Valve Corporation",
                 useD3DMetal: true,
                 enableHud: false
-            ),
-            GameItem(
-                id: "steam_1086940",
-                title: "Baldur's Gate 3",
-                storefront: "Steam",
-                badge: .native,
-                isNative: true,
-                isUniversalApp: false,
-                bannerColor: .indigo,
-                runtime: "Native macOS Mach-O (Zero Translation Overhead)",
-                rating: 99,
-                performanceStars: 5,
-                hardwarePreset: "High Preset / Native Display",
-                targetFps: 60,
-                knownIssues: [],
-                antiCheatStatus: "Not Required",
-                acquisitionType: .nativeStorefront,
-                steamAppId: "1086940",
-                steamHeaderImageURL: "https://cdn.cloudflare.steamstatic.com/steam/apps/1086940/header.jpg"
-            ),
-            GameItem(
-                id: "gog_1207664643",
-                title: "The Witcher 3: Wild Hunt",
-                storefront: "GOG Galaxy",
-                badge: .compatible,
-                isNative: false,
-                isUniversalApp: false,
-                bannerColor: .red,
-                runtime: "D3DMetal + Wine-CX-23.7 (DirectX 12 Next-Gen)",
-                rating: 97,
-                performanceStars: 5,
-                hardwarePreset: "High Preset / 1440p",
-                targetFps: 60,
-                knownIssues: [
-                    "HairWorks can be toggled off for +15 FPS boost on M1/M2 chips"
-                ],
-                antiCheatStatus: "None",
-                acquisitionType: .storefrontIntegration,
-                useD3DMetal: true,
-                enableHud: false
-            ),
-            GameItem(
-                id: "steam_1245620",
-                title: "Elden Ring",
-                storefront: "Steam",
-                badge: .compatible,
-                isNative: false,
-                isUniversalApp: false,
-                bannerColor: .yellow,
-                runtime: "D3DMetal + Wine-CX-23.7 (Profile #1842)",
-                rating: 94,
-                performanceStars: 4,
-                hardwarePreset: "Medium Preset / 1440p",
-                targetFps: 60,
-                knownIssues: [
-                    "Shader compilation stutter on first visit to new regions",
-                    "Disable Ray Tracing in-game for consistent 60 FPS"
-                ],
-                antiCheatStatus: "Easy Anti-Cheat (Wine-compatible override enabled)",
-                acquisitionType: .windowsLauncherRuntime,
-                steamAppId: "1245620",
-                steamHeaderImageURL: "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/header.jpg"
-            ),
-            GameItem(
-                id: "steam_1091500",
-                title: "Cyberpunk 2077",
-                storefront: "Steam",
-                badge: .compatible,
-                isNative: false,
-                isUniversalApp: false,
-                bannerColor: .cyan,
-                runtime: "D3DMetal 2.0 (DirectX 12 Translation)",
-                rating: 91,
-                performanceStars: 4,
-                hardwarePreset: "High Preset / FSR Balanced",
-                targetFps: 60,
-                knownIssues: [
-                    "Path Tracing is not supported through translation layer",
-                    "Enable FSR 2.1 in game display options"
-                ],
-                antiCheatStatus: "None",
-                acquisitionType: .windowsLauncherRuntime,
-                steamAppId: "1091500",
-                steamHeaderImageURL: "https://cdn.cloudflare.steamstatic.com/steam/apps/1091500/header.jpg"
-            ),
-            GameItem(
-                id: "itch_celeste",
-                title: "Celeste",
-                storefront: "itch.io",
-                badge: .native,
-                isNative: true,
-                isUniversalApp: false,
-                bannerColor: .pink,
-                runtime: "Native macOS Mono Runtime",
-                rating: 99,
-                performanceStars: 5,
-                hardwarePreset: "Native Display / 120 FPS",
-                targetFps: 120,
-                knownIssues: [],
-                antiCheatStatus: "None",
-                acquisitionType: .nativeStorefront
-            ),
-            GameItem(
-                id: "bnet_diablo_iv",
-                title: "Diablo IV",
-                storefront: "Battle.net",
-                badge: .compatible,
-                isNative: false,
-                isUniversalApp: false,
-                bannerColor: .black,
-                runtime: "D3DMetal 2.0 (DirectX 12 Ultimate)",
-                rating: 89,
-                performanceStars: 4,
-                hardwarePreset: "Medium-High / 1440p FSR",
-                targetFps: 60,
-                knownIssues: ["Initial Battle.net agent login requires focus confirmation"],
-                antiCheatStatus: "Battle.net Warden (Supported in Wine)",
-                acquisitionType: .storefrontIntegration
-            ),
-            GameItem(
-                id: "steam_367520",
-                title: "Hollow Knight",
-                storefront: "Steam",
-                badge: .native,
-                isNative: true,
-                isUniversalApp: false,
-                bannerColor: .blue,
-                runtime: "Native macOS Apple Silicon (Mach-O)",
-                rating: 99,
-                performanceStars: 5,
-                hardwarePreset: "Max Settings / 120 FPS",
-                targetFps: 120,
-                knownIssues: [],
-                antiCheatStatus: "Not Required",
-                acquisitionType: .nativeStorefront
-            ),
-            GameItem(
-                id: "app_notepad_plus_plus",
-                title: "Notepad++",
-                storefront: "Universal Windows App",
-                badge: .compatible,
-                isNative: false,
-                isUniversalApp: true,
-                bannerColor: .green,
-                runtime: "Wine Desktop Subsystem (DPI Scaled)",
-                rating: 98,
-                performanceStars: 5,
-                hardwarePreset: "Productivity Mode",
-                targetFps: 60,
-                knownIssues: [],
-                antiCheatStatus: "None",
-                acquisitionType: .existingFiles
-            ),
-            GameItem(
-                id: "epic_fn",
-                title: "Fortnite",
-                storefront: "Epic Games",
-                badge: .unsupported,
-                isNative: false,
-                isUniversalApp: false,
-                bannerColor: .purple,
-                runtime: "None (Execution Blocked)",
-                rating: 0,
-                performanceStars: 0,
-                hardwarePreset: "Unsupported",
-                targetFps: 0,
-                knownIssues: [
-                    "Requires Windows kernel-level driver (Easy Anti-Cheat / BattlEye)",
-                    "No software-side translation fix currently exists"
-                ],
-                antiCheatStatus: "Blocked (Kernel Anti-Cheat)",
-                acquisitionType: .storefrontIntegration
             )
         ]
 

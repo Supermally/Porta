@@ -140,6 +140,9 @@ public struct GameItem: Identifiable, Hashable, Sendable {
     public var analysisChecklist: [String] = []
     public var steamAppId: String? = nil
     public var steamHeaderImageURL: String? = nil
+    public var localPosterPath: String? = nil
+    public var localHeroPath: String? = nil
+    public var localLogoPath: String? = nil
     public var cloudSavePath: String? = nil
     public var developerName: String = "Official Release"
     public var lastPlayedText: String = "Recently"

@@ -1,18 +1,19 @@
 import SwiftUI
+import AppKit
 
 public struct LibraryView: View {
     @ObservedObject var engine: EngineService
 
     private let gridColumns = [
-        GridItem(.adaptive(minimum: 140, maximum: 180), spacing: 16)
+        GridItem(.adaptive(minimum: 150, maximum: 190), spacing: 16)
     ]
 
     public var body: some View {
         VStack(spacing: 0) {
             // Liquid Glass Top Navigation & Controls Toolbar
-            HStack(spacing: 10) {
-                // Search Field
-                HStack(spacing: 6) {
+            HStack(spacing: 12) {
+                // Search Field (Non-crammed, flexible layout)
+                HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.secondary)
                         .font(.system(size: 12))
@@ -28,12 +29,13 @@ public struct LibraryView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(Color.primary.opacity(0.06))
                 .cornerRadius(8)
+                .frame(minWidth: 160)
 
-                Spacer()
+                Spacer(minLength: 8)
 
                 // View Mode Toggle (Grid vs List)
                 Picker("View Mode", selection: $engine.libraryViewMode) {
@@ -42,7 +44,7 @@ public struct LibraryView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 72)
+                .frame(width: 76)
 
                 // Import Menu
                 Menu {
@@ -81,7 +83,7 @@ public struct LibraryView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(.ultraThinMaterial)
+            .liquidGlass(cornerRadius: 0, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
 
             Divider()
 
@@ -98,7 +100,7 @@ public struct LibraryView: View {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 14) {
                                     ForEach(Array(engine.games.prefix(4))) { game in
-                                        RecentGamePosterCard(game: game, isSelected: engine.selectedGame?.id == game.id) {
+                                        RecentGamePosterCard(game: game, engine: engine, isSelected: engine.selectedGame?.id == game.id) {
                                             engine.selectedGame = game
                                         } onPlay: {
                                             engine.launchGame(game)
@@ -125,7 +127,7 @@ public struct LibraryView: View {
                             // Grid Mode (Posters)
                             LazyVGrid(columns: gridColumns, spacing: 16) {
                                 ForEach(engine.filteredGames) { game in
-                                    GameGridPosterCard(game: game, isSelected: engine.selectedGame?.id == game.id) {
+                                    GameGridPosterCard(game: game, engine: engine, isSelected: engine.selectedGame?.id == game.id) {
                                         engine.selectedGame = game
                                     } onPlay: {
                                         engine.launchGame(game)
@@ -152,12 +154,73 @@ public struct LibraryView: View {
             }
         }
         .background(Color(NSColor.windowBackgroundColor))
+        .onHover { _ in NSCursor.arrow.set() }
+    }
+}
+
+// MARK: - Game Image Loader Component (Local Steam cache / Native .app bundle / Fallback)
+public struct GameArtworkView: View {
+    let game: GameItem
+    let cornerRadius: CGFloat
+
+    public var body: some View {
+        Group {
+            if let localPath = game.localPosterPath ?? game.localHeroPath,
+               let nsImage = NSImage(contentsOfFile: localPath) {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else if game.isNative, !game.executablePath.isEmpty,
+                      FileManager.default.fileExists(atPath: game.executablePath) {
+                let icon = NSWorkspace.shared.icon(forFile: game.executablePath)
+                Image(nsImage: icon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .padding(14)
+                    .background(Color.black.opacity(0.1))
+            } else if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    case .failure, .empty:
+                        proceduralArtwork
+                    @unknown default:
+                        proceduralArtwork
+                    }
+                }
+            } else {
+                proceduralArtwork
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    }
+
+    private var proceduralArtwork: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(game.bannerColor.gradient)
+            VStack(spacing: 6) {
+                Image(systemName: game.isNative ? "apple.logo" : (game.isUnityGame ? "cube.fill" : "gamecontroller.fill"))
+                    .font(.system(size: 26))
+                    .foregroundColor(.white.opacity(0.9))
+                Text(game.title)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 6)
+                    .lineLimit(2)
+            }
+        }
     }
 }
 
 // MARK: - Recently Played Poster Card
 struct RecentGamePosterCard: View {
     let game: GameItem
+    @ObservedObject var engine: EngineService
     let isSelected: Bool
     let onSelect: () -> Void
     let onPlay: () -> Void
@@ -166,26 +229,17 @@ struct RecentGamePosterCard: View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 8) {
                 ZStack(alignment: .bottomLeading) {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(game.bannerColor.gradient.opacity(0.85))
-                        .frame(width: 170, height: 110)
-                        .overlay(
-                            VStack {
-                                Image(systemName: game.isNative ? "apple.logo" : (game.isUnityGame ? "cube.fill" : "gamecontroller.fill"))
-                                    .font(.system(size: 28))
-                                    .foregroundColor(.white.opacity(0.8))
-                            }
-                        )
+                    GameArtworkView(game: game, cornerRadius: 10)
+                        .frame(width: 175, height: 110)
 
                     // Glass Bottom Title Tag
                     HStack {
                         Text(game.badge.rawValue)
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(.ultraThinMaterial)
+                            .liquidGlass(cornerRadius: 4, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
                             .foregroundColor(.white)
-                            .cornerRadius(4)
                         Spacer()
                     }
                     .padding(8)
@@ -204,16 +258,20 @@ struct RecentGamePosterCard: View {
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }
-                .frame(width: 170, alignment: .leading)
+                .frame(width: 175, alignment: .leading)
             }
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            if hovering { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() }
+        }
     }
 }
 
 // MARK: - Grid Poster Card
 struct GameGridPosterCard: View {
     let game: GameItem
+    @ObservedObject var engine: EngineService
     let isSelected: Bool
     let onSelect: () -> Void
     let onPlay: () -> Void
@@ -222,31 +280,16 @@ struct GameGridPosterCard: View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 6) {
                 ZStack(alignment: .topTrailing) {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(game.bannerColor.gradient.opacity(0.8))
-                        .aspectRatio(3/4, contentMode: .fit)
-                        .overlay(
-                            VStack(spacing: 6) {
-                                Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.white.opacity(0.85))
-                                Text(game.title)
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 8)
-                                    .lineLimit(2)
-                            }
-                        )
+                    GameArtworkView(game: game, cornerRadius: 10)
+                        .aspectRatio(2/3, contentMode: .fit)
 
                     // Compatibility Badge Pill
                     Text(game.badge.rawValue)
                         .font(.system(size: 9, weight: .bold))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
-                        .background(.ultraThinMaterial)
+                        .liquidGlass(cornerRadius: 4, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
                         .foregroundColor(.white)
-                        .cornerRadius(4)
                         .padding(6)
                 }
                 .overlay(
@@ -266,6 +309,9 @@ struct GameGridPosterCard: View {
             }
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            if hovering { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() }
+        }
     }
 }
 
@@ -280,14 +326,8 @@ struct GameListRow: View {
         Button(action: onSelect) {
             HStack(spacing: 12) {
                 // Mini Artwork
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(game.bannerColor.gradient)
-                    .frame(width: 32, height: 32)
-                    .overlay(
-                        Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white)
-                    )
+                GameArtworkView(game: game, cornerRadius: 6)
+                    .frame(width: 34, height: 34)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(game.title)
@@ -339,5 +379,8 @@ struct GameListRow: View {
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            if hovering { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() }
+        }
     }
 }

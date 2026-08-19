@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 public struct GameDetailView: View {
     @ObservedObject var engine: EngineService
@@ -13,16 +14,32 @@ public struct GameDetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 // Breathable Hero Artwork Banner
                 ZStack(alignment: .bottomLeading) {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(game.bannerColor.gradient.opacity(0.85))
-                        .frame(height: 190)
-                        .overlay(
-                            VStack {
-                                Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
-                                    .font(.system(size: 48))
-                                    .foregroundColor(.white.opacity(0.8))
-                            }
-                        )
+                    if let heroPath = game.localHeroPath ?? game.localPosterPath,
+                       let nsImage = NSImage(contentsOfFile: heroPath) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(height: 200)
+                            .clipped()
+                            .overlay(
+                                LinearGradient(
+                                    colors: [Color.black.opacity(0.1), Color.black.opacity(0.75)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(game.bannerColor.gradient.opacity(0.85))
+                            .frame(height: 190)
+                            .overlay(
+                                VStack {
+                                    Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
+                                        .font(.system(size: 48))
+                                        .foregroundColor(.white.opacity(0.8))
+                                }
+                            )
+                    }
 
                     // Hero Text Overlay
                     VStack(alignment: .leading, spacing: 6) {
@@ -31,15 +48,14 @@ public struct GameDetailView: View {
                                 .font(.system(size: 11, weight: .bold))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(.ultraThinMaterial)
+                                .liquidGlass(cornerRadius: 5, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
                                 .foregroundColor(.white)
-                                .cornerRadius(5)
 
                             Text(game.storefront)
                                 .font(.system(size: 11, weight: .medium))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(Color.black.opacity(0.3))
+                                .background(Color.black.opacity(0.4))
                                 .foregroundColor(.white)
                                 .cornerRadius(5)
                         }
@@ -50,10 +66,11 @@ public struct GameDetailView: View {
 
                         Text(game.developerName)
                             .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(.white.opacity(0.85))
                     }
                     .padding(20)
                 }
+                .cornerRadius(16)
 
                 // Primary Action Bar (Liquid Glass ▶ Play Button)
                 HStack(spacing: 12) {
@@ -71,10 +88,12 @@ public struct GameDetailView: View {
                                 .font(.system(size: 14, weight: .bold))
                         }
                         .frame(minWidth: 150)
-                        .padding(.vertical, 8)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(engine.isGameModeActive ? .red : .accentColor)
+                    .buttonStyle(LiquidGlassButtonStyle(
+                        isProminent: true,
+                        isEnabled: engine.liquidGlassEnabled,
+                        intensity: engine.liquidGlassIntensity
+                    ))
 
                     Button(action: {
                         engine.runBenchmark(for: game)
@@ -84,10 +103,12 @@ public struct GameDetailView: View {
                             Text("Benchmark")
                         }
                         .font(.system(size: 13))
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(LiquidGlassButtonStyle(
+                        isProminent: false,
+                        isEnabled: engine.liquidGlassEnabled,
+                        intensity: engine.liquidGlassIntensity
+                    ))
 
                     Button(action: {
                         engine.runTroubleshooter(for: game)
@@ -98,10 +119,12 @@ public struct GameDetailView: View {
                             Text("Troubleshoot")
                         }
                         .font(.system(size: 13))
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(LiquidGlassButtonStyle(
+                        isProminent: false,
+                        isEnabled: engine.liquidGlassEnabled,
+                        intensity: engine.liquidGlassIntensity
+                    ))
 
                     Spacer()
 
@@ -112,10 +135,12 @@ public struct GameDetailView: View {
                             Image(systemName: "folder.fill")
                                 .font(.system(size: 12))
                                 .padding(8)
-                                .background(Color.primary.opacity(0.06))
-                                .cornerRadius(8)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(LiquidGlassButtonStyle(
+                            isProminent: false,
+                            isEnabled: engine.liquidGlassEnabled,
+                            intensity: engine.liquidGlassIntensity
+                        ))
                         .help("Show game files in Finder")
                     }
                 }
@@ -130,8 +155,7 @@ public struct GameDetailView: View {
                             .font(.system(size: 11, design: .monospaced))
                             .padding(10)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.regularMaterial)
-                            .cornerRadius(8)
+                            .liquidGlass(cornerRadius: 8, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
                     }
                 }
 
@@ -179,12 +203,7 @@ public struct GameDetailView: View {
                     }
                 }
                 .padding(16)
-                .background(.regularMaterial)
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                )
+                .liquidGlass(cornerRadius: 12, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
 
                 // Performance on This Mac Card
                 VStack(alignment: .leading, spacing: 12) {
@@ -234,14 +253,9 @@ public struct GameDetailView: View {
                     .cornerRadius(8)
                 }
                 .padding(16)
-                .background(.regularMaterial)
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                )
+                .liquidGlass(cornerRadius: 12, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
 
-                // Developer & Advanced Mode Disclosure (Simple by default, Powerful when requested)
+                // Developer & Advanced Mode Disclosure
                 DisclosureGroup(
                     isExpanded: $showingDeveloperDetails,
                     content: {
@@ -307,16 +321,12 @@ public struct GameDetailView: View {
                     }
                 )
                 .padding(16)
-                .background(.regularMaterial)
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                )
+                .liquidGlass(cornerRadius: 12, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
             }
             .padding(24)
         }
         .background(Color(NSColor.windowBackgroundColor))
+        .onHover { _ in NSCursor.arrow.set() }
         .sheet(isPresented: $showingTroubleshootSheet) {
             if let report = engine.activeTroubleshootReport {
                 DiagnosticsSheetView(report: report, engine: engine) {
@@ -328,13 +338,13 @@ public struct GameDetailView: View {
 }
 
 // MARK: - Compatibility Row Component
-struct CompatibilityRow: View {
+public struct CompatibilityRow: View {
     let title: String
     let subtitle: String
     let status: String
     let statusColor: Color
 
-    var body: some View {
+    public var body: some View {
         HStack(spacing: 12) {
             Text(status)
                 .font(.system(size: 14, weight: .bold))
