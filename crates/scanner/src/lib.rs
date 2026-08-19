@@ -1,7 +1,9 @@
 pub mod steam_deep;
+pub mod storefronts;
 pub mod vdf;
 
 pub use steam_deep::{DeepSteamManager, SteamGameDetails, SteamLibraryFolder, SteamUserAccount};
+pub use storefronts::{EpicHeroicGameDetails, EpicHeroicStorefrontManager, GogGameDetails, GogStorefrontManager};
 
 use mac_gaming_analyzer::{BinaryAnalysisReport, BinaryAnalyzer};
 use mac_gaming_profiles::CompatibilityStatus;

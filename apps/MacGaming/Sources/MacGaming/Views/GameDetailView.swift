@@ -697,6 +697,122 @@ public struct GameDetailView: View {
                         )
                     }
 
+                    // GOG Galaxy Storefront Card
+                    if game.storefront == "GOG Galaxy" || game.id.hasPrefix("gog_") {
+                        let gogId = game.id.replacingOccurrences(of: "gog_", with: "")
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: "gift.fill")
+                                    .foregroundColor(.red)
+                                Text("GOG Galaxy DRM-Free Integration")
+                                    .font(.system(size: 15, weight: .bold))
+
+                                Spacer()
+
+                                Text("DRM-Free")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(Color.red.opacity(0.15))
+                                    .foregroundColor(.red)
+                                    .cornerRadius(5)
+                            }
+
+                            Text("• Standalone DRM-Free Execution: No background launcher overhead or online check-in required.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    engine.openGogStore(for: gogId)
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "cart.fill")
+                                        Text("GOG Store Page")
+                                    }
+                                    .font(.system(size: 11, weight: .semibold))
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button(action: {
+                                    engine.openNativeFilePicker(isUniversalApp: false, chooseFolder: false)
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "square.and.arrow.down.fill")
+                                        Text("Install Offline Backup (.exe)")
+                                    }
+                                    .font(.system(size: 11, weight: .semibold))
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                        }
+                        .padding(14)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.red.opacity(0.15), lineWidth: 1)
+                        )
+                    }
+
+                    // Epic Games / Heroic Storefront Card
+                    if game.storefront == "Epic Games" || game.id.hasPrefix("epic_") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: "gamecontroller.fill")
+                                    .foregroundColor(.purple)
+                                Text("Epic Games Store & Heroic Integration")
+                                    .font(.system(size: 15, weight: .bold))
+
+                                Spacer()
+
+                                Text("EOS Active")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(Color.purple.opacity(0.15))
+                                    .foregroundColor(.purple)
+                                    .cornerRadius(5)
+                            }
+
+                            Text("• Epic Online Services (EOS) & Heroic sync: Runs inside isolated container with D3DMetal translation.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    engine.openEpicStore(for: game.id)
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "cart.fill")
+                                        Text("Epic Store")
+                                    }
+                                    .font(.system(size: 11, weight: .semibold))
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button(action: {
+                                    engine.syncEpicHeroicLibrary()
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "arrow.triangle.2.circlepath")
+                                        Text("Rescan Heroic")
+                                    }
+                                    .font(.system(size: 11, weight: .semibold))
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                        }
+                        .padding(14)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.purple.opacity(0.15), lineWidth: 1)
+                        )
+                    }
+
                 // Community Reports & Reviews Section
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {

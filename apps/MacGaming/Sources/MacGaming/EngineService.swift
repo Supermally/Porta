@@ -123,10 +123,13 @@ public class EngineService: ObservableObject {
 
     public func scanAllLaunchers() {
         isScanning = true
+        syncSteamLibrary()
+        syncGogLibrary()
+        syncEpicHeroicLibrary()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             guard let self = self else { return }
-            self.loadInitialData()
             self.isScanning = false
+            self.launchOutputMessage = "🔄 Multi-Storefront Scan Complete: Synchronized Steam, GOG Galaxy, and Epic Games / Heroic libraries."
         }
     }
 
@@ -767,6 +770,142 @@ public class EngineService: ObservableObject {
                 selectedGame?.cloudSavePath = savePath
             }
             launchOutputMessage = "☁️ Steam Cloud Saves Synced: Local container linked to \(savePath)."
+        }
+    }
+
+    public func syncGogLibrary() {
+        let gogSearchDirs = [
+            FileManager.default.homeDirectoryForCurrentUser.path + "/GOG Games",
+            "/Applications",
+            FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/prefixes"
+        ]
+
+        var discoveredGog: [GameItem] = []
+
+        for dir in gogSearchDirs where FileManager.default.fileExists(atPath: dir) {
+            if let enumerator = FileManager.default.enumerator(atPath: dir) {
+                while let element = enumerator.nextObject() as? String {
+                    if element.hasPrefix("goggame-") && element.hasSuffix(".info") {
+                        let fullPath = dir + "/" + element
+                        let folderURL = URL(fileURLWithPath: fullPath).deletingLastPathComponent()
+
+                        if let data = try? Data(contentsOf: URL(fileURLWithPath: fullPath)),
+                           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                            let gameId = json["gameId"] as? String ?? "gog_unknown"
+                            let name = json["name"] as? String ?? folderURL.lastPathComponent
+
+                            var execPath = folderURL.path
+                            var isNative = false
+
+                            if let playTasks = json["playTasks"] as? [[String: Any]],
+                               let primary = playTasks.first(where: { ($0["isPrimary"] as? Bool) == true }) ?? playTasks.first,
+                               let relPath = primary["path"] as? String {
+                                let candidate = folderURL.appendingPathComponent(relPath).path
+                                if FileManager.default.fileExists(atPath: candidate) {
+                                    execPath = candidate
+                                    isNative = execPath.hasSuffix(".app")
+                                }
+                            }
+
+                            let gogItem = GameItem(
+                                id: "gog_\(gameId)",
+                                title: name,
+                                storefront: "GOG Galaxy",
+                                badge: isNative ? .native : .compatible,
+                                isNative: isNative,
+                                isUniversalApp: false,
+                                bannerColor: .red,
+                                runtime: isNative ? "Native macOS Mach-O" : "Apple D3DMetal + Wine-CX-23.7 (DRM-Free)",
+                                rating: 97,
+                                performanceStars: 5,
+                                hardwarePreset: "High Preset / \(hardware.chipName)",
+                                targetFps: 60,
+                                knownIssues: [],
+                                antiCheatStatus: "DRM-Free (Zero Verification Overhead)",
+                                executablePath: execPath,
+                                installPath: folderURL.path,
+                                acquisitionType: isNative ? .nativeStorefront : .storefrontIntegration,
+                                engineType: isNative ? "Native macOS" : "Direct3D",
+                                useD3DMetal: true,
+                                enableHud: false
+                            )
+                            discoveredGog.append(gogItem)
+                        }
+                    }
+                }
+            }
+        }
+
+        for item in discoveredGog {
+            if let idx = self.games.firstIndex(where: { $0.id == item.id }) {
+                self.games[idx] = item
+            } else {
+                self.games.insert(item, at: 0)
+            }
+        }
+    }
+
+    public func syncEpicHeroicLibrary() {
+        let heroicJson = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/heroic/legendaryConfig/legendary/installed.json"
+        var discoveredEpic: [GameItem] = []
+
+        if FileManager.default.fileExists(atPath: heroicJson),
+           let data = try? Data(contentsOf: URL(fileURLWithPath: heroicJson)),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: [String: Any]] {
+            for (appName, val) in json {
+                let title = val["title"] as? String ?? appName
+                let installPath = val["install_path"] as? String ?? ""
+                let exeRel = val["executable"] as? String ?? ""
+                let fullExe = installPath.isEmpty ? "" : (installPath + "/" + exeRel)
+                let isNative = fullExe.hasSuffix(".app")
+
+                if !installPath.isEmpty && FileManager.default.fileExists(atPath: installPath) {
+                    let epicItem = GameItem(
+                        id: "epic_\(appName.lowercased())",
+                        title: title,
+                        storefront: "Epic Games",
+                        badge: isNative ? .native : .compatible,
+                        isNative: isNative,
+                        isUniversalApp: false,
+                        bannerColor: .purple,
+                        runtime: isNative ? "Native macOS Mach-O" : "D3DMetal + Wine (Epic Online Services)",
+                        rating: 94,
+                        performanceStars: 5,
+                        hardwarePreset: "High Preset / \(hardware.chipName)",
+                        targetFps: 60,
+                        knownIssues: [],
+                        antiCheatStatus: "Epic Online Services Active",
+                        executablePath: fullExe,
+                        installPath: installPath,
+                        acquisitionType: isNative ? .nativeStorefront : .storefrontIntegration,
+                        engineType: isNative ? "Native macOS" : "Direct3D",
+                        useD3DMetal: true,
+                        enableHud: false
+                    )
+                    discoveredEpic.append(epicItem)
+                }
+            }
+        }
+
+        for item in discoveredEpic {
+            if let idx = self.games.firstIndex(where: { $0.id == item.id }) {
+                self.games[idx] = item
+            } else {
+                self.games.insert(item, at: 0)
+            }
+        }
+    }
+
+    public func openGogStore(for gameId: String) {
+        let cleanId = gameId.replacingOccurrences(of: "gog_", with: "")
+        if let url = URL(string: "https://www.gog.com/game/\(cleanId)") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    public func openEpicStore(for appName: String) {
+        if let url = URL(string: "https://store.epicgames.com") {
+            NSWorkspace.shared.open(url)
         }
     }
 
