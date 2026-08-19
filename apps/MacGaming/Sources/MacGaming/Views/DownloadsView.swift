@@ -85,6 +85,19 @@ public struct DownloadsView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+
+                        Button(action: {
+                            engine.repairSteamSandbox()
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "wrench.and.screwdriver")
+                                Text("Repair Sandbox")
+                            }
+                            .font(.system(size: 12))
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .help("Kills zombie processes and wipes Steam CEF caches.")
                     }
                 }
                 .padding(16)
