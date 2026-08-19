@@ -3,23 +3,6 @@ import SwiftUI
 public struct MainContentView: View {
     @StateObject var engine = EngineService()
 
-    private func countForStorefront(_ sf: StorefrontFilter) -> Int {
-        engine.games.filter { game in
-            switch sf {
-            case .all: return true
-            case .steam: return game.storefront == "Steam"
-            case .gog: return game.storefront == "GOG Galaxy"
-            case .epic: return game.storefront == "Epic Games"
-            case .itch: return game.storefront == "itch.io"
-            case .ubisoft: return game.storefront == "Ubisoft"
-            case .ea: return game.storefront == "EA App"
-            case .battlenet: return game.storefront == "Battle.net"
-            case .universalApp: return game.isUniversalApp
-            case .local: return game.storefront.contains("Local")
-            }
-        }.count
-    }
-
     public var body: some View {
         NavigationSplitView {
             VStack(alignment: .leading, spacing: 0) {
@@ -46,7 +29,7 @@ public struct MainContentView: View {
                 .padding(.bottom, 12)
 
                 Divider()
-                    .opacity(0.3)
+                    .opacity(0.2)
                     .padding(.horizontal, 12)
 
                 // Native Sidebar Glass Bubble Rows
@@ -67,28 +50,7 @@ public struct MainContentView: View {
 
                     Section("Game Providers") {
                         ForEach(StorefrontFilter.allCases) { sf in
-                            Button(action: {
-                                engine.selectedStorefront = sf
-                                engine.activeTab = .library
-                            }) {
-                                HStack {
-                                    Label(sf.rawValue, systemImage: sf.icon)
-                                        .font(.system(size: 13, weight: engine.activeTab == .library && engine.selectedStorefront == sf ? .semibold : .regular))
-                                    Spacer()
-                                    let count = countForStorefront(sf)
-                                    if count > 0 {
-                                        Text("\(count)")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .padding(.horizontal, 7)
-                                            .padding(.vertical, 2)
-                                            .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                .padding(.vertical, 3)
-                            }
-                            .buttonStyle(.plain)
-                            .listRowBackground(engine.activeTab == .library && engine.selectedStorefront == sf ? Color.accentColor.opacity(0.18) : Color.clear)
+                            StorefrontSidebarRow(sf: sf, engine: engine)
                         }
                     }
 
@@ -143,7 +105,58 @@ public struct MainContentView: View {
             }
             .background(VisualEffectView(material: .windowBackground, blendingMode: .behindWindow))
         }
+        .background(WindowTranslucencyConfigurator())
         .frame(minWidth: 960, minHeight: 620)
+    }
+}
+
+struct StorefrontSidebarRow: View {
+    let sf: StorefrontFilter
+    @ObservedObject var engine: EngineService
+
+    private var isSelected: Bool {
+        engine.activeTab == .library && engine.selectedStorefront == sf
+    }
+
+    private var gameCount: Int {
+        engine.games.filter { game in
+            switch sf {
+            case .all: return true
+            case .steam: return game.storefront == "Steam"
+            case .gog: return game.storefront == "GOG Galaxy"
+            case .epic: return game.storefront == "Epic Games"
+            case .itch: return game.storefront == "itch.io"
+            case .ubisoft: return game.storefront == "Ubisoft"
+            case .ea: return game.storefront == "EA App"
+            case .battlenet: return game.storefront == "Battle.net"
+            case .universalApp: return game.isUniversalApp
+            case .local: return game.storefront.contains("Local")
+            }
+        }.count
+    }
+
+    var body: some View {
+        Button(action: {
+            engine.selectedStorefront = sf
+            engine.activeTab = .library
+        }) {
+            HStack {
+                Label(sf.rawValue, systemImage: sf.icon)
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                Spacer()
+                if gameCount > 0 {
+                    Text("\(gameCount)")
+                        .font(.system(size: 11, weight: .bold))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.vertical, 3)
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(isSelected ? Color.accentColor.opacity(0.18) : Color.clear)
     }
 }
 

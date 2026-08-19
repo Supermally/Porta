@@ -87,12 +87,12 @@ public struct LibraryView: View {
             .padding(.vertical, 12)
 
             Divider()
-                .opacity(0.2)
+                .opacity(0.15)
 
             // Library Content Area
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
-                    // Recently Played Shelf (Liquid Glass Floating Pods)
+                    // Recently Played Shelf
                     if engine.searchText.isEmpty && engine.selectedFilter == nil && engine.selectedStorefront == .all {
                         VStack(alignment: .leading, spacing: 14) {
                             HStack(spacing: 8) {
@@ -178,11 +178,29 @@ public struct GameArtworkView: View {
             } else if game.isNative, !game.executablePath.isEmpty,
                       FileManager.default.fileExists(atPath: game.executablePath) {
                 let icon = NSWorkspace.shared.icon(forFile: game.executablePath)
-                Image(nsImage: icon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .padding(16)
-                    .background(Color.black.opacity(0.15))
+                ZStack {
+                    LinearGradient(
+                        colors: [
+                            Color.accentColor.opacity(0.4),
+                            Color.black.opacity(0.6)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    VStack(spacing: 8) {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 48, height: 48)
+                            .shadow(color: Color.black.opacity(0.3), radius: 4, y: 2)
+                        Text(game.title)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 8)
+                            .lineLimit(2)
+                    }
+                }
             } else if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
                 AsyncImage(url: url) { phase in
                     switch phase {
@@ -205,24 +223,36 @@ public struct GameArtworkView: View {
 
     private var proceduralArtwork: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(game.bannerColor.gradient)
-            VStack(spacing: 8) {
-                Image(systemName: game.isNative ? "apple.logo" : (game.isUnityGame ? "cube.fill" : "gamecontroller.fill"))
-                    .font(.system(size: 28))
-                    .foregroundColor(.white.opacity(0.9))
+            LinearGradient(
+                colors: [
+                    game.bannerColor.opacity(0.85),
+                    game.bannerColor.opacity(0.40),
+                    Color.black.opacity(0.70)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.15))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: game.isNative ? "apple.logo" : (game.isUnityGame ? "cube.fill" : "gamecontroller.fill"))
+                        .font(.system(size: 22))
+                        .foregroundColor(.white)
+                }
                 Text(game.title)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 10)
                     .lineLimit(2)
             }
         }
     }
 }
 
-// MARK: - Recently Played Glass Bubble Card
+// MARK: - Recently Played Responsive Glass Card
 struct RecentGameGlassCard: View {
     let game: GameItem
     @ObservedObject var engine: EngineService
@@ -230,14 +260,16 @@ struct RecentGameGlassCard: View {
     let onSelect: () -> Void
     let onPlay: () -> Void
 
+    @State private var isHovered: Bool = false
+
     var body: some View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 8) {
                 ZStack(alignment: .bottomLeading) {
                     GameArtworkView(game: game, cornerRadius: 14)
-                        .frame(width: 175, height: 110)
+                        .frame(width: 180, height: 112)
 
-                    // Floating Glass Badge
+                    // Floating Glass Status Badge
                     HStack {
                         Text(game.badge.rawValue)
                             .font(.system(size: 9, weight: .bold))
@@ -249,59 +281,8 @@ struct RecentGameGlassCard: View {
                     }
                     .padding(8)
                 }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
-                )
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(game.title)
-                        .font(.system(size: 12, weight: .semibold))
-                        .lineLimit(1)
-                        .foregroundColor(.primary)
-                    Text(game.storefront)
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                }
-                .frame(width: 175, alignment: .leading)
-            }
-            .padding(6)
-            .liquidGlassBubble(cornerRadius: 18, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Grid Glass Poster Card
-struct GameGridGlassCard: View {
-    let game: GameItem
-    @ObservedObject var engine: EngineService
-    let isSelected: Bool
-    let onSelect: () -> Void
-    let onPlay: () -> Void
-
-    var body: some View {
-        Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 10) {
-                ZStack(alignment: .topTrailing) {
-                    GameArtworkView(game: game, cornerRadius: 18)
-                        .aspectRatio(2/3, contentMode: .fit)
-
-                    // Floating Glass Compatibility Pill
-                    Text(game.badge.rawValue)
-                        .font(.system(size: 10, weight: .bold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, tint: game.badge.color)
-                        .foregroundColor(.white)
-                        .padding(8)
-                }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2.5)
-                )
-
-                VStack(alignment: .leading, spacing: 3) {
                     Text(game.title)
                         .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
@@ -310,22 +291,95 @@ struct GameGridGlassCard: View {
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
-                .padding(.horizontal, 4)
+                .frame(width: 180, alignment: .leading)
             }
-            .padding(10)
-            .liquidGlassBubble(cornerRadius: 24, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+            .padding(6)
+            .liquidGlassBubble(cornerRadius: 18, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(isSelected ? Color.accentColor : (isHovered ? Color.white.opacity(0.4) : Color.clear), lineWidth: 2)
+            )
+            .scaleEffect(isHovered ? 1.03 : 1.0)
+            .shadow(color: isSelected ? Color.accentColor.opacity(0.35) : (isHovered ? Color.black.opacity(0.18) : Color.clear), radius: isHovered ? 10 : 0, y: 4)
+            .animation(.spring(response: 0.24, dampingFraction: 0.72), value: isHovered)
+            .animation(.easeInOut(duration: 0.15), value: isSelected)
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+        }
     }
 }
 
-// MARK: - List Glass Row
+// MARK: - Responsive Grid Glass Poster Card
+struct GameGridGlassCard: View {
+    let game: GameItem
+    @ObservedObject var engine: EngineService
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onPlay: () -> Void
+
+    @State private var isHovered: Bool = false
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: 8) {
+                ZStack(alignment: .topTrailing) {
+                    GameArtworkView(game: game, cornerRadius: 14)
+                        .aspectRatio(2/3, contentMode: .fill)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 220)
+                        .clipped()
+
+                    // Floating Glass Compatibility Pill
+                    Text(game.badge.rawValue)
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, tint: game.badge.color)
+                        .foregroundColor(.white)
+                        .padding(8)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(game.title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                        .foregroundColor(.primary)
+                    Text(game.storefront)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 2)
+            }
+            .padding(6)
+            .liquidGlassBubble(cornerRadius: 18, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(isSelected ? Color.accentColor : (isHovered ? Color.white.opacity(0.4) : Color.clear), lineWidth: 2)
+            )
+            .scaleEffect(isHovered ? 1.03 : 1.0)
+            .shadow(color: isSelected ? Color.accentColor.opacity(0.35) : (isHovered ? Color.black.opacity(0.18) : Color.clear), radius: isHovered ? 10 : 0, y: 4)
+            .animation(.spring(response: 0.24, dampingFraction: 0.72), value: isHovered)
+            .animation(.easeInOut(duration: 0.15), value: isSelected)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+    }
+}
+
+// MARK: - Responsive List Glass Row
 struct GameListGlassRow: View {
     let game: GameItem
     @ObservedObject var engine: EngineService
     let isSelected: Bool
     let onSelect: () -> Void
     let onPlay: () -> Void
+
+    @State private var isHovered: Bool = false
 
     var body: some View {
         Button(action: onSelect) {
@@ -381,9 +435,14 @@ struct GameListGlassRow: View {
             .liquidGlassBubble(cornerRadius: 16, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? Color.accentColor : (isHovered ? Color.white.opacity(0.3) : Color.clear), lineWidth: 1.5)
             )
+            .scaleEffect(isHovered ? 1.01 : 1.0)
+            .animation(.spring(response: 0.22, dampingFraction: 0.75), value: isHovered)
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+        }
     }
 }
