@@ -10,22 +10,24 @@ public struct LibraryView: View {
 
     public var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                // Recently Played Shelf
+            VStack(alignment: .leading, spacing: 26) {
+                // Recently Played Shelf (Apple Horizontal Scrolling Under Sidebar)
                 if engine.searchText.isEmpty && engine.selectedFilter == nil && engine.selectedStorefront == .all {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Recently Played")
                             .font(.title3)
                             .fontWeight(.bold)
+                            .padding(.horizontal, 20)
 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 16) {
-                                ForEach(Array(engine.games.prefix(4))) { game in
+                                ForEach(Array(engine.games.prefix(5))) { game in
                                     RecentGamePosterCard(game: game, isSelected: engine.selectedGame?.id == game.id) {
                                         engine.selectedGame = game
                                     }
                                 }
                             }
+                            .padding(.horizontal, 20)
                             .padding(.vertical, 4)
                         }
                     }
@@ -63,8 +65,9 @@ public struct LibraryView: View {
                         }
                     }
                 }
+                .padding(.horizontal, 20)
             }
-            .padding(20)
+            .padding(.vertical, 20)
         }
         .searchable(text: $engine.searchText, prompt: "Search library...")
         .toolbar {
@@ -178,7 +181,7 @@ struct RecentGamePosterCard: View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 8) {
                 GameArtworkView(game: game, cornerRadius: 12)
-                    .frame(width: 180, height: 110)
+                    .frame(width: 190, height: 115)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -197,7 +200,7 @@ struct RecentGamePosterCard: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .frame(width: 180, alignment: .leading)
+                .frame(width: 190, alignment: .leading)
             }
             .scaleEffect(isHovered ? 1.025 : 1.0)
             .animation(.spring(response: 0.22, dampingFraction: 0.75), value: isHovered)

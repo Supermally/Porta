@@ -2,11 +2,11 @@ import SwiftUI
 import AppKit
 
 // =============================================================================
-// MARK: - Mac Gaming Liquid Glass Design System
-// Apple Native First • Restrained Glass for Interactive Controls • Configurable Optics
+// MARK: - Apple Liquid Glass Native Framework Integration
+// Based on Apple's Official Liquid Glass & Landmarks Architecture
 // =============================================================================
 
-// MARK: - Environment Keys for Liquid Glass Configuration
+// MARK: - 1. Liquid Glass Environment Configuration
 private struct LiquidGlassEnabledKey: EnvironmentKey {
     static let defaultValue: Bool = true
 }
@@ -27,36 +27,10 @@ public extension EnvironmentValues {
     }
 }
 
-// MARK: - 1. Play Button (Signature Prominent Action)
-public struct PlayButton: View {
-    public let isPlaying: Bool
-    public let action: () -> Void
-
-    public init(isPlaying: Bool = false, action: @escaping () -> Void) {
-        self.isPlaying = isPlaying
-        self.action = action
-    }
-
-    public var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-                    .font(.system(size: 13, weight: .bold))
-                Text(isPlaying ? "Stop Session" : "Play")
-                    .font(.system(size: 14, weight: .bold))
-            }
-        }
-        .buttonStyle(LiquidGlassButtonStyle(
-            isProminent: true,
-            customTint: isPlaying ? Color.red : Color.accentColor
-        ))
-        .fixedSize()
-    }
-}
-
-// MARK: - 2. Glass Action Group (GlassEffectContainer)
-/// Groups multiple interactive glass controls into a unified glass cluster
-public struct GlassActionGroup<Content: View>: View {
+// MARK: - 2. GlassEffectContainer
+/// Combines multiple Liquid Glass views for optimal rendering performance,
+/// shape blending, and morphing transitions across states.
+public struct GlassEffectContainer<Content: View>: View {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
 
@@ -78,7 +52,7 @@ public struct GlassActionGroup<Content: View>: View {
                 if isGlassEnabled {
                     Capsule()
                         .fill(.ultraThinMaterial)
-                        .opacity(0.60 + (glassIntensity * 0.30))
+                        .opacity(0.65 + (glassIntensity * 0.25))
 
                     Capsule()
                         .strokeBorder(
@@ -104,7 +78,128 @@ public struct GlassActionGroup<Content: View>: View {
     }
 }
 
-// MARK: - 3. Compatibility Badge View (Restrained Semantic Glass)
+public typealias GlassActionGroup = GlassEffectContainer
+
+// MARK: - 3. Interactive Morphing Launch Glass Control
+/// Implements Apple's coordinated morphing transitions using @Namespace and matchedGeometry.
+/// Morphs fluidly from [ ▶ Play | Benchmark | Troubleshoot ] into a unified live session monitor.
+public struct MorphingLaunchGlassControl: View {
+    @ObservedObject var engine: EngineService
+    let game: GameItem
+    let onShowTroubleshoot: () -> Void
+    var namespace: Namespace.ID
+
+    public init(engine: EngineService, game: GameItem, onShowTroubleshoot: @escaping () -> Void, namespace: Namespace.ID) {
+        self.engine = engine
+        self.game = game
+        self.onShowTroubleshoot = onShowTroubleshoot
+        self.namespace = namespace
+    }
+
+    public var body: some View {
+        Group {
+            if engine.isGameModeActive {
+                // Active Session State: Morphed Live Status Capsule
+                HStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 8, height: 8)
+                            .shadow(color: Color.green.opacity(0.8), radius: 4)
+
+                        Text("Running in D3DMetal Sandbox")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.primary)
+                    }
+                    .padding(.leading, 6)
+
+                    Divider()
+                        .frame(height: 14)
+                        .opacity(0.3)
+
+                    Button {
+                        engine.runBenchmark(for: game)
+                    } label: {
+                        Label("HUD", systemImage: "gauge.with.needle")
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption)
+
+                    Button {
+                        engine.stopGame()
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "stop.fill")
+                                .font(.system(size: 11, weight: .bold))
+                            Text("Stop")
+                                .font(.system(size: 12, weight: .bold))
+                        }
+                    }
+                    .buttonStyle(LiquidGlassButtonStyle(isProminent: true, customTint: .red))
+                    .matchedGeometryEffect(id: "primaryAction", in: namespace)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.3), lineWidth: 1))
+                .shadow(color: Color.green.opacity(0.2), radius: 8, y: 3)
+            } else {
+                // Idle State: Prominent Play Button + Action Group
+                HStack(spacing: 12) {
+                    PlayButton(isPlaying: false) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            engine.launchGame(game)
+                        }
+                    }
+                    .matchedGeometryEffect(id: "primaryAction", in: namespace)
+
+                    GlassEffectContainer(spacing: 8) {
+                        Button {
+                            engine.runBenchmark(for: game)
+                        } label: {
+                            Label("Benchmark", systemImage: "gauge.with.needle")
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+
+                        Divider()
+                            .frame(height: 14)
+                            .opacity(0.3)
+
+                        Button {
+                            engine.runTroubleshooter(for: game)
+                            onShowTroubleshoot()
+                        } label: {
+                            Label("Troubleshoot", systemImage: "wrench.and.screwdriver")
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+
+                        if !game.installPath.isEmpty {
+                            Divider()
+                                .frame(height: 14)
+                                .opacity(0.3)
+
+                            Button {
+                                NSWorkspace.shared.selectFile(game.executablePath.isEmpty ? game.installPath : game.executablePath, inFileViewerRootedAtPath: game.installPath)
+                            } label: {
+                                Image(systemName: "folder")
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .help("Show game files in Finder")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 4. Compatibility Badge View (Semantic Restrained Glass)
 public struct CompatibilityBadgeView: View {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -157,7 +252,34 @@ public struct CompatibilityBadgeView: View {
     }
 }
 
-// MARK: - 4. Liquid Glass Button Style (Prominent and Standard Glass)
+// MARK: - 5. Play Button (Signature Prominent Action)
+public struct PlayButton: View {
+    public let isPlaying: Bool
+    public let action: () -> Void
+
+    public init(isPlaying: Bool = false, action: @escaping () -> Void) {
+        self.isPlaying = isPlaying
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+                    .font(.system(size: 13, weight: .bold))
+                Text(isPlaying ? "Stop Session" : "Play")
+                    .font(.system(size: 14, weight: .bold))
+            }
+        }
+        .buttonStyle(LiquidGlassButtonStyle(
+            isProminent: true,
+            customTint: isPlaying ? Color.red : Color.accentColor
+        ))
+        .fixedSize()
+    }
+}
+
+// MARK: - 6. Liquid Glass Button Style (Prominent and Standard Glass)
 public struct LiquidGlassButtonStyle: ButtonStyle {
     public var isProminent: Bool
     public var customTint: Color?
@@ -269,7 +391,7 @@ private struct GlassButtonView: View {
     }
 }
 
-// MARK: - 5. View Extensions
+// MARK: - 7. View Extensions
 public extension View {
     /// Injects liquid glass configuration environment values
     func liquidGlassEnvironment(enabled: Bool, intensity: Double) -> some View {

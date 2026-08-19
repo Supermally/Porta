@@ -7,11 +7,12 @@ public struct GameDetailView: View {
 
     @State private var showingDeveloperDetails = false
     @State private var showingTroubleshootSheet = false
+    @Namespace private var glassNamespace
 
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                // Hero Artwork Banner
+                // Background Extension Hero Artwork Banner
                 ZStack(alignment: .bottomLeading) {
                     if let heroPath = game.localHeroPath ?? game.localPosterPath,
                        let nsImage = NSImage(contentsOfFile: heroPath) {
@@ -52,7 +53,7 @@ public struct GameDetailView: View {
                         .frame(height: 220)
                     }
 
-                    // Hero Text & Compatibility Badge
+                    // Hero Information & Compatibility Badge
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
                             CompatibilityBadgeView(game.badge)
@@ -78,61 +79,18 @@ public struct GameDetailView: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-                // Liquid Glass Action Controls Group
-                HStack(spacing: 12) {
-                    PlayButton(isPlaying: engine.isGameModeActive) {
-                        if engine.isGameModeActive {
-                            engine.stopGame()
-                        } else {
-                            engine.launchGame(game)
-                        }
-                    }
-
-                    GlassActionGroup(spacing: 8) {
-                        Button {
-                            engine.runBenchmark(for: game)
-                        } label: {
-                            Label("Benchmark", systemImage: "gauge.with.needle")
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-
-                        Divider()
-                            .frame(height: 16)
-                            .opacity(0.4)
-
-                        Button {
-                            engine.runTroubleshooter(for: game)
-                            showingTroubleshootSheet = true
-                        } label: {
-                            Label("Troubleshoot", systemImage: "wrench.and.screwdriver")
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-
-                        if !game.installPath.isEmpty {
-                            Divider()
-                                .frame(height: 16)
-                                .opacity(0.4)
-
-                            Button {
-                                NSWorkspace.shared.selectFile(game.executablePath.isEmpty ? game.installPath : game.executablePath, inFileViewerRootedAtPath: game.installPath)
-                            } label: {
-                                Image(systemName: "folder")
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .help("Show game files in Finder")
-                        }
-                    }
-
+                // Morphing Liquid Glass Action Controls (Apple MatchedGeometry Transitions)
+                HStack {
+                    MorphingLaunchGlassControl(
+                        engine: engine,
+                        game: game,
+                        onShowTroubleshoot: { showingTroubleshootSheet = true },
+                        namespace: glassNamespace
+                    )
                     Spacer()
                 }
 
-                // Session Status / Output Telemetry
+                // Session Status / Output Diagnostics
                 if let msg = engine.launchOutputMessage {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Session Status")
