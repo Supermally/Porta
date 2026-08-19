@@ -403,6 +403,13 @@ public class EngineService: ObservableObject {
             return
         }
 
+        // Case 1.5: Windows Steam Client Sandbox
+        if game.id == "launcher_steam_windows" || (game.executablePath.lowercased().hasSuffix("steam.exe") && !FileManager.default.fileExists(atPath: game.executablePath)) {
+            launchWindowsSteamSandbox()
+            self.isLaunching = false
+            return
+        }
+
         // Case 2: Windows Executable (.exe)
         // Check if Rosetta 2 is installed on Apple Silicon
         if !hardware.rosettaReady {
@@ -1206,7 +1213,32 @@ public class EngineService: ObservableObject {
     }
 
     private func loadInitialData() {
+        let prefixSteamExe = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/launchers/steam/drive_c/Program Files (x86)/Steam/Steam.exe"
+        let prefixSteamDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/launchers/steam"
+
         self.games = [
+            GameItem(
+                id: "launcher_steam_windows",
+                title: "Steam (Windows Client)",
+                storefront: "Steam",
+                badge: .compatible,
+                isNative: false,
+                isUniversalApp: false,
+                bannerColor: .blue,
+                runtime: "Wine-CX-23.7 + D3DMetal (Official Windows Steam Container)",
+                rating: 99,
+                performanceStars: 5,
+                hardwarePreset: "Windows Storefront Container",
+                targetFps: 60,
+                knownIssues: [],
+                antiCheatStatus: "Steam Guard / Official DRM Active",
+                executablePath: prefixSteamExe,
+                installPath: prefixSteamDir,
+                acquisitionType: .windowsLauncherRuntime,
+                engineType: "Windows Application",
+                useD3DMetal: true,
+                enableHud: false
+            ),
             GameItem(
                 id: "steam_1086940",
                 title: "Baldur's Gate 3",
@@ -1400,7 +1432,13 @@ public class EngineService: ObservableObject {
         ]
 
         guard let runner = runnerPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
-            launchOutputMessage = "⚠️ Wine runner not detected. Install via `brew install --cask wine-stable` or `brew install --cask whisky` to run Windows Steam."
+            launchOutputMessage = """
+            ⚠️ Translation Runner Not Found on Host System
+            To run Windows Steam, a Wine runner is required.
+            Quick Install Options:
+            • brew install --cask wine-stable
+            • or brew install --cask whisky
+            """
             return
         }
 
@@ -1408,35 +1446,94 @@ public class EngineService: ObservableObject {
         let steamExe = prefixPath + "/drive_c/Program Files (x86)/Steam/Steam.exe"
         try? FileManager.default.createDirectory(atPath: prefixPath + "/drive_c/Program Files (x86)/Steam", withIntermediateDirectories: true)
 
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
-
         var env = ProcessInfo.processInfo.environment
         env["WINEPREFIX"] = prefixPath
         env["WINE_D3D_METAL"] = "1"
-        proc.environment = env
+        env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;d3d9=n,b;d3dcompiler_47=n,b"
 
+        // Case 1: Steam.exe already installed
         if FileManager.default.fileExists(atPath: steamExe) {
-            var args = ["-x86_64", runner, steamExe, "-no-cef-sandbox"]
+            let proc = Process()
+            proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
+            var args = ["-x86_64", runner, steamExe, "-no-cef-sandbox", "-allosarches"]
             if let id = appId {
                 args.append("-applaunch")
                 args.append(id)
             }
             proc.arguments = args
+            proc.environment = env
             try? proc.run()
             self.activeProcesses.append(proc)
-            launchOutputMessage = "🟢 Launched Windows Steam Sandbox Container (Prefix: \(prefixPath)). Sign in with your official Steam credentials to install and play Windows-only titles!"
+            self.isGameModeActive = true
+            launchOutputMessage = "🟢 Launched Windows Steam Sandbox Container! (Prefix: \(prefixPath))"
+            return
+        }
+
+        // Case 2: Auto-Provision Windows Steam silently
+        self.launchOutputMessage = "⚙️ Automatically setting up Windows Steam container in background..."
+        
+        let downloadsDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Downloads"
+        let localInstaller = downloadsDir + "/SteamSetup.exe"
+
+        let runInstaller: (String) -> Void = { installerPath in
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    self.launchOutputMessage = "📦 Installing Windows Steam silently into container..."
+                }
+
+                let installProc = Process()
+                installProc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
+                installProc.arguments = ["-x86_64", runner, installerPath, "/S"]
+                installProc.environment = env
+
+                try? installProc.run()
+                installProc.waitUntilExit()
+
+                DispatchQueue.main.async {
+                    if FileManager.default.fileExists(atPath: steamExe) {
+                        let proc = Process()
+                        proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
+                        var args = ["-x86_64", runner, steamExe, "-no-cef-sandbox", "-allosarches"]
+                        if let id = appId {
+                            args.append("-applaunch")
+                            args.append(id)
+                        }
+                        proc.arguments = args
+                        proc.environment = env
+                        try? proc.run()
+                        self.activeProcesses.append(proc)
+                        self.isGameModeActive = true
+                        self.launchOutputMessage = "🟢 Windows Steam setup complete and launched! Sign in with your Steam credentials to download and play Windows-only titles."
+                    } else {
+                        self.launchOutputMessage = "🟢 Steam container initialized. Ready at: \(prefixPath)"
+                    }
+                }
+            }
+        }
+
+        if FileManager.default.fileExists(atPath: localInstaller) {
+            runInstaller(localInstaller)
         } else {
-            launchOutputMessage = """
-            📦 Setting up Windows Steam Sandbox Container (Acquisition Path ③)
+            // Auto-download SteamSetup.exe from official Valve CDN
+            self.launchOutputMessage = "⬇️ Downloading official Windows Steam installer from Valve CDN..."
+            let cacheDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/cache"
+            try? FileManager.default.createDirectory(atPath: cacheDir, withIntermediateDirectories: true)
+            let targetDownload = URL(fileURLWithPath: cacheDir + "/SteamSetup.exe")
 
-            Prefix Location: \(prefixPath)
-
-            To complete setup:
-            1. Download official Windows Steam installer (`SteamSetup.exe`)
-            2. Run in this container to authenticate directly with Steam
-            3. Your full Windows Steam library will download through official Steam servers!
-            """
+            let steamUrl = URL(string: "https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe")!
+            let task = URLSession.shared.downloadTask(with: steamUrl) { tempURL, response, error in
+                if let temp = tempURL {
+                    try? FileManager.default.removeItem(at: targetDownload)
+                    try? FileManager.default.moveItem(at: temp, to: targetDownload)
+                    runInstaller(targetDownload.path)
+                } else {
+                    DispatchQueue.main.async {
+                        self.launchOutputMessage = "❌ Failed to download SteamSetup.exe: \(error?.localizedDescription ?? "Network error"). You can drop SteamSetup.exe into ~/Downloads and click again!"
+                    }
+                }
+            }
+            task.resume()
         }
     }
 }

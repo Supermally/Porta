@@ -108,6 +108,49 @@ impl PrefixProvisioner {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SteamWindowsContainerStatus {
+    pub prefix_path: PathBuf,
+    pub steam_exe_path: PathBuf,
+    pub is_installed: bool,
+    pub installer_url: String,
+    pub launch_flags: Vec<String>,
+}
+
+pub struct SteamWindowsProvisioner;
+
+impl SteamWindowsProvisioner {
+    pub const OFFICIAL_INSTALLER_URL: &'static str = "https://cdn.cloudflare.steamstatic.com/client/installer/SteamSetup.exe";
+
+    pub fn inspect_container<P: AsRef<Path>>(base_dir: P) -> SteamWindowsContainerStatus {
+        let prefix_path = base_dir.as_ref().join("launchers/steam");
+        let steam_exe_path = prefix_path.join("drive_c/Program Files (x86)/Steam/Steam.exe");
+        let is_installed = steam_exe_path.exists();
+
+        SteamWindowsContainerStatus {
+            prefix_path,
+            steam_exe_path,
+            is_installed,
+            installer_url: Self::OFFICIAL_INSTALLER_URL.to_string(),
+            launch_flags: vec![
+                "-no-cef-sandbox".to_string(),
+                "-allosarches".to_string(),
+                "-vgui".to_string(),
+            ],
+        }
+    }
+
+    pub fn build_silent_install_command<P: AsRef<Path>>(runner: &str, _prefix_path: P, setup_exe: P) -> (String, Vec<String>) {
+        (
+            runner.to_string(),
+            vec![
+                setup_exe.as_ref().display().to_string(),
+                "/S".to_string(),
+            ],
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
