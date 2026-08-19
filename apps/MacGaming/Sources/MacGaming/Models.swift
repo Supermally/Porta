@@ -94,6 +94,8 @@ public struct GameItem: Identifiable, Hashable, Sendable {
     public var acquisitionType: AcquisitionType = .storefrontIntegration
     public var customLaunchArgs: String = ""
     public var isUnityGame: Bool = false
+    public var engineType: String = "Auto"
+    public var analysisChecklist: [String] = []
     
     // Runtime override options
     public var useD3DMetal: Bool = true

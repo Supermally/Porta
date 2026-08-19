@@ -1,6 +1,8 @@
 pub mod provisioner;
+pub mod runtime;
 
 pub use provisioner::{DependencyStatus, PrefixProvisioner, ProvisioningPlan};
+pub use runtime::{RuntimeEnvironment, RuntimeManager};
 
 use mac_gaming_profiles::{CompatibilityProfile, RuntimeConfig};
 use mac_gaming_scanner::DiscoveredGame;
