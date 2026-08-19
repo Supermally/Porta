@@ -186,14 +186,73 @@ public struct ConsoleLogEntry: Identifiable, Sendable {
     }
 }
 
-public struct GameItem: Identifiable, Hashable, Sendable {
+public struct GameSaveInstance: Identifiable, Hashable, Codable, Sendable {
+    public let id: UUID
+    public let gameId: String
+    public var name: String
+    public var note: String
+    public let createdAt: Date
+    public let byteSize: Int64
+    public let fileCount: Int
+    public let snapshotPath: String
+    public let isAutoSave: Bool
+
+    public init(
+        id: UUID = UUID(),
+        gameId: String,
+        name: String,
+        note: String = "",
+        createdAt: Date = Date(),
+        byteSize: Int64 = 0,
+        fileCount: Int = 0,
+        snapshotPath: String,
+        isAutoSave: Bool = false
+    ) {
+        self.id = id
+        self.gameId = gameId
+        self.name = name
+        self.note = note
+        self.createdAt = createdAt
+        self.byteSize = byteSize
+        self.fileCount = fileCount
+        self.snapshotPath = snapshotPath
+        self.isAutoSave = isAutoSave
+    }
+
+    public var formattedSize: String {
+        ByteCountFormatter.string(fromByteCount: byteSize, countStyle: .file)
+    }
+
+    public var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: createdAt)
+    }
+}
+
+public struct GameSaveManifest: Codable, Sendable {
+    public var gameId: String
+    public var activeSaveDirectory: String?
+    public var autoSnapshotOnLaunch: Bool
+    public var instances: [GameSaveInstance]
+
+    public init(gameId: String, activeSaveDirectory: String? = nil, autoSnapshotOnLaunch: Bool = false, instances: [GameSaveInstance] = []) {
+        self.gameId = gameId
+        self.activeSaveDirectory = activeSaveDirectory
+        self.autoSnapshotOnLaunch = autoSnapshotOnLaunch
+        self.instances = instances
+    }
+}
+
+public struct GameItem: Identifiable, Hashable, Codable, Sendable {
     public let id: String
     public var title: String
     public let storefront: String
     public var badge: CompatibilityBadge
     public let isNative: Bool
     public let isUniversalApp: Bool
-    public let bannerColor: Color
+    public var bannerColorName: String = "blue"
     public var runtime: String
     public let rating: Int
     public let performanceStars: Int
@@ -226,6 +285,97 @@ public struct GameItem: Identifiable, Hashable, Sendable {
     public var enableHud: Bool = false
     public var enableEsync: Bool = true
     public var enableFsync: Bool = true
+
+    public init(
+        id: String,
+        title: String,
+        storefront: String,
+        badge: CompatibilityBadge,
+        isNative: Bool,
+        isUniversalApp: Bool,
+        bannerColorName: String = "blue",
+        bannerColor: Color = .blue,
+        runtime: String,
+        rating: Int,
+        performanceStars: Int,
+        hardwarePreset: String,
+        targetFps: Int,
+        knownIssues: [String] = [],
+        antiCheatStatus: String? = nil,
+        executablePath: String = "",
+        installPath: String = "",
+        displayResolution: String = "Native",
+        configUtilityPath: String? = nil,
+        companionPrograms: [CompanionProgram] = [],
+        acquisitionType: AcquisitionType = .storefrontIntegration,
+        customLaunchArgs: String = "",
+        isUnityGame: Bool = false,
+        engineType: String = "Auto",
+        analysisChecklist: [String] = [],
+        steamAppId: String? = nil,
+        steamHeaderImageURL: String? = nil,
+        localPosterPath: String? = nil,
+        localHeroPath: String? = nil,
+        localLogoPath: String? = nil,
+        cloudSavePath: String? = nil,
+        developerName: String = "Official Release",
+        lastPlayedText: String = "Recently",
+        supportsController: Bool = true,
+        useD3DMetal: Bool = true,
+        enableHud: Bool = false,
+        enableEsync: Bool = true,
+        enableFsync: Bool = true
+    ) {
+        self.id = id
+        self.title = title
+        self.storefront = storefront
+        self.badge = badge
+        self.isNative = isNative
+        self.isUniversalApp = isUniversalApp
+        self.bannerColorName = bannerColorName
+        self.runtime = runtime
+        self.rating = rating
+        self.performanceStars = performanceStars
+        self.hardwarePreset = hardwarePreset
+        self.targetFps = targetFps
+        self.knownIssues = knownIssues
+        self.antiCheatStatus = antiCheatStatus
+        self.executablePath = executablePath
+        self.installPath = installPath
+        self.displayResolution = displayResolution
+        self.configUtilityPath = configUtilityPath
+        self.companionPrograms = companionPrograms
+        self.acquisitionType = acquisitionType
+        self.customLaunchArgs = customLaunchArgs
+        self.isUnityGame = isUnityGame
+        self.engineType = engineType
+        self.analysisChecklist = analysisChecklist
+        self.steamAppId = steamAppId
+        self.steamHeaderImageURL = steamHeaderImageURL
+        self.localPosterPath = localPosterPath
+        self.localHeroPath = localHeroPath
+        self.localLogoPath = localLogoPath
+        self.cloudSavePath = cloudSavePath
+        self.developerName = developerName
+        self.lastPlayedText = lastPlayedText
+        self.supportsController = supportsController
+        self.useD3DMetal = useD3DMetal
+        self.enableHud = enableHud
+        self.enableEsync = enableEsync
+        self.enableFsync = enableFsync
+    }
+
+    public var bannerColor: Color {
+        switch bannerColorName {
+        case "red": return .red
+        case "orange": return .orange
+        case "green": return .green
+        case "teal": return .teal
+        case "indigo": return .indigo
+        case "purple": return .purple
+        default: return .blue
+        }
+    }
 }
 
 public struct SteamAccountSummary: Identifiable, Hashable, Sendable {
@@ -236,7 +386,7 @@ public struct SteamAccountSummary: Identifiable, Hashable, Sendable {
     public let isOnline: Bool
 }
 
-public enum AcquisitionType: String, CaseIterable, Hashable, Sendable {
+public enum AcquisitionType: String, CaseIterable, Hashable, Codable, Sendable {
     case nativeStorefront = "Native Storefront"
     case storefrontIntegration = "Storefront Integration"
     case windowsLauncherRuntime = "Windows Launcher Sandbox"
@@ -261,7 +411,7 @@ public enum AcquisitionType: String, CaseIterable, Hashable, Sendable {
     }
 }
 
-public struct CompanionProgram: Identifiable, Hashable, Sendable {
+public struct CompanionProgram: Identifiable, Hashable, Codable, Sendable {
     public var id: String { path }
     public var name: String
     public var path: String

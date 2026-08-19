@@ -297,6 +297,7 @@ public class EngineService: ObservableObject {
         self.games.insert(newItem, at: 0)
         self.selectedGame = newItem
         self.launchOutputMessage = "📁 Imported folder '\(folderName)'\(isUnity ? " (Unity Engine detected — auto-applied DirectX 12 override)" : "") with \(companions.count) companion program(s)."
+        saveImportedGames()
     }
 
     public func importCustomExecutable(name: String, path: String) {
@@ -341,7 +342,7 @@ public class EngineService: ObservableObject {
             badge: isApp ? .native : .compatible,
             isNative: isApp,
             isUniversalApp: false,
-            bannerColor: .teal,
+            bannerColorName: "teal",
             runtime: isApp ? "Native macOS Mach-O" : (isUnity ? "D3DMetal 2.0 (Unity DirectX 12 Engine Mode)" : "D3DMetal + Wine-CX-23.7 (Auto Prefix)"),
             rating: 92,
             performanceStars: 4,
@@ -366,18 +367,19 @@ public class EngineService: ObservableObject {
         )
         self.games.insert(newItem, at: 0)
         self.selectedGame = newItem
+        saveImportedGames()
     }
 
     public func importUniversalApplication(name: String, path: String) {
-        let isApp = path.hasSuffix(".app")
+        let isApp = path.hasSuffix(".app") || (try? FileManager.default.attributesOfItem(atPath: path)[.type] as? FileAttributeType) == .typeDirectory && path.contains(".app")
         let newItem = GameItem(
             id: "app_\(name.lowercased().replacingOccurrences(of: " ", with: "_"))",
             title: name,
-            storefront: "Universal Windows App",
+            storefront: "Universal Apps",
             badge: isApp ? .native : .compatible,
             isNative: isApp,
             isUniversalApp: true,
-            bannerColor: .blue,
+            bannerColorName: "blue",
             runtime: isApp ? "Native macOS Mach-O" : "Wine Desktop GUI Subsystem (DPI Scaled)",
             rating: 96,
             performanceStars: 5,
@@ -394,6 +396,227 @@ public class EngineService: ObservableObject {
         )
         self.games.insert(newItem, at: 0)
         self.selectedGame = newItem
+        saveImportedGames()
+    }
+
+    // MARK: - Imported Games Persistence
+
+    public func saveImportedGames() {
+        let appSupport = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming"
+        try? FileManager.default.createDirectory(atPath: appSupport, withIntermediateDirectories: true)
+        let filePath = appSupport + "/imported_games.json"
+
+        let customGames = self.games.filter { game in
+            game.acquisitionType == .existingFiles || game.storefront == "Local / Custom" || game.isUniversalApp
+        }
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        if let data = try? encoder.encode(customGames) {
+            try? data.write(to: URL(fileURLWithPath: filePath), options: .atomic)
+            log("Saved \(customGames.count) imported game(s) to persistent storage.", level: .info, source: "Storage")
+        }
+    }
+
+    public func loadImportedGames() {
+        let appSupport = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming"
+        let filePath = appSupport + "/imported_games.json"
+
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: filePath)),
+              let customGames = try? JSONDecoder().decode([GameItem].self, from: data) else {
+            return
+        }
+
+        for game in customGames {
+            if !self.games.contains(where: { $0.id == game.id }) {
+                self.games.append(game)
+            }
+        }
+        log("Restored \(customGames.count) persistent imported game(s) from storage.", level: .info, source: "Storage")
+    }
+
+    public func deleteImportedGame(_ game: GameItem) {
+        if let idx = self.games.firstIndex(where: { $0.id == game.id }) {
+            self.games.remove(at: idx)
+            if self.selectedGame?.id == game.id {
+                self.selectedGame = self.games.first
+            }
+            saveImportedGames()
+            log("Removed '\(game.title)' from game library.", level: .info, source: "Library")
+        }
+    }
+
+    // MARK: - Save States & Progress Instance Manager
+
+    public func detectSaveDirectory(for game: GameItem) -> String? {
+        let prefixPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/prefixes/\(game.id)"
+        let steamPrefixPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/launchers/steam"
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+
+        if let custom = game.cloudSavePath, !custom.isEmpty, FileManager.default.fileExists(atPath: custom) {
+            return custom
+        }
+
+        // Candidate locations for Wine games:
+        let candidatePrefixes = [prefixPath, steamPrefixPath]
+        for p in candidatePrefixes {
+            let uDir = p + "/drive_c/users"
+            if let users = try? FileManager.default.contentsOfDirectory(atPath: uDir) {
+                for u in users {
+                    let candidates = [
+                        "\(uDir)/\(u)/Saved Games/\(game.title)",
+                        "\(uDir)/\(u)/Saved Games",
+                        "\(uDir)/\(u)/Documents/My Games/\(game.title)",
+                        "\(uDir)/\(u)/AppData/Roaming/\(game.title)",
+                        "\(uDir)/\(u)/AppData/Local/\(game.title)"
+                    ]
+                    for c in candidates where FileManager.default.fileExists(atPath: c) {
+                        return c
+                    }
+                }
+            }
+        }
+
+        // Candidate locations for Native macOS games:
+        let macCandidates = [
+            "\(home)/Library/Application Support/\(game.title)",
+            "\(home)/Documents/\(game.title)",
+            "\(game.installPath)/saves",
+            "\(game.installPath)/save",
+            "\(game.installPath)/SaveData"
+        ]
+        for c in macCandidates where FileManager.default.fileExists(atPath: c) {
+            return c
+        }
+
+        if !game.installPath.isEmpty && FileManager.default.fileExists(atPath: game.installPath) {
+            let fallbackSaves = game.installPath + "/saves"
+            try? FileManager.default.createDirectory(atPath: fallbackSaves, withIntermediateDirectories: true)
+            return fallbackSaves
+        }
+
+        return nil
+    }
+
+    public func loadSaveManifest(for game: GameItem) -> GameSaveManifest {
+        let saveVaultDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/saves/\(game.id)"
+        try? FileManager.default.createDirectory(atPath: saveVaultDir, withIntermediateDirectories: true)
+        let manifestPath = saveVaultDir + "/manifest.json"
+
+        if let data = try? Data(contentsOf: URL(fileURLWithPath: manifestPath)),
+           let manifest = try? JSONDecoder().decode(GameSaveManifest.self, from: data) {
+            return manifest
+        }
+
+        let detected = detectSaveDirectory(for: game)
+        let initialManifest = GameSaveManifest(gameId: game.id, activeSaveDirectory: detected, autoSnapshotOnLaunch: false, instances: [])
+        saveManifest(initialManifest, for: game)
+        return initialManifest
+    }
+
+    public func saveManifest(_ manifest: GameSaveManifest, for game: GameItem) {
+        let saveVaultDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/saves/\(game.id)"
+        try? FileManager.default.createDirectory(atPath: saveVaultDir, withIntermediateDirectories: true)
+        let manifestPath = saveVaultDir + "/manifest.json"
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        if let data = try? encoder.encode(manifest) {
+            try? data.write(to: URL(fileURLWithPath: manifestPath), options: .atomic)
+        }
+    }
+
+    public func createSaveSnapshot(for game: GameItem, name: String, note: String = "", isAutoSave: Bool = false) -> GameSaveInstance? {
+        var manifest = loadSaveManifest(for: game)
+        guard let activeSaveDir = manifest.activeSaveDirectory ?? detectSaveDirectory(for: game),
+              FileManager.default.fileExists(atPath: activeSaveDir) else {
+            log("⚠️ No active save directory found for '\(game.title)'.", level: .warning, source: "Saves")
+            return nil
+        }
+
+        let instanceId = UUID()
+        let saveVaultDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/saves/\(game.id)"
+        let snapshotDir = "\(saveVaultDir)/snapshots/\(instanceId.uuidString)"
+
+        try? FileManager.default.createDirectory(atPath: snapshotDir, withIntermediateDirectories: true)
+
+        var totalBytes: Int64 = 0
+        var totalFiles = 0
+
+        if let enumerator = FileManager.default.enumerator(at: URL(fileURLWithPath: activeSaveDir), includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey]) {
+            for case let fileURL as URL in enumerator {
+                let relPath = fileURL.path.replacingOccurrences(of: activeSaveDir, with: "")
+                let destURL = URL(fileURLWithPath: snapshotDir + relPath)
+                try? FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try? FileManager.default.copyItem(at: fileURL, to: destURL)
+
+                if let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+                   let size = attrs[.size] as? Int64 {
+                    totalBytes += size
+                    totalFiles += 1
+                }
+            }
+        }
+
+        let instance = GameSaveInstance(
+            id: instanceId,
+            gameId: game.id,
+            name: name.isEmpty ? "Save Checkpoint \(manifest.instances.count + 1)" : name,
+            note: note,
+            createdAt: Date(),
+            byteSize: totalBytes,
+            fileCount: totalFiles,
+            snapshotPath: snapshotDir,
+            isAutoSave: isAutoSave
+        )
+
+        manifest.instances.insert(instance, at: 0)
+        saveManifest(manifest, for: game)
+        log("Created save checkpoint '\(instance.name)' (\(instance.formattedSize)) for '\(game.title)'.", level: .info, source: "Saves")
+        return instance
+    }
+
+    public func restoreSaveSnapshot(game: GameItem, instance: GameSaveInstance) -> Bool {
+        let manifest = loadSaveManifest(for: game)
+        guard let activeSaveDir = manifest.activeSaveDirectory ?? detectSaveDirectory(for: game) else {
+            log("⚠️ Active save path not found for restore.", level: .error, source: "Saves")
+            return false
+        }
+
+        // 1. Create a safety auto-backup of current active save before overwriting
+        _ = createSaveSnapshot(for: game, name: "Safety Backup (Pre-Restore)", note: "Automatically generated before restoring '\(instance.name)'", isAutoSave: true)
+
+        // 2. Clear current active save directory contents
+        if let contents = try? FileManager.default.contentsOfDirectory(atPath: activeSaveDir) {
+            for item in contents {
+                try? FileManager.default.removeItem(atPath: activeSaveDir + "/" + item)
+            }
+        }
+
+        // 3. Copy snapshot files to active save directory
+        if let enumerator = FileManager.default.enumerator(at: URL(fileURLWithPath: instance.snapshotPath), includingPropertiesForKeys: nil) {
+            for case let fileURL as URL in enumerator {
+                let relPath = fileURL.path.replacingOccurrences(of: instance.snapshotPath, with: "")
+                let destURL = URL(fileURLWithPath: activeSaveDir + relPath)
+                try? FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try? FileManager.default.copyItem(at: fileURL, to: destURL)
+            }
+        }
+
+        log("Successfully restored save checkpoint '\(instance.name)' for '\(game.title)'.", level: .info, source: "Saves")
+        return true
+    }
+
+    public func deleteSaveSnapshot(game: GameItem, instance: GameSaveInstance) {
+        var manifest = loadSaveManifest(for: game)
+        try? FileManager.default.removeItem(atPath: instance.snapshotPath)
+        manifest.instances.removeAll(where: { $0.id == instance.id })
+        saveManifest(manifest, for: game)
+        log("Deleted save checkpoint '\(instance.name)' from vault.", level: .info, source: "Saves")
+    }
+
+    public func revealSaveSnapshotInFinder(instance: GameSaveInstance) {
+        NSWorkspace.shared.selectFile(instance.snapshotPath, inFileViewerRootedAtPath: instance.snapshotPath)
     }
 
     public func launchGame(_ game: GameItem) {
@@ -1468,6 +1691,8 @@ public class EngineService: ObservableObject {
                 enableHud: false
             )
         ]
+
+        loadImportedGames()
 
         if selectedGame == nil {
             selectedGame = games.first

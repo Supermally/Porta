@@ -6,6 +6,7 @@ public struct GameDetailView: View {
     let game: GameItem
 
     @State private var showingDeveloperDetails = false
+    @State private var showingAdvancedSettings = false
     @State private var showingTroubleshootSheet = false
     @Namespace private var glassNamespace
 
@@ -172,22 +173,27 @@ public struct GameDetailView: View {
                     }
                 }
 
-                // Developer & Advanced Settings
+                // Save States & Progress Instance Vault
+                GameSaveInstancesView(engine: engine, game: game)
+
+                // Advanced Settings & Library Management
                 DisclosureGroup(
-                    isExpanded: $showingDeveloperDetails,
+                    isExpanded: $showingAdvancedSettings,
                     content: {
                         VStack(alignment: .leading, spacing: 14) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Runtime:")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(game.runtime)
-                                    .font(.system(size: 11, design: .monospaced))
+                            if !game.runtime.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Runtime:")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(game.runtime)
+                                        .font(.system(size: 11, design: .monospaced))
+                                }
                             }
 
                             if !game.installPath.isEmpty {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Container Path:")
+                                    Text("Install Path:")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                     Text(game.installPath)
@@ -195,26 +201,48 @@ public struct GameDetailView: View {
                                 }
                             }
 
-                            Picker("Graphics Backend", selection: Binding(
-                                get: { game.useD3DMetal },
-                                set: { engine.setGraphicsBackend(for: game.id, useD3DMetal: $0) }
-                            )) {
-                                Text("Apple D3DMetal 2.0").tag(true)
-                                Text("DXVK (Vulkan)").tag(false)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Graphics Translation Layer")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+
+                                Picker("Backend", selection: Binding(
+                                    get: { game.useD3DMetal },
+                                    set: { engine.setGraphicsBackend(for: game.id, useD3DMetal: $0) }
+                                )) {
+                                    Text("Apple D3DMetal 2.0").tag(true)
+                                    Text("DXVK (Vulkan)").tag(false)
+                                }
+                                .pickerStyle(.segmented)
                             }
-                            .pickerStyle(.segmented)
 
                             Toggle("Metal Performance HUD Overlay", isOn: Binding(
                                 get: { game.enableHud },
                                 set: { _ in engine.toggleHud(for: game.id) }
                             ))
+
+                            if game.acquisitionType == .existingFiles || game.storefront == "Local / Custom" || game.isUniversalApp {
+                                Divider()
+                                    .padding(.vertical, 4)
+
+                                Button(role: .destructive) {
+                                    engine.deleteImportedGame(game)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "trash")
+                                        Text("Remove Game from Library")
+                                    }
+                                    .foregroundColor(.red)
+                                }
+                                .buttonStyle(.bordered)
+                            }
                         }
                         .padding(14)
                         .liquidGlassCard(cornerRadius: 12)
                         .padding(.top, 4)
                     },
                     label: {
-                        Label("Advanced Settings", systemImage: "gearshape.2")
+                        Label("Advanced Settings & Library Management", systemImage: "gearshape.2")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
