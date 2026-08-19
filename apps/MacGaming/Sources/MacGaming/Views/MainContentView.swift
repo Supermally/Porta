@@ -42,7 +42,13 @@ public struct MainContentView: View {
             // 3. Floating Crystal-Clear Liquid Glass Sidebar (Floats Over the Content Canvas)
             FloatingGlassSidebarView(engine: engine)
         }
-        .liquidGlassEnvironment(enabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+        .liquidGlassEnvironment(
+            enabled: engine.liquidGlassEnabled,
+            transparency: engine.glassTransparency,
+            specularIntensity: engine.glassSpecularIntensity,
+            blurRadius: engine.glassBlurRadius,
+            reduceTransparency: engine.reduceTransparency
+        )
         .frame(minWidth: 980, minHeight: 640)
     }
 
