@@ -8,65 +8,25 @@ public struct MainContentView: View {
             // Ambient Chromatic Backdrop for Liquid Glass Refraction
             AmbientChromaticBackdrop()
 
-            NavigationSplitView {
-                List(selection: $engine.activeTab) {
-                    Section {
-                        NavigationLink(value: NavigationTab.library) {
-                            Label {
-                                HStack {
-                                    Text("Library")
-                                    Spacer()
-                                    if engine.games.count > 0 {
-                                        Text("\(engine.games.count)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                            } icon: {
-                                Image(systemName: "square.grid.2x2")
-                            }
-                        }
-                        .keyboardShortcut("1", modifiers: .command)
+            HStack(spacing: 0) {
+                // 1. Floating Crystal-Clear Liquid Glass Sidebar
+                FloatingGlassSidebarView(engine: engine)
 
-                        NavigationLink(value: NavigationTab.discover) {
-                            Label("Discover", systemImage: "sparkles")
-                        }
-                        .keyboardShortcut("2", modifiers: .command)
-
-                        NavigationLink(value: NavigationTab.compatibility) {
-                            Label("Compatibility", systemImage: "checkmark.seal")
-                        }
-                        .keyboardShortcut("3", modifiers: .command)
-
-                        NavigationLink(value: NavigationTab.downloads) {
-                            Label("Downloads", systemImage: "arrow.down.circle")
-                        }
-                        .keyboardShortcut("4", modifiers: .command)
-                    }
-
-                    Section("Storefronts") {
-                        ForEach(StorefrontFilter.allCases) { sf in
-                            StorefrontSidebarRow(sf: sf, engine: engine)
-                        }
-                    }
-
-                    Section {
-                        NavigationLink(value: NavigationTab.settings) {
-                            Label("Settings", systemImage: "gearshape")
-                        }
-                        .keyboardShortcut(",", modifiers: .command)
-                    }
-                }
-                .listStyle(.sidebar)
-                .scrollContentBackground(.hidden)
-                .navigationTitle("Mac Gaming")
-                .frame(minWidth: 200, idealWidth: 220)
-            } content: {
+                // 2. Content & Detail Canvas
                 Group {
                     switch engine.activeTab {
                     case .library:
-                        LibraryView(engine: engine)
-                            .frame(minWidth: 320, idealWidth: 380)
+                        HSplitView {
+                            LibraryView(engine: engine)
+                                .frame(minWidth: 340, idealWidth: 420)
+
+                            if let game = engine.selectedGame {
+                                GameDetailView(engine: engine, game: game)
+                                    .frame(minWidth: 400)
+                            } else {
+                                emptyStateView
+                            }
+                        }
                     case .discover:
                         MacNativeSpotlightView(engine: engine)
                     case .compatibility:
@@ -77,79 +37,24 @@ public struct MainContentView: View {
                         SettingsView(engine: engine)
                     }
                 }
-                .scrollContentBackground(.hidden)
-            } detail: {
-                Group {
-                    if let game = engine.selectedGame, engine.activeTab == .library {
-                        GameDetailView(engine: engine, game: game)
-                    } else if engine.activeTab == .discover {
-                        DeveloperDemandView(engine: engine)
-                    } else if engine.activeTab == .compatibility {
-                        LibraryAuditView(engine: engine)
-                    } else {
-                        VStack(spacing: 12) {
-                            Image(systemName: "gamecontroller")
-                                .font(.system(size: 48))
-                                .foregroundStyle(.secondary)
-                            Text("No Game Selected")
-                                .font(.headline)
-                            Text("Select a game from your library to view details and launch.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                }
-                .scrollContentBackground(.hidden)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .liquidGlassEnvironment(enabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
         }
-        .frame(minWidth: 940, minHeight: 620)
-    }
-}
-
-struct StorefrontSidebarRow: View {
-    let sf: StorefrontFilter
-    @ObservedObject var engine: EngineService
-
-    private var isSelected: Bool {
-        engine.activeTab == .library && engine.selectedStorefront == sf
+        .frame(minWidth: 960, minHeight: 640)
     }
 
-    private var count: Int {
-        engine.games.filter { game in
-            switch sf {
-            case .all: return true
-            case .steam: return game.storefront == "Steam"
-            case .gog: return game.storefront == "GOG Galaxy"
-            case .epic: return game.storefront == "Epic Games"
-            case .itch: return game.storefront == "itch.io"
-            case .ubisoft: return game.storefront == "Ubisoft"
-            case .ea: return game.storefront == "EA App"
-            case .battlenet: return game.storefront == "Battle.net"
-            case .universalApp: return game.isUniversalApp
-            case .local: return game.storefront.contains("Local")
-            }
-        }.count
-    }
-
-    var body: some View {
-        Button {
-            engine.selectedStorefront = sf
-            engine.activeTab = .library
-        } label: {
-            HStack {
-                Label(sf.rawValue, systemImage: sf.icon)
-                    .fontWeight(isSelected ? .semibold : .regular)
-                Spacer()
-                if count > 0 {
-                    Text("\(count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+    private var emptyStateView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "gamecontroller")
+                .font(.system(size: 48))
+                .foregroundStyle(.secondary)
+            Text("No Game Selected")
+                .font(.headline)
+            Text("Select a game from your library to view details and launch.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
-        .buttonStyle(.plain)
-        .listRowBackground(isSelected ? Color.accentColor.opacity(0.18) : Color.clear)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
