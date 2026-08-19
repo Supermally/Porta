@@ -44,19 +44,24 @@ public struct DownloadsView: View {
                     HStack(spacing: 12) {
                         Menu {
                             Button {
-                                engine.launchWindowsSteamSandbox(mode: .standard)
+                                engine.launchWindowsSteamSandbox(mode: .virtualDesktop)
                             } label: {
-                                Label("Launch Standard (Full UI)", systemImage: "app.window.checkmark")
+                                Label("Virtual Desktop Container (Recommended)", systemImage: "display")
                             }
                             Button {
                                 engine.launchWindowsSteamSandbox(mode: .miniLibrary)
                             } label: {
-                                Label("Launch Mini Library (Fast)", systemImage: "list.bullet.rectangle")
+                                Label("Mini Library Mode (Fast)", systemImage: "list.bullet.rectangle")
+                            }
+                            Button {
+                                engine.launchWindowsSteamSandbox(mode: .standard)
+                            } label: {
+                                Label("Direct Win32 Window", systemImage: "app.window.checkmark")
                             }
                             Button {
                                 engine.launchWindowsSteamSandbox(mode: .gamepadUI)
                             } label: {
-                                Label("Launch Big Picture UI", systemImage: "gamecontroller")
+                                Label("Big Picture / Gamepad UI", systemImage: "gamecontroller")
                             }
                         } label: {
                             HStack(spacing: 4) {

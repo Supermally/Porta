@@ -1003,19 +1003,34 @@ public class EngineService: ObservableObject {
         for proc in activeProcesses where proc.isRunning {
             let pid = proc.processIdentifier
             proc.terminate()
-            // Cleanly reap child process tree and orphaned helper instances
             let killTask = Process()
             killTask.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-            killTask.arguments = ["-P", "\(pid)"]
+            killTask.arguments = ["-9", "-P", "\(pid)"]
             try? killTask.run()
         }
         activeProcesses.removeAll()
 
-        // Clean any lingering wine processes associated with sandbox
-        let wineKill = Process()
-        wineKill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
-        wineKill.arguments = ["-9", "steamwebhelper.exe"]
-        try? wineKill.run()
+        // 1. Terminate wineserver to cleanly shut down the Windows session and prevent Steam auto-respawn
+        let wineserverPaths = ["/opt/homebrew/bin/wineserver", "/usr/local/bin/wineserver"]
+        if let ws = wineserverPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+            let prefixPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/launchers/steam"
+            let wsKill = Process()
+            wsKill.executableURL = URL(fileURLWithPath: ws)
+            wsKill.arguments = ["-k"]
+            var env = ProcessInfo.processInfo.environment
+            env["WINEPREFIX"] = prefixPath
+            wsKill.environment = env
+            try? wsKill.run()
+            wsKill.waitUntilExit()
+        }
+
+        // 2. Kill all residual Wine and Steam processes
+        for targetProc in ["steam.exe", "steamwebhelper.exe", "explorer.exe", "winedevice.exe", "services.exe", "wineserver", "wine64-preloader", "wine-preloader"] {
+            let pKill = Process()
+            pKill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            pKill.arguments = ["-9", targetProc]
+            try? pKill.run()
+        }
 
         if let token = activeActivityToken {
             ProcessInfo.processInfo.endActivity(token)
@@ -1459,7 +1474,7 @@ public class EngineService: ObservableObject {
         }
     }
 
-    public func launchWindowsSteamSandbox(appId: String? = nil, mode: SteamLaunchMode = .standard) {
+    public func launchWindowsSteamSandbox(appId: String? = nil, mode: SteamLaunchMode = .virtualDesktop) {
         let runnerPaths = [
             "/opt/homebrew/bin/wine64",
             "/usr/local/bin/wine64",

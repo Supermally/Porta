@@ -97,14 +97,19 @@ public struct LibraryView: View {
                     Divider()
                     Menu("Launch Windows Steam Sandbox") {
                         Button {
-                            engine.launchWindowsSteamSandbox(mode: .standard)
+                            engine.launchWindowsSteamSandbox(mode: .virtualDesktop)
                         } label: {
-                            Label("Standard Client (Full UI)", systemImage: "app.window.checkmark")
+                            Label("Virtual Desktop Container (Recommended)", systemImage: "display")
                         }
                         Button {
                             engine.launchWindowsSteamSandbox(mode: .miniLibrary)
                         } label: {
                             Label("Mini Library Mode (Ultra-Fast)", systemImage: "list.bullet.rectangle")
+                        }
+                        Button {
+                            engine.launchWindowsSteamSandbox(mode: .standard)
+                        } label: {
+                            Label("Direct Win32 Window", systemImage: "app.window.checkmark")
                         }
                         Button {
                             engine.launchWindowsSteamSandbox(mode: .gamepadUI)
