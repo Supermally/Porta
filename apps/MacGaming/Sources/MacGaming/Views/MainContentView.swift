@@ -5,64 +5,57 @@ public struct MainContentView: View {
 
     public var body: some View {
         NavigationSplitView {
-            VStack(alignment: .leading, spacing: 0) {
-                // Floating App Brand Header
-                HStack(spacing: 10) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.accentColor.gradient)
-                            .frame(width: 28, height: 28)
-                        Image(systemName: "apple.logo")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                    .shadow(color: Color.accentColor.opacity(0.4), radius: 6, x: 0, y: 2)
-
-                    Text("Mac Gaming")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.primary)
-
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 12)
-
-                Divider()
-                    .opacity(0.2)
-                    .padding(.horizontal, 12)
-
-                // Native Sidebar Glass Bubble Rows
-                List {
-                    Section {
-                        SidebarTabRow(tab: .library, currentTab: $engine.activeTab, badgeCount: engine.games.count, engine: engine)
-                            .keyboardShortcut("1", modifiers: .command)
-
-                        SidebarTabRow(tab: .discover, currentTab: $engine.activeTab, engine: engine)
-                            .keyboardShortcut("2", modifiers: .command)
-
-                        SidebarTabRow(tab: .compatibility, currentTab: $engine.activeTab, engine: engine)
-                            .keyboardShortcut("3", modifiers: .command)
-
-                        SidebarTabRow(tab: .downloads, currentTab: $engine.activeTab, engine: engine)
-                            .keyboardShortcut("4", modifiers: .command)
-                    }
-
-                    Section("Game Providers") {
-                        ForEach(StorefrontFilter.allCases) { sf in
-                            StorefrontSidebarRow(sf: sf, engine: engine)
+            List(selection: $engine.activeTab) {
+                Section {
+                    NavigationLink(value: NavigationTab.library) {
+                        Label {
+                            HStack {
+                                Text("Library")
+                                Spacer()
+                                if engine.games.count > 0 {
+                                    Text("\(engine.games.count)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        } icon: {
+                            Image(systemName: "square.grid.2x2")
                         }
                     }
+                    .keyboardShortcut("1", modifiers: .command)
 
-                    Section {
-                        SidebarTabRow(tab: .settings, currentTab: $engine.activeTab, engine: engine)
-                            .keyboardShortcut(",", modifiers: .command)
+                    NavigationLink(value: NavigationTab.discover) {
+                        Label("Discover", systemImage: "sparkles")
+                    }
+                    .keyboardShortcut("2", modifiers: .command)
+
+                    NavigationLink(value: NavigationTab.compatibility) {
+                        Label("Compatibility", systemImage: "checkmark.seal")
+                    }
+                    .keyboardShortcut("3", modifiers: .command)
+
+                    NavigationLink(value: NavigationTab.downloads) {
+                        Label("Downloads", systemImage: "arrow.down.circle")
+                    }
+                    .keyboardShortcut("4", modifiers: .command)
+                }
+
+                Section("Storefronts") {
+                    ForEach(StorefrontFilter.allCases) { sf in
+                        StorefrontSidebarRow(sf: sf, engine: engine)
                     }
                 }
-                .listStyle(.sidebar)
+
+                Section {
+                    NavigationLink(value: NavigationTab.settings) {
+                        Label("Settings", systemImage: "gearshape")
+                    }
+                    .keyboardShortcut(",", modifiers: .command)
+                }
             }
-            .frame(minWidth: 220, idealWidth: 240)
-            .background(VisualEffectView(material: .sidebar, blendingMode: .behindWindow))
+            .listStyle(.sidebar)
+            .navigationTitle("Mac Gaming")
+            .frame(minWidth: 200, idealWidth: 220)
         } content: {
             Group {
                 switch engine.activeTab {
@@ -79,7 +72,6 @@ public struct MainContentView: View {
                     SettingsView(engine: engine)
                 }
             }
-            .background(VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow))
         } detail: {
             Group {
                 if let game = engine.selectedGame, engine.activeTab == .library {
@@ -89,24 +81,21 @@ public struct MainContentView: View {
                 } else if engine.activeTab == .compatibility {
                     LibraryAuditView(engine: engine)
                 } else {
-                    VStack(spacing: 16) {
-                        Image(systemName: engine.activeTab.icon)
-                            .font(.system(size: 52))
-                            .foregroundColor(.accentColor.opacity(0.8))
-                            .padding(24)
-                            .liquidGlassBubble(cornerRadius: 30, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-
-                        Text(engine.activeTab == .library ? "Select a game from your library to view details and launch" : engine.activeTab.rawValue)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.secondary)
+                    VStack(spacing: 12) {
+                        Image(systemName: "gamecontroller")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.secondary)
+                        Text("No Game Selected")
+                            .font(.headline)
+                        Text("Select a game from your library to view details and launch.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .background(VisualEffectView(material: .windowBackground, blendingMode: .behindWindow))
         }
-        .background(WindowTranslucencyConfigurator())
-        .frame(minWidth: 960, minHeight: 620)
+        .frame(minWidth: 920, minHeight: 600)
     }
 }
 
@@ -118,7 +107,7 @@ struct StorefrontSidebarRow: View {
         engine.activeTab == .library && engine.selectedStorefront == sf
     }
 
-    private var gameCount: Int {
+    private var count: Int {
         engine.games.filter { game in
             switch sf {
             case .all: return true
@@ -136,62 +125,22 @@ struct StorefrontSidebarRow: View {
     }
 
     var body: some View {
-        Button(action: {
+        Button {
             engine.selectedStorefront = sf
             engine.activeTab = .library
-        }) {
+        } label: {
             HStack {
                 Label(sf.rawValue, systemImage: sf.icon)
-                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .fontWeight(isSelected ? .semibold : .regular)
                 Spacer()
-                if gameCount > 0 {
-                    Text("\(gameCount)")
-                        .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .padding(.vertical, 3)
-        }
-        .buttonStyle(.plain)
-        .listRowBackground(isSelected ? Color.accentColor.opacity(0.18) : Color.clear)
-    }
-}
-
-struct SidebarTabRow: View {
-    let tab: NavigationTab
-    @Binding var currentTab: NavigationTab
-    var badgeCount: Int? = nil
-    var engine: EngineService
-
-    var body: some View {
-        Button(action: { currentTab = tab }) {
-            HStack(spacing: 10) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 14, weight: currentTab == tab ? .bold : .regular))
-                    .foregroundColor(currentTab == tab ? .accentColor : .primary)
-                    .frame(width: 20)
-
-                Text(tab.rawValue)
-                    .font(.system(size: 13, weight: currentTab == tab ? .semibold : .regular))
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                if let count = badgeCount, count > 0 {
+                if count > 0 {
                     Text("\(count)")
-                        .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-                        .foregroundColor(.secondary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .padding(.vertical, 4)
         }
         .buttonStyle(.plain)
-        .listRowBackground(currentTab == tab ? Color.accentColor.opacity(0.18) : Color.clear)
+        .listRowBackground(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
     }
 }

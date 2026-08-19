@@ -50,6 +50,8 @@ public enum CompatibilityBadge: String, CaseIterable, Identifiable, Codable, Sen
         }
     }
 
+    public var icon: String { iconName }
+
     public var color: Color {
         switch self {
         case .native: return Color(red: 0.20, green: 0.78, blue: 0.35)

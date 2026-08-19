@@ -7,25 +7,24 @@ public struct GameDetailView: View {
 
     @State private var showingDeveloperDetails = false
     @State private var showingTroubleshootSheet = false
-    @State private var showingSubmitSheet = false
 
     public var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Floating Large Rounded Glass Hero Banner
+            VStack(alignment: .leading, spacing: 22) {
+                // Hero Artwork Banner
                 ZStack(alignment: .bottomLeading) {
                     if let heroPath = game.localHeroPath ?? game.localPosterPath,
                        let nsImage = NSImage(contentsOfFile: heroPath) {
                         Image(nsImage: nsImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(height: 220)
+                            .frame(height: 240)
                             .clipped()
                             .overlay(
                                 LinearGradient(
                                     colors: [
-                                        Color.black.opacity(0.10),
-                                        Color.black.opacity(0.80)
+                                        Color.black.opacity(0.1),
+                                        Color.black.opacity(0.85)
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
@@ -35,326 +34,218 @@ public struct GameDetailView: View {
                         ZStack {
                             LinearGradient(
                                 colors: [
-                                    Color.blue.opacity(0.85),
-                                    Color.indigo.opacity(0.70),
-                                    Color.black.opacity(0.85)
+                                    Color.blue.opacity(0.8),
+                                    Color.indigo.opacity(0.6),
+                                    Color.black.opacity(0.9)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                             HStack {
                                 Spacer()
-                                Image(systemName: game.isNative ? "apple.logo" : (game.isUnityGame ? "cube.fill" : "gamecontroller.fill"))
-                                    .font(.system(size: 84))
-                                    .foregroundColor(.white.opacity(0.12))
-                                    .padding(.trailing, 30)
+                                Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
+                                    .font(.system(size: 96))
+                                    .foregroundColor(.white.opacity(0.1))
+                                    .padding(.trailing, 40)
                             }
                         }
-                        .frame(height: 200)
+                        .frame(height: 220)
                     }
 
-                    // Hero Text & Floating Glass Badges
-                    VStack(alignment: .leading, spacing: 8) {
+                    // Hero Text & Compatibility Badge
+                    VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
-                            Text(game.badge.rawValue)
-                                .font(.system(size: 11, weight: .bold))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity, tint: game.badge.color)
-                                .foregroundColor(.white)
+                            CompatibilityBadgeView(game.badge)
 
                             Text(game.storefront)
-                                .font(.system(size: 11, weight: .semibold))
-                                .padding(.horizontal, 10)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-                                .foregroundColor(.white)
+                                .background(.ultraThinMaterial, in: Capsule())
                         }
 
                         Text(game.title)
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.title)
+                            .fontWeight(.bold)
                             .foregroundColor(.white)
 
                         Text(game.developerName)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.85))
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.8))
                     }
                     .padding(22)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .liquidGlassBubble(cornerRadius: 22, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-                // Floating Responsive Liquid Glass Action Controls
-                HStack(spacing: 10) {
-                    Button(action: {
+                // Liquid Glass Action Controls Group
+                HStack(spacing: 12) {
+                    PlayButton(isPlaying: engine.isGameModeActive) {
                         if engine.isGameModeActive {
                             engine.stopGame()
                         } else {
                             engine.launchGame(game)
                         }
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: engine.isGameModeActive ? "stop.fill" : "play.fill")
-                                .font(.system(size: 13, weight: .bold))
-                            Text(engine.isGameModeActive ? "Stop Session" : "Play")
-                                .font(.system(size: 14, weight: .bold))
-                        }
                     }
-                    .buttonStyle(LiquidGlassButtonStyle(
-                        isProminent: true,
-                        isEnabled: engine.liquidGlassEnabled,
-                        intensity: engine.liquidGlassIntensity,
-                        customTint: engine.isGameModeActive ? Color.red : Color.accentColor
-                    ))
-                    .fixedSize()
 
-                    Button(action: {
-                        engine.runBenchmark(for: game)
-                    }) {
-                        HStack(spacing: 5) {
-                            Image(systemName: "gauge.with.needle")
-                            Text("Benchmark")
+                    GlassActionGroup(spacing: 8) {
+                        Button {
+                            engine.runBenchmark(for: game)
+                        } label: {
+                            Label("Benchmark", systemImage: "gauge.with.needle")
                         }
-                    }
-                    .buttonStyle(LiquidGlassButtonStyle(
-                        isProminent: false,
-                        isEnabled: engine.liquidGlassEnabled,
-                        intensity: engine.liquidGlassIntensity
-                    ))
-                    .fixedSize()
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
 
-                    Button(action: {
-                        engine.runTroubleshooter(for: game)
-                        showingTroubleshootSheet = true
-                    }) {
-                        HStack(spacing: 5) {
-                            Image(systemName: "wrench.and.screwdriver")
-                            Text("Troubleshoot")
-                        }
-                    }
-                    .buttonStyle(LiquidGlassButtonStyle(
-                        isProminent: false,
-                        isEnabled: engine.liquidGlassEnabled,
-                        intensity: engine.liquidGlassIntensity
-                    ))
-                    .fixedSize()
+                        Divider()
+                            .frame(height: 16)
+                            .opacity(0.4)
 
-                    if !game.installPath.isEmpty {
-                        Button(action: {
-                            NSWorkspace.shared.selectFile(game.executablePath.isEmpty ? game.installPath : game.executablePath, inFileViewerRootedAtPath: game.installPath)
-                        }) {
-                            Image(systemName: "folder.fill")
-                                .font(.system(size: 12))
+                        Button {
+                            engine.runTroubleshooter(for: game)
+                            showingTroubleshootSheet = true
+                        } label: {
+                            Label("Troubleshoot", systemImage: "wrench.and.screwdriver")
                         }
-                        .buttonStyle(LiquidGlassButtonStyle(
-                            isProminent: false,
-                            isEnabled: engine.liquidGlassEnabled,
-                            intensity: engine.liquidGlassIntensity
-                        ))
-                        .fixedSize()
-                        .help("Show game files in Finder")
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+
+                        if !game.installPath.isEmpty {
+                            Divider()
+                                .frame(height: 16)
+                                .opacity(0.4)
+
+                            Button {
+                                NSWorkspace.shared.selectFile(game.executablePath.isEmpty ? game.installPath : game.executablePath, inFileViewerRootedAtPath: game.installPath)
+                            } label: {
+                                Image(systemName: "folder")
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .help("Show game files in Finder")
+                        }
                     }
 
                     Spacer()
                 }
 
-                // Launch Diagnostics / Status Telemetry Box
+                // Session Status / Output Telemetry
                 if let msg = engine.launchOutputMessage {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Session Status:")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Session Status")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
                         Text(msg)
                             .font(.system(size: 12, design: .monospaced))
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .liquidGlassBubble(cornerRadius: 16, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+                            .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
                 }
 
-                // Native Apple-Style Compatibility Breakdown Card
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack {
-                        Image(systemName: "checklist.checked")
-                            .foregroundColor(.accentColor)
-                            .font(.system(size: 16, weight: .bold))
-                        Text("Compatibility")
-                            .font(.system(size: 16, weight: .bold))
-                        Spacer()
-                        Text("Automatic")
-                            .font(.system(size: 11, weight: .bold))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-                            .foregroundColor(.secondary)
-                    }
+                // Compatibility Breakdown Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Compatibility")
+                        .font(.headline)
 
                     VStack(spacing: 8) {
-                        CompatibilityGlassRow(
+                        CompatibilityItemRow(
                             title: "Apple Silicon",
-                            subtitle: game.isNative ? "Native ARM64 Mach-O execution" : "Rosetta 2 translation bridge active",
-                            status: "✓",
-                            statusColor: .green,
-                            engine: engine
+                            detail: game.isNative ? "Native ARM64 Mach-O execution" : "Rosetta 2 translation bridge active",
+                            isSupported: true
                         )
 
-                        CompatibilityGlassRow(
+                        CompatibilityItemRow(
                             title: "Graphics Pipeline",
-                            subtitle: game.isNative ? "Metal 3 Hardware Accelerated" : (game.isUnityGame ? "DirectX 12 → Apple D3DMetal" : "DirectX 11/12 → Metal Translation"),
-                            status: "✓",
-                            statusColor: .green,
-                            engine: engine
+                            detail: game.isNative ? "Metal 3 Hardware Accelerated" : (game.isUnityGame ? "DirectX 12 → Apple D3DMetal" : "DirectX 11/12 → Metal Translation"),
+                            isSupported: true
                         )
 
-                        CompatibilityGlassRow(
+                        CompatibilityItemRow(
                             title: "Game Controller",
-                            subtitle: "Apple GameController framework active (DualSense, Xbox, Switch Pro)",
-                            status: "✓",
-                            statusColor: .green,
-                            engine: engine
+                            detail: "Apple GameController framework active (DualSense, Xbox, Switch Pro)",
+                            isSupported: true
                         )
 
-                        CompatibilityGlassRow(
+                        CompatibilityItemRow(
                             title: "Anti-Cheat & DRM",
-                            subtitle: game.antiCheatStatus ?? "Verified compatible with Mac Gaming runtime",
-                            status: game.badge == .unsupported ? "✗" : "✓",
-                            statusColor: game.badge == .unsupported ? .red : .green,
-                            engine: engine
+                            detail: game.antiCheatStatus ?? "Verified compatible with Mac Gaming runtime",
+                            isSupported: game.badge != .unsupported
                         )
                     }
                 }
-                .padding(18)
-                .liquidGlassBubble(cornerRadius: 22, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
 
-                // Performance on This Mac Card
-                VStack(alignment: .leading, spacing: 14) {
+                // Performance on This Mac
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Image(systemName: "cpu")
-                            .foregroundColor(.accentColor)
-                            .font(.system(size: 16, weight: .bold))
                         Text("Performance on This Mac")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.headline)
                         Spacer()
                         Text(engine.hardware.chipName)
-                            .font(.system(size: 12, weight: .bold))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .liquidGlassPill(isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-                            .foregroundColor(.primary)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
 
                     HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Target Framerate")
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                            Text("\(game.targetFps) FPS")
-                                .font(.system(size: 18, weight: .bold))
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .liquidGlassBubble(cornerRadius: 14, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Recommended Preset")
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                            Text(game.hardwarePreset)
-                                .font(.system(size: 13, weight: .semibold))
-                                .lineLimit(1)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .liquidGlassBubble(cornerRadius: 14, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Community Verdict")
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                            Text("\(game.rating)% Verified")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.green)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .liquidGlassBubble(cornerRadius: 14, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+                        PerformanceMetricBox(title: "Target Framerate", value: "\(game.targetFps) FPS", subtitle: nil)
+                        PerformanceMetricBox(title: "Recommended Preset", value: game.hardwarePreset, subtitle: nil)
+                        PerformanceMetricBox(title: "Community Verdict", value: "\(game.rating)% Verified", subtitle: nil, isHighlighted: true)
                     }
                 }
-                .padding(18)
-                .liquidGlassBubble(cornerRadius: 22, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
 
-                // Developer & Advanced Mode Disclosure
+                // Developer & Advanced Settings
                 DisclosureGroup(
                     isExpanded: $showingDeveloperDetails,
                     content: {
                         VStack(alignment: .leading, spacing: 14) {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Runtime Environment:")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.secondary)
+                                Text("Runtime:")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                                 Text(game.runtime)
                                     .font(.system(size: 11, design: .monospaced))
                             }
 
                             if !game.installPath.isEmpty {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Container Prefix Path:")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundColor(.secondary)
+                                    Text("Container Path:")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                     Text(game.installPath)
                                         .font(.system(size: 11, design: .monospaced))
-                                        .lineLimit(1)
                                 }
                             }
 
-                            // Graphics Translation Toggle
-                            HStack {
-                                Text("Graphics Backend:")
-                                    .font(.system(size: 12, weight: .semibold))
-                                Spacer()
-                                Picker("", selection: Binding(
-                                    get: { game.useD3DMetal },
-                                    set: { engine.setGraphicsBackend(for: game.id, useD3DMetal: $0) }
-                                )) {
-                                    Text("Apple D3DMetal 2.0").tag(true)
-                                    Text("DXVK (Vulkan)").tag(false)
-                                }
-                                .pickerStyle(.segmented)
-                                .labelsHidden()
-                                .frame(width: 220)
+                            Picker("Graphics Backend", selection: Binding(
+                                get: { game.useD3DMetal },
+                                set: { engine.setGraphicsBackend(for: game.id, useD3DMetal: $0) }
+                            )) {
+                                Text("Apple D3DMetal 2.0").tag(true)
+                                Text("DXVK (Vulkan)").tag(false)
                             }
+                            .pickerStyle(.segmented)
 
-                            // Metal Performance HUD Toggle
-                            HStack {
-                                Text("Metal Performance HUD:")
-                                    .font(.system(size: 12, weight: .semibold))
-                                Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { game.enableHud },
-                                    set: { _ in engine.toggleHud(for: game.id) }
-                                ))
-                                .toggleStyle(.switch)
-                                .labelsHidden()
-                            }
+                            Toggle("Metal Performance HUD Overlay", isOn: Binding(
+                                get: { game.enableHud },
+                                set: { _ in engine.toggleHud(for: game.id) }
+                            ))
                         }
-                        .padding(.top, 12)
+                        .padding(.top, 8)
                     },
                     label: {
-                        HStack {
-                            Image(systemName: "hammer.fill")
-                                .foregroundColor(.secondary)
-                            Text("Advanced / Developer Settings")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(.secondary)
-                        }
+                        Label("Advanced Settings", systemImage: "gearshape.2")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
                 )
-                .padding(18)
-                .liquidGlassBubble(cornerRadius: 22, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
             }
-            .padding(20)
+            .padding(24)
         }
-        .onHover { _ in NSCursor.arrow.set() }
         .sheet(isPresented: $showingTroubleshootSheet) {
             if let report = engine.activeTroubleshootReport {
                 DiagnosticsSheetView(report: report, engine: engine) {
@@ -365,33 +256,60 @@ public struct GameDetailView: View {
     }
 }
 
-// MARK: - Compatibility Glass Row Component
-public struct CompatibilityGlassRow: View {
+// MARK: - Compatibility Item Row
+struct CompatibilityItemRow: View {
     let title: String
-    let subtitle: String
-    let status: String
-    let statusColor: Color
-    @ObservedObject var engine: EngineService
+    let detail: String
+    let isSupported: Bool
 
-    public var body: some View {
+    var body: some View {
         HStack(spacing: 12) {
-            Text(status)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(statusColor)
-                .frame(width: 20)
+            Image(systemName: isSupported ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .foregroundColor(isSupported ? .green : .red)
+                .font(.title3)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                Text(subtitle)
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .liquidGlassBubble(cornerRadius: 12, isEnabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
+        .padding(10)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+// MARK: - Performance Metric Box
+struct PerformanceMetricBox: View {
+    let title: String
+    let value: String
+    let subtitle: String?
+    var isHighlighted: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.headline)
+                .foregroundColor(isHighlighted ? .green : .primary)
+                .lineLimit(1)
+            if let sub = subtitle {
+                Text(sub)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
