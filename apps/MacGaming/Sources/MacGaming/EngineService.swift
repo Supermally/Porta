@@ -36,6 +36,34 @@ public class EngineService: ObservableObject {
     @Published public var reduceTransparency: Bool = false
     @Published public var preparingGameItem: GameItem? = nil
     @Published public var preparationStep: Int = 0
+    @Published public var consoleLogs: [ConsoleLogEntry] = []
+
+    public func log(_ message: String, level: LogLevel = .info, source: String = "Engine") {
+        DispatchQueue.main.async {
+            self.consoleLogs.append(ConsoleLogEntry(level: level, source: source, message: message))
+            if self.consoleLogs.count > 1200 {
+                self.consoleLogs.removeFirst(200)
+            }
+        }
+    }
+
+    public func copyConsoleLogsToClipboard() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        let fullText = consoleLogs.map { log in
+            "[\(formatter.string(from: log.timestamp))] [\(log.level.rawValue)] [\(log.source)] \(log.message)"
+        }.joined(separator: "\n")
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(fullText, forType: .string)
+        log("Copied \(consoleLogs.count) console log lines to clipboard.", level: .info, source: "Console")
+    }
+
+    public func clearConsoleLogs() {
+        consoleLogs.removeAll()
+        log("Console logs cleared.", level: .info, source: "Console")
+    }
 
     public func resetGlassDefaults() {
         liquidGlassEnabled = true
@@ -43,6 +71,7 @@ public class EngineService: ObservableObject {
         glassSpecularIntensity = 0.90
         glassBlurRadius = 20.0
         reduceTransparency = false
+        log("Reset Liquid Glass settings to Apple defaults.", level: .info, source: "Settings")
     }
 
     private var activeActivityToken: NSObjectProtocol?
@@ -50,6 +79,7 @@ public class EngineService: ObservableObject {
 
     public init() {
         self.hardware = Self.probeHostHardware()
+        log("MacGaming Engine initialized on \(hardware.chipName) (\(hardware.osVersion)).", level: .info, source: "System")
         loadInitialData()
         loadCommunityReviews()
         loadCatalogEntries()
@@ -969,10 +999,23 @@ public class EngineService: ObservableObject {
     }
 
     public func stopGame() {
+        log("Stopping all active game and container processes...", level: .process, source: "Lifecycle")
         for proc in activeProcesses where proc.isRunning {
+            let pid = proc.processIdentifier
             proc.terminate()
+            // Cleanly reap child process tree and orphaned helper instances
+            let killTask = Process()
+            killTask.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            killTask.arguments = ["-P", "\(pid)"]
+            try? killTask.run()
         }
         activeProcesses.removeAll()
+
+        // Clean any lingering wine processes associated with sandbox
+        let wineKill = Process()
+        wineKill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        wineKill.arguments = ["-9", "steamwebhelper.exe"]
+        try? wineKill.run()
 
         if let token = activeActivityToken {
             ProcessInfo.processInfo.endActivity(token)
@@ -980,6 +1023,7 @@ public class EngineService: ObservableObject {
         }
         isGameModeActive = false
         launchOutputMessage = "All parallel game and companion processes terminated. macOS power management returned to normal."
+        log("All game and container processes terminated successfully.", level: .info, source: "Lifecycle")
     }
 
     public func runBenchmark(for game: GameItem) {
@@ -1516,6 +1560,17 @@ public class EngineService: ObservableObject {
         
         var steamLaunchFlags: [String] = []
         switch mode {
+        case .virtualDesktop:
+            steamLaunchFlags = [
+                "-no-cef-sandbox",
+                "-allprocesscounter",
+                "-cef-disable-gpu",
+                "-cef-disable-d3d11",
+                "-cef-disable-breakpad",
+                "-cef-force-32bit",
+                "-tcp",
+                "-allosarches"
+            ]
         case .standard:
             steamLaunchFlags = [
                 "-no-cef-sandbox",
@@ -1555,16 +1610,55 @@ public class EngineService: ObservableObject {
         if FileManager.default.fileExists(atPath: steamExe) {
             let proc = Process()
             proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
-            var args = ["-x86_64", runner, steamExe] + steamLaunchFlags
+
+            var args: [String] = []
+            if mode == .virtualDesktop {
+                args = ["-x86_64", runner, "explorer.exe", "/desktop=Steam,1280x800", steamExe] + steamLaunchFlags
+            } else {
+                args = ["-x86_64", runner, steamExe] + steamLaunchFlags
+            }
+
             if let id = appId {
                 args.append("-applaunch")
                 args.append(id)
             }
             proc.arguments = args
             proc.environment = env
+
+            let outPipe = Pipe()
+            let errPipe = Pipe()
+            proc.standardOutput = outPipe
+            proc.standardError = errPipe
+
+            outPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                let data = handle.availableData
+                if let str = String(data: data, encoding: .utf8), !str.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    let lines = str.components(separatedBy: .newlines).filter { !$0.isEmpty }
+                    DispatchQueue.main.async {
+                        for line in lines {
+                            self?.log(line, level: .info, source: "Steam")
+                        }
+                    }
+                }
+            }
+
+            errPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                let data = handle.availableData
+                if let str = String(data: data, encoding: .utf8), !str.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    let lines = str.components(separatedBy: .newlines).filter { !$0.isEmpty }
+                    DispatchQueue.main.async {
+                        for line in lines {
+                            self?.log(line, level: line.contains("err:") ? .error : .warning, source: "Wine")
+                        }
+                    }
+                }
+            }
+
             try? proc.run()
             self.activeProcesses.append(proc)
             self.isGameModeActive = true
+
+            log("Launched Windows Steam container (\(mode.rawValue)) with PID \(proc.processIdentifier).", level: .process, source: "Launcher")
 
             var msg = "🟢 Launched Windows Steam (\(mode.rawValue))! (Prefix: \(prefixPath))"
             if isNativeSteamRunning {

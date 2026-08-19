@@ -32,24 +32,27 @@ public enum StorefrontFilter: String, CaseIterable, Identifiable {
 }
 
 public enum SteamLaunchMode: String, CaseIterable, Identifiable {
-    case standard = "Full Client Mode"
+    case virtualDesktop = "Virtual Desktop Container (Recommended)"
     case miniLibrary = "Mini Library Mode (Fast)"
+    case standard = "Direct Win32 Window"
     case gamepadUI = "Gamepad / Big Picture Mode"
 
     public var id: String { rawValue }
 
     public var icon: String {
         switch self {
-        case .standard: return "app.window.checkmark"
+        case .virtualDesktop: return "display"
         case .miniLibrary: return "list.bullet.rectangle"
+        case .standard: return "app.window.checkmark"
         case .gamepadUI: return "gamecontroller"
         }
     }
 
     public var description: String {
         switch self {
-        case .standard: return "Full Steam client with Store, Community, and Library."
+        case .virtualDesktop: return "Runs in a managed Wine virtual desktop to ensure 100% visible CEF UI without black screens."
         case .miniLibrary: return "Ultra-fast native list mode that skips heavy CEF webviews."
+        case .standard: return "Direct native Cocoa window mode."
         case .gamepadUI: return "Modern console-style Big Picture UI optimized for controllers."
         }
     }
@@ -82,7 +85,7 @@ public enum CompatibilityBadge: String, CaseIterable, Identifiable, Codable, Sen
         case .compatible: return Color(red: 0.18, green: 0.50, blue: 0.98)
         case .experimental: return Color(red: 0.95, green: 0.77, blue: 0.06)
         case .communityFix: return Color(red: 0.98, green: 0.55, blue: 0.00)
-        case .unsupported: return Color(red: 0.92, green: 0.26, blue: 0.21)
+        case .unsupported: return Color(red: 0.92, green: 0.23, blue: 0.25)
         }
     }
 
@@ -115,6 +118,7 @@ public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
     case discover = "Discover"
     case compatibility = "Compatibility"
     case downloads = "Downloads"
+    case console = "Console"
     case settings = "Settings"
 
     public var id: String { rawValue }
@@ -124,6 +128,7 @@ public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
         case .discover: return "sparkles"
         case .compatibility: return "checklist.checked"
         case .downloads: return "arrow.down.circle.fill"
+        case .console: return "terminal.fill"
         case .settings: return "gearshape.fill"
         }
     }
@@ -134,8 +139,50 @@ public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
         case .discover: return "2"
         case .compatibility: return "3"
         case .downloads: return "4"
+        case .console: return "d"
         case .settings: return ","
         }
+    }
+}
+
+public enum LogLevel: String, CaseIterable, Identifiable, Sendable {
+    case info = "INFO"
+    case warning = "WARN"
+    case error = "ERROR"
+    case process = "PROC"
+
+    public var id: String { rawValue }
+    public var icon: String {
+        switch self {
+        case .info: return "info.circle.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .error: return "xmark.octagon.fill"
+        case .process: return "terminal.fill"
+        }
+    }
+    public var color: Color {
+        switch self {
+        case .info: return .blue
+        case .warning: return .orange
+        case .error: return .red
+        case .process: return .green
+        }
+    }
+}
+
+public struct ConsoleLogEntry: Identifiable, Sendable {
+    public let id: UUID
+    public let timestamp: Date
+    public let level: LogLevel
+    public let source: String
+    public let message: String
+
+    public init(id: UUID = UUID(), timestamp: Date = Date(), level: LogLevel = .info, source: String = "Engine", message: String) {
+        self.id = id
+        self.timestamp = timestamp
+        self.level = level
+        self.source = source
+        self.message = message
     }
 }
 

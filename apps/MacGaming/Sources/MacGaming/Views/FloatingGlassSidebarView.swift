@@ -84,6 +84,16 @@ public struct FloatingGlassSidebarView: View {
                     engine.activeTab = .downloads
                 }
                 .keyboardShortcut("4", modifiers: .command)
+
+                SidebarNavItem(
+                    title: "Console",
+                    icon: "terminal",
+                    badgeText: "\(engine.consoleLogs.count)",
+                    isSelected: engine.activeTab == .console
+                ) {
+                    engine.activeTab = .console
+                }
+                .keyboardShortcut("d", modifiers: .command)
             }
             .padding(.horizontal, 8)
 

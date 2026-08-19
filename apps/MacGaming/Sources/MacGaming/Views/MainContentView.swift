@@ -32,6 +32,9 @@ public struct MainContentView: View {
                 case .downloads:
                     DownloadsView(engine: engine)
                         .padding(.leading, 248)
+                case .console:
+                    DeveloperConsoleView(engine: engine)
+                        .padding(.leading, 248)
                 case .settings:
                     SettingsView(engine: engine)
                         .padding(.leading, 248)
