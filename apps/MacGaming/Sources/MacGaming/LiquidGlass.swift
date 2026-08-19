@@ -85,7 +85,7 @@ public struct CompatibilityBadgeView: View {
 
     public var body: some View {
         HStack(spacing: 5) {
-            Image(systemName: badge.icon)
+            Image(systemName: badge.iconName)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(badge.color)
 
