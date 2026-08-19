@@ -2,8 +2,8 @@ import SwiftUI
 import AppKit
 
 // =============================================================================
-// MARK: - SwiftUI Liquid Glass (iOS 26+ / macOS Reference Design System)
-// Implements Apple's Liquid Glass API specifications from patrickserrano/liquid-glass
+// MARK: - Crystal Clear Apple Liquid Glass Design System
+// 100% Crystal Clear Optics • Zero Milky Frosting • 3D Refractive Specular Edges
 // =============================================================================
 
 // MARK: - 1. Liquid Glass Configuration Environment
@@ -60,9 +60,8 @@ public struct GlassConfiguration {
     }
 }
 
-// MARK: - 3. GlassEffectContainer
-/// Combines multiple Liquid Glass views for optimal rendering performance,
-/// shape blending, and morphing transitions across states.
+// MARK: - 3. GlassEffectContainer (Crystal Clear Group Container)
+/// Combines multiple Liquid Glass views in a crystal-clear unified pod
 public struct GlassEffectContainer<Content: View>: View {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -70,7 +69,7 @@ public struct GlassEffectContainer<Content: View>: View {
     public let spacing: CGFloat
     public let content: Content
 
-    public init(spacing: CGFloat = 20, @ViewBuilder content: () -> Content) {
+    public init(spacing: CGFloat = 8, @ViewBuilder content: () -> Content) {
         self.spacing = spacing
         self.content = content()
     }
@@ -79,29 +78,35 @@ public struct GlassEffectContainer<Content: View>: View {
         HStack(spacing: spacing) {
             content
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
         .background(
             ZStack {
                 if isGlassEnabled {
+                    // 1. Pure Crystal Clear Base (No milky frosting)
                     Capsule()
-                        .fill(.ultraThinMaterial)
-                        .opacity(0.70 + (glassIntensity * 0.25))
+                        .fill(Color.white.opacity(0.06 * glassIntensity))
 
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity(0.25 * glassIntensity), location: 0.0),
-                                    .init(color: Color.white.opacity(0.04 * glassIntensity), location: 0.4),
-                                    .init(color: Color.clear, location: 0.7),
-                                    .init(color: Color.white.opacity(0.08 * glassIntensity), location: 1.0)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                    // 2. Upper Specular Lens Reflection
+                    VStack {
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: Color.white.opacity(0.25 * glassIntensity), location: 0.0),
+                                        .init(color: Color.white.opacity(0.03 * glassIntensity), location: 0.5),
+                                        .init(color: Color.clear, location: 1.0)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
                             )
-                        )
+                            .frame(height: 12)
+                        Spacer()
+                    }
+                    .clipShape(Capsule())
 
+                    // 3. Razor-Sharp 3D Specular Rim Bevel
                     Capsule()
                         .strokeBorder(
                             LinearGradient(
@@ -114,7 +119,7 @@ public struct GlassEffectContainer<Content: View>: View {
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 1.3
+                            lineWidth: 1.2
                         )
                 } else {
                     Capsule()
@@ -123,13 +128,13 @@ public struct GlassEffectContainer<Content: View>: View {
             }
         )
         .clipShape(Capsule())
-        .shadow(color: Color.black.opacity(isGlassEnabled ? 0.10 * glassIntensity : 0.04), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(isGlassEnabled ? 0.08 * glassIntensity : 0.03), radius: 6, x: 0, y: 3)
     }
 }
 
 public typealias GlassActionGroup = GlassEffectContainer
 
-// MARK: - 4. Liquid Glass Modifier
+// MARK: - 4. Liquid Glass Modifier (Crystal Clear Pane)
 public struct LiquidGlassViewModifier: ViewModifier {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -168,28 +173,35 @@ public struct LiquidGlassViewModifier: ViewModifier {
         switch shape {
         case .capsule:
             ZStack {
+                // Crystal Clear Substrate
                 Capsule()
-                    .fill(.ultraThinMaterial)
-                    .opacity(0.70 + (glassIntensity * 0.25))
+                    .fill(Color.white.opacity((isHovered ? 0.10 : 0.05) * glassIntensity))
 
                 if let tint = config.tintColor {
                     Capsule()
-                        .fill(tint.opacity(0.18 * glassIntensity))
+                        .fill(tint.opacity(0.12 * glassIntensity))
                 }
 
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.white.opacity((isHovered ? 0.35 : 0.20) * glassIntensity), location: 0.0),
-                                .init(color: Color.white.opacity(0.03 * glassIntensity), location: 0.4),
-                                .init(color: Color.clear, location: 1.0)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                // Top Specular Sheen
+                VStack {
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity((isHovered ? 0.35 : 0.22) * glassIntensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.04 * glassIntensity), location: 0.4),
+                                    .init(color: Color.clear, location: 1.0)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
-                    )
+                        .frame(height: 12)
+                    Spacer()
+                }
+                .clipShape(Capsule())
 
+                // 3D Glass Rim
                 Capsule()
                     .strokeBorder(
                         LinearGradient(
@@ -206,38 +218,25 @@ public struct LiquidGlassViewModifier: ViewModifier {
                     )
             }
             .clipShape(Capsule())
-            .shadow(color: Color.black.opacity(0.08 * glassIntensity), radius: isHovered ? 8 : 4, y: isHovered ? 3 : 2)
+            .shadow(color: Color.black.opacity(0.06 * glassIntensity), radius: isHovered ? 6 : 3, y: isHovered ? 2 : 1)
 
         case .rect(let radius):
             ZStack {
+                // Crystal Clear Substrate
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .opacity(0.70 + (glassIntensity * 0.25))
+                    .fill(Color.white.opacity((isHovered ? 0.08 : 0.04) * glassIntensity))
 
                 if let tint = config.tintColor {
                     RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .fill(tint.opacity(0.16 * glassIntensity))
+                        .fill(tint.opacity(0.10 * glassIntensity))
                 }
 
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.white.opacity((isHovered ? 0.30 : 0.16) * glassIntensity), location: 0.0),
-                                .init(color: Color.white.opacity(0.04 * glassIntensity), location: 0.35),
-                                .init(color: Color.clear, location: 0.65),
-                                .init(color: Color.white.opacity(0.03 * glassIntensity), location: 1.0)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
+                // Top Curved Lens Highlight
                 VStack {
                     LinearGradient(
                         stops: [
-                            .init(color: Color.white.opacity((isHovered ? 0.55 : 0.40) * glassIntensity), location: 0.0),
-                            .init(color: Color.white.opacity(0.08 * glassIntensity), location: 0.4),
+                            .init(color: Color.white.opacity((isHovered ? 0.35 : 0.22) * glassIntensity), location: 0.0),
+                            .init(color: Color.white.opacity(0.04 * glassIntensity), location: 0.4),
                             .init(color: Color.clear, location: 1.0)
                         ],
                         startPoint: .top,
@@ -248,15 +247,16 @@ public struct LiquidGlassViewModifier: ViewModifier {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
 
+                // 3D Specular Rim
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .strokeBorder(
                         LinearGradient(
                             stops: [
-                                .init(color: Color.white.opacity((isHovered ? 1.0 : 0.90) * glassIntensity), location: 0.0),
-                                .init(color: Color.white.opacity(0.35 * glassIntensity), location: 0.30),
+                                .init(color: Color.white.opacity((isHovered ? 0.95 : 0.85) * glassIntensity), location: 0.0),
+                                .init(color: Color.white.opacity(0.30 * glassIntensity), location: 0.30),
                                 .init(color: Color.white.opacity(0.06 * glassIntensity), location: 0.65),
                                 .init(color: Color.white.opacity(0.30 * glassIntensity), location: 0.90),
-                                .init(color: Color.white.opacity(0.60 * glassIntensity), location: 1.0)
+                                .init(color: Color.white.opacity(0.55 * glassIntensity), location: 1.0)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -265,31 +265,17 @@ public struct LiquidGlassViewModifier: ViewModifier {
                     )
             }
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .shadow(color: Color.black.opacity(0.08 * glassIntensity), radius: isHovered ? 10 : 6, y: isHovered ? 5 : 3)
+            .shadow(color: Color.black.opacity(0.06 * glassIntensity), radius: isHovered ? 8 : 4, y: isHovered ? 3 : 2)
 
         case .circle:
             ZStack {
                 Circle()
-                    .fill(.ultraThinMaterial)
-                    .opacity(0.70 + (glassIntensity * 0.25))
+                    .fill(Color.white.opacity((isHovered ? 0.10 : 0.05) * glassIntensity))
 
                 if let tint = config.tintColor {
                     Circle()
-                        .fill(tint.opacity(0.18 * glassIntensity))
+                        .fill(tint.opacity(0.12 * glassIntensity))
                 }
-
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.white.opacity((isHovered ? 0.35 : 0.20) * glassIntensity), location: 0.0),
-                                .init(color: Color.white.opacity(0.03 * glassIntensity), location: 0.4),
-                                .init(color: Color.clear, location: 1.0)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
 
                 Circle()
                     .strokeBorder(
@@ -307,7 +293,7 @@ public struct LiquidGlassViewModifier: ViewModifier {
                     )
             }
             .clipShape(Circle())
-            .shadow(color: Color.black.opacity(0.08 * glassIntensity), radius: isHovered ? 8 : 4, y: isHovered ? 3 : 2)
+            .shadow(color: Color.black.opacity(0.06 * glassIntensity), radius: isHovered ? 6 : 3, y: isHovered ? 2 : 1)
         }
     }
 
@@ -462,20 +448,23 @@ public struct MorphingLaunchGlassControl: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay(
+                .background(
                     Capsule()
-                        .strokeBorder(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity(0.95), location: 0.0),
-                                    .init(color: Color.white.opacity(0.3), location: 0.5),
-                                    .init(color: Color.white.opacity(0.6), location: 1.0)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.2
+                        .fill(Color.white.opacity(0.06))
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(
+                                    LinearGradient(
+                                        stops: [
+                                            .init(color: Color.white.opacity(0.95), location: 0.0),
+                                            .init(color: Color.white.opacity(0.3), location: 0.5),
+                                            .init(color: Color.white.opacity(0.6), location: 1.0)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.2
+                                )
                         )
                 )
                 .shadow(color: Color.green.opacity(0.25), radius: 10, y: 4)
@@ -535,7 +524,7 @@ public struct MorphingLaunchGlassControl: View {
     }
 }
 
-// MARK: - 8. Compatibility Badge View (Semantic Restrained Glass)
+// MARK: - 8. Compatibility Badge View (Crystal Clear Semantic Glass)
 public struct CompatibilityBadgeView: View {
     public let badge: CompatibilityBadge
 
@@ -555,11 +544,11 @@ public struct CompatibilityBadgeView: View {
         }
         .padding(.horizontal, 9)
         .padding(.vertical, 4)
-        .glassEffect(.regular.tint(badge.color.opacity(0.3)), in: .capsule)
+        .glassEffect(.regular.tint(badge.color.opacity(0.25)), in: .capsule)
     }
 }
 
-// MARK: - 9. Play Button (Signature Prominent Action)
+// MARK: - 9. Play Button (Crystal Sapphire Glass Action)
 public struct PlayButton: View {
     public let isPlaying: Bool
     public let action: () -> Void
@@ -586,7 +575,7 @@ public struct PlayButton: View {
     }
 }
 
-// MARK: - 10. Liquid Glass Button Style (Prominent and Standard Glass)
+// MARK: - 10. Liquid Glass Button Style (Crystal Clear Standard & Prominent Glass)
 public struct LiquidGlassButtonStyle: ButtonStyle {
     public var isProminent: Bool
     public var customTint: Color?
@@ -631,6 +620,7 @@ private struct GlassButtonView: View {
             .background(
                 ZStack {
                     if isProminent {
+                        // Vibrant Sapphire / Ruby Glass Capsule
                         Capsule()
                             .fill(
                                 LinearGradient(
@@ -659,9 +649,9 @@ private struct GlassButtonView: View {
                                 )
                         }
                     } else if isGlassEnabled {
+                        // 100% Crystal Clear Glass Button (No milkiness)
                         Capsule()
-                            .fill(.ultraThinMaterial)
-                            .opacity(isHovered ? 0.95 : (0.65 + (glassIntensity * 0.25)))
+                            .fill(Color.white.opacity((isHovered ? 0.12 : 0.06) * glassIntensity))
 
                         Capsule()
                             .fill(
@@ -680,6 +670,7 @@ private struct GlassButtonView: View {
                             .fill(Color(NSColor.controlColor))
                     }
 
+                    // 3D Specular Glass Rim
                     Capsule()
                         .strokeBorder(
                             LinearGradient(
@@ -699,7 +690,7 @@ private struct GlassButtonView: View {
             .foregroundColor(isProminent ? .white : .primary)
             .clipShape(Capsule())
             .shadow(
-                color: isProminent ? (customTint ?? Color.accentColor).opacity(isHovered ? 0.50 : 0.30) : Color.black.opacity(isGlassEnabled ? 0.08 * glassIntensity : 0.02),
+                color: isProminent ? (customTint ?? Color.accentColor).opacity(isHovered ? 0.50 : 0.30) : Color.black.opacity(isGlassEnabled ? 0.06 * glassIntensity : 0.02),
                 radius: isHovered ? 8 : 4,
                 x: 0,
                 y: isHovered ? 3 : 2
