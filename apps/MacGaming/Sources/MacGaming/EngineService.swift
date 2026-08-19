@@ -1843,6 +1843,7 @@ public class EngineService: ObservableObject {
         switch mode {
         case .virtualDesktop:
             steamLaunchFlags = [
+                "-cef-single-process",
                 "-no-cef-sandbox",
                 "-allprocesscounter",
                 "-cef-disable-gpu",
@@ -1854,6 +1855,7 @@ public class EngineService: ObservableObject {
             ]
         case .standard:
             steamLaunchFlags = [
+                "-cef-single-process",
                 "-no-cef-sandbox",
                 "-allprocesscounter",
                 "-cef-disable-gpu",
