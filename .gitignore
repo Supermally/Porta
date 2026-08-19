@@ -1,0 +1,23 @@
+# Rust
+/target
+Cargo.lock
+
+# Swift / Xcode / SPM
+.build/
+.swiftpm/
+*.xcodeproj
+*.xcworkspace
+DerivedData/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# User Prefix Scratch
+prefixes/
+tmp/
+*.log

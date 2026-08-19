@@ -1,0 +1,29 @@
+schema_version: "1.0.0"
+game_id: "steam_1245620"
+title: "Elden Ring"
+status: "compatible"
+runtime:
+  wine_flavor: "wine-crossover-23.7"
+  windows_version: "win10"
+  dxvk:
+    enabled: false
+  d3dmetal:
+    enabled: true
+    hud: false
+    msync: true
+  environment:
+    WINEDLLOVERRIDES: "dinput8=n,b"
+    WINEESYNC: "1"
+    WINEFSYNC: "1"
+hardware_recommendations:
+  - match_pattern: "Apple M[1-4]"
+    recommended_resolution: "1440p"
+    target_fps: 60
+    settings_preset: "Medium"
+    notes: "Turn off Ray Tracing for rock-solid 60 FPS"
+anti_cheat:
+  type: "easy_anti_cheat"
+  status: "supported"
+known_issues:
+  - "Shader compilation stutter on first visit to new regions"
+community_rating_percentage: 94

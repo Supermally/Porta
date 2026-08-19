@@ -1,0 +1,13 @@
+schema_version: "1.0.0"
+game_id: "steam_413150"
+title: "Stardew Valley"
+status: "native"
+runtime:
+  wine_flavor: "native-macos"
+  windows_version: "none"
+hardware_recommendations:
+  - match_pattern: "Apple M[1-4]"
+    recommended_resolution: "Native"
+    target_fps: 120
+    settings_preset: "Ultra"
+community_rating_percentage: 100

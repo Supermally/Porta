@@ -1,0 +1,23 @@
+schema_version: "1.0.0"
+game_id: "steam_367520"
+title: "Hollow Knight"
+status: "native"
+runtime:
+  wine_flavor: "native"
+  windows_version: "none"
+  dxvk:
+    enabled: false
+  d3dmetal:
+    enabled: false
+  environment: {}
+hardware_recommendations:
+  - match_pattern: "Apple M[1-4]"
+    recommended_resolution: "4K / Native Retina"
+    target_fps: 120
+    settings_preset: "Maximum"
+    notes: "Native Apple Silicon / macOS Mach-O execution with ultra-low latency input"
+anti_cheat:
+  type: "none"
+  status: "not_applicable"
+known_issues: []
+community_rating_percentage: 99

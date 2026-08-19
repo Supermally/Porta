@@ -1,0 +1,24 @@
+[package]
+name = "mac-gaming-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+mac-gaming-profiles = { path = "../profiles" }
+mac-gaming-analyzer = { path = "../analyzer" }
+mac-gaming-scanner = { path = "../scanner" }
+mac-gaming-prefix = { path = "../prefix" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+rusqlite = { workspace = true }
+dirs = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

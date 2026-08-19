@@ -1,0 +1,14 @@
+schema_version: "1.0.0"
+game_id: "steam_1086940"
+title: "Baldur's Gate 3"
+status: "native"
+runtime:
+  wine_flavor: "native-macos"
+  windows_version: "none"
+hardware_recommendations:
+  - match_pattern: "Apple M[1-4]"
+    recommended_resolution: "Native Display"
+    target_fps: 60
+    settings_preset: "High"
+    notes: "Native Apple Silicon build provided via Steam"
+community_rating_percentage: 99

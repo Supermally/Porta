@@ -1,0 +1,14 @@
+schema_version: "1.0.0"
+game_id: "epic_fn"
+title: "Fortnite"
+status: "unsupported"
+runtime:
+  wine_flavor: "none"
+  windows_version: "none"
+anti_cheat:
+  type: "easy_anti_cheat_kernel / battleye"
+  status: "blocked_kernel_driver"
+  notes: "Requires Windows kernel-level driver (Easy Anti-Cheat / BattlEye) which cannot run inside Wine or macOS."
+known_issues:
+  - "Kernel anti-cheat prevents online matchmaking on non-Windows kernels"
+community_rating_percentage: 0
