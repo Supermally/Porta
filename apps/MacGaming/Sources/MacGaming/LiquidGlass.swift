@@ -2,8 +2,9 @@ import SwiftUI
 import AppKit
 
 // =============================================================================
-// MARK: - Apple Liquid Glass Native Framework Integration
-// Based on Apple's Official Liquid Glass & Landmarks Architecture
+// MARK: - Apple Liquid Glass Native Design System
+// High-Fidelity Refraction • 3D Specular Rim Bevels • Ambient Translucency
+// Matches iOS 26 / macOS Tahoe Reference Optics
 // =============================================================================
 
 // MARK: - 1. Liquid Glass Environment Configuration
@@ -12,7 +13,7 @@ private struct LiquidGlassEnabledKey: EnvironmentKey {
 }
 
 private struct LiquidGlassIntensityKey: EnvironmentKey {
-    static let defaultValue: Double = 0.85
+    static let defaultValue: Double = 0.90
 }
 
 public extension EnvironmentValues {
@@ -27,9 +28,152 @@ public extension EnvironmentValues {
     }
 }
 
-// MARK: - 2. GlassEffectContainer
-/// Combines multiple Liquid Glass views for optimal rendering performance,
-/// shape blending, and morphing transitions across states.
+// MARK: - 2. Ambient Chromatic Background (For Liquid Glass Refraction)
+/// Provides the luminous chromatic backdrop necessary for liquid glass to scatter and refract light
+public struct AmbientChromaticBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    public init() {}
+
+    public var body: some View {
+        ZStack {
+            // Base Deep Canvas
+            (colorScheme == .dark ? Color(red: 0.05, green: 0.08, blue: 0.13) : Color(red: 0.94, green: 0.96, blue: 0.99))
+                .ignoresSafeArea()
+
+            // Ambient Chromatic Orbs for Glass Refraction
+            GeometryReader { proxy in
+                ZStack {
+                    // Top-Leading Cyan/Cobalt Glow
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color(red: 0.0, green: 0.45, blue: 0.95).opacity(0.18),
+                                    Color(red: 0.1, green: 0.6, blue: 0.9).opacity(0.08),
+                                    Color.clear
+                                ],
+                                center: .center,
+                                startRadius: 10,
+                                endRadius: proxy.size.width * 0.45
+                            )
+                        )
+                        .frame(width: proxy.size.width * 0.8, height: proxy.size.width * 0.8)
+                        .position(x: proxy.size.width * 0.2, y: proxy.size.height * 0.15)
+                        .blur(radius: 60)
+
+                    // Bottom-Trailing Indigo/Purple Glow
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color(red: 0.35, green: 0.20, blue: 0.85).opacity(0.15),
+                                    Color(red: 0.15, green: 0.35, blue: 0.80).opacity(0.06),
+                                    Color.clear
+                                ],
+                                center: .center,
+                                startRadius: 10,
+                                endRadius: proxy.size.width * 0.40
+                            )
+                        )
+                        .frame(width: proxy.size.width * 0.7, height: proxy.size.width * 0.7)
+                        .position(x: proxy.size.width * 0.85, y: proxy.size.height * 0.85)
+                        .blur(radius: 70)
+                }
+            }
+            .ignoresSafeArea()
+        }
+    }
+}
+
+// MARK: - 3. Liquid Glass Card Modifier
+public struct LiquidGlassCardModifier: ViewModifier {
+    @Environment(\.liquidGlassEnabled) private var isGlassEnabled
+    @Environment(\.liquidGlassIntensity) private var glassIntensity
+
+    public let cornerRadius: CGFloat
+    public let tintColor: Color?
+
+    public init(cornerRadius: CGFloat = 16, tintColor: Color? = nil) {
+        self.cornerRadius = cornerRadius
+        self.tintColor = tintColor
+    }
+
+    public func body(content: Content) -> some View {
+        content
+            .background(
+                ZStack {
+                    if isGlassEnabled {
+                        // 1. Ultra-Thin Material Substrate
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .opacity(0.70 + (glassIntensity * 0.25))
+
+                        // 2. Translucent Internal Specular Gradient
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: (tintColor ?? Color.white).opacity(0.16 * glassIntensity), location: 0.0),
+                                        .init(color: Color.white.opacity(0.04 * glassIntensity), location: 0.35),
+                                        .init(color: Color.clear, location: 0.65),
+                                        .init(color: Color.white.opacity(0.03 * glassIntensity), location: 1.0)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+
+                        // 3. Curved Top Specular Lens Flare (Apple 3D Glass)
+                        VStack {
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.40 * glassIntensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.08 * glassIntensity), location: 0.4),
+                                    .init(color: Color.clear, location: 1.0)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .frame(height: max(14, cornerRadius * 0.8))
+                            Spacer()
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+
+                        // 4. Refractive 3D Glass Rim Bevel with Chromatic dispersion
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .strokeBorder(
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: Color.white.opacity(0.90 * glassIntensity), location: 0.0),
+                                        .init(color: Color.white.opacity(0.35 * glassIntensity), location: 0.30),
+                                        .init(color: Color.white.opacity(0.06 * glassIntensity), location: 0.65),
+                                        .init(color: Color.white.opacity(0.30 * glassIntensity), location: 0.90),
+                                        .init(color: Color.white.opacity(0.60 * glassIntensity), location: 1.0)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.2
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(Color(NSColor.controlBackgroundColor))
+                    }
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .shadow(color: Color.black.opacity(isGlassEnabled ? 0.08 * glassIntensity : 0.04), radius: 10, x: 0, y: 5)
+    }
+}
+
+public extension View {
+    func liquidGlassCard(cornerRadius: CGFloat = 16, tintColor: Color? = nil) -> some View {
+        self.modifier(LiquidGlassCardModifier(cornerRadius: cornerRadius, tintColor: tintColor))
+    }
+}
+
+// MARK: - 4. GlassEffectContainer (Apple Multi-View Blended Container)
 public struct GlassEffectContainer<Content: View>: View {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -46,26 +190,64 @@ public struct GlassEffectContainer<Content: View>: View {
         HStack(spacing: spacing) {
             content
         }
-        .padding(6)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
         .background(
             ZStack {
                 if isGlassEnabled {
+                    // 1. Ultra-Thin Material Substrate
                     Capsule()
                         .fill(.ultraThinMaterial)
-                        .opacity(0.65 + (glassIntensity * 0.25))
+                        .opacity(0.70 + (glassIntensity * 0.25))
 
+                    // 2. Translucent Internal Specular Sheen
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.25 * glassIntensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.04 * glassIntensity), location: 0.4),
+                                    .init(color: Color.clear, location: 0.7),
+                                    .init(color: Color.white.opacity(0.08 * glassIntensity), location: 1.0)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+
+                    // 3. Top-Rim Convex Lens Reflection
+                    VStack {
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.45 * glassIntensity),
+                                        Color.white.opacity(0.08 * glassIntensity),
+                                        Color.clear
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(height: 14)
+                        Spacer()
+                    }
+                    .clipShape(Capsule())
+
+                    // 4. Refractive 3D Specular Rim
                     Capsule()
                         .strokeBorder(
                             LinearGradient(
                                 stops: [
-                                    .init(color: Color.white.opacity(0.45 * glassIntensity), location: 0.0),
-                                    .init(color: Color.white.opacity(0.10 * glassIntensity), location: 0.5),
-                                    .init(color: Color.white.opacity(0.25 * glassIntensity), location: 1.0)
+                                    .init(color: Color.white.opacity(0.95 * glassIntensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.35 * glassIntensity), location: 0.35),
+                                    .init(color: Color.white.opacity(0.08 * glassIntensity), location: 0.65),
+                                    .init(color: Color.white.opacity(0.45 * glassIntensity), location: 1.0)
                                 ],
-                                startPoint: .top,
-                                endPoint: .bottom
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             ),
-                            lineWidth: 1.0
+                            lineWidth: 1.3
                         )
                 } else {
                     Capsule()
@@ -74,15 +256,13 @@ public struct GlassEffectContainer<Content: View>: View {
             }
         )
         .clipShape(Capsule())
-        .shadow(color: Color.black.opacity(isGlassEnabled ? 0.08 * glassIntensity : 0.04), radius: 6, x: 0, y: 3)
+        .shadow(color: Color.black.opacity(isGlassEnabled ? 0.10 * glassIntensity : 0.04), radius: 8, x: 0, y: 4)
     }
 }
 
 public typealias GlassActionGroup = GlassEffectContainer
 
-// MARK: - 3. Interactive Morphing Launch Glass Control
-/// Implements Apple's coordinated morphing transitions using @Namespace and matchedGeometry.
-/// Morphs fluidly from [ ▶ Play | Benchmark | Troubleshoot ] into a unified live session monitor.
+// MARK: - 5. Interactive Morphing Launch Glass Control
 public struct MorphingLaunchGlassControl: View {
     @ObservedObject var engine: EngineService
     let game: GameItem
@@ -105,7 +285,7 @@ public struct MorphingLaunchGlassControl: View {
                         Circle()
                             .fill(Color.green)
                             .frame(width: 8, height: 8)
-                            .shadow(color: Color.green.opacity(0.8), radius: 4)
+                            .shadow(color: Color.green.opacity(0.9), radius: 5)
 
                         Text("Running in D3DMetal Sandbox")
                             .font(.system(size: 13, weight: .semibold))
@@ -126,7 +306,9 @@ public struct MorphingLaunchGlassControl: View {
                     .font(.caption)
 
                     Button {
-                        engine.stopGame()
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            engine.stopGame()
+                        }
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: "stop.fill")
@@ -141,8 +323,22 @@ public struct MorphingLaunchGlassControl: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(.ultraThinMaterial, in: Capsule())
-                .overlay(Capsule().strokeBorder(Color.white.opacity(0.3), lineWidth: 1))
-                .shadow(color: Color.green.opacity(0.2), radius: 8, y: 3)
+                .overlay(
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.95), location: 0.0),
+                                    .init(color: Color.white.opacity(0.3), location: 0.5),
+                                    .init(color: Color.white.opacity(0.6), location: 1.0)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.2
+                        )
+                )
+                .shadow(color: Color.green.opacity(0.25), radius: 10, y: 4)
             } else {
                 // Idle State: Prominent Play Button + Action Group
                 HStack(spacing: 12) {
@@ -199,7 +395,7 @@ public struct MorphingLaunchGlassControl: View {
     }
 }
 
-// MARK: - 4. Compatibility Badge View (Semantic Restrained Glass)
+// MARK: - 6. Compatibility Badge View (Semantic Restrained Glass)
 public struct CompatibilityBadgeView: View {
     @Environment(\.liquidGlassEnabled) private var isGlassEnabled
     @Environment(\.liquidGlassIntensity) private var glassIntensity
@@ -233,14 +429,15 @@ public struct CompatibilityBadgeView: View {
                         .strokeBorder(
                             LinearGradient(
                                 stops: [
-                                    .init(color: Color.white.opacity(0.40 * glassIntensity), location: 0.0),
-                                    .init(color: Color.white.opacity(0.08 * glassIntensity), location: 0.5),
-                                    .init(color: Color.white.opacity(0.20 * glassIntensity), location: 1.0)
+                                    .init(color: Color.white.opacity(0.85 * glassIntensity), location: 0.0),
+                                    .init(color: Color.white.opacity(0.20 * glassIntensity), location: 0.4),
+                                    .init(color: Color.white.opacity(0.06 * glassIntensity), location: 0.7),
+                                    .init(color: Color.white.opacity(0.40 * glassIntensity), location: 1.0)
                                 ],
-                                startPoint: .top,
-                                endPoint: .bottom
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             ),
-                            lineWidth: 0.8
+                            lineWidth: 1.0
                         )
                 } else {
                     Capsule()
@@ -252,7 +449,7 @@ public struct CompatibilityBadgeView: View {
     }
 }
 
-// MARK: - 5. Play Button (Signature Prominent Action)
+// MARK: - 7. Play Button (Signature Prominent Action)
 public struct PlayButton: View {
     public let isPlaying: Bool
     public let action: () -> Void
@@ -273,13 +470,13 @@ public struct PlayButton: View {
         }
         .buttonStyle(LiquidGlassButtonStyle(
             isProminent: true,
-            customTint: isPlaying ? Color.red : Color.accentColor
+            customTint: isPlaying ? Color.red : Color(red: 0.05, green: 0.48, blue: 0.98)
         ))
         .fixedSize()
     }
 }
 
-// MARK: - 6. Liquid Glass Button Style (Prominent and Standard Glass)
+// MARK: - 8. Liquid Glass Button Style (Prominent and Standard Glass)
 public struct LiquidGlassButtonStyle: ButtonStyle {
     public var isProminent: Bool
     public var customTint: Color?
@@ -306,28 +503,37 @@ private struct GlassButtonView: View {
 
     var body: some View {
         configuration.label
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 13, weight: .bold))
             .lineLimit(1)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 18)
             .padding(.vertical, 8)
-            .frame(height: 32)
+            .frame(height: 34)
             .background(
                 ZStack {
                     if isProminent {
                         // Prominent Liquid Glass Capsule
                         Capsule()
-                            .fill((customTint ?? Color.accentColor).gradient)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        (customTint ?? Color(red: 0.05, green: 0.48, blue: 0.98)),
+                                        (customTint ?? Color(red: 0.02, green: 0.35, blue: 0.85))
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                             .opacity(configuration.isPressed ? 0.85 : 1.0)
 
                         if isGlassEnabled {
-                            // Top Specular Curved Sheen
+                            // Top Specular Curved Lens Flare
                             Capsule()
                                 .fill(
                                     LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(isHovered ? 0.55 * glassIntensity : 0.40 * glassIntensity),
-                                            Color.white.opacity(0.06),
-                                            Color.clear
+                                        stops: [
+                                            .init(color: Color.white.opacity(isHovered ? 0.70 * glassIntensity : 0.50 * glassIntensity), location: 0.0),
+                                            .init(color: Color.white.opacity(0.12 * glassIntensity), location: 0.45),
+                                            .init(color: Color.clear, location: 1.0)
                                         ],
                                         startPoint: .top,
                                         endPoint: .bottom
@@ -343,13 +549,13 @@ private struct GlassButtonView: View {
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(isHovered ? 0.28 * glassIntensity : 0.14 * glassIntensity),
-                                        Color.white.opacity(0.02),
-                                        Color.clear
+                                    stops: [
+                                        .init(color: Color.white.opacity(isHovered ? 0.35 * glassIntensity : 0.20 * glassIntensity), location: 0.0),
+                                        .init(color: Color.white.opacity(0.04 * glassIntensity), location: 0.4),
+                                        .init(color: Color.clear, location: 1.0)
                                     ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
                                 )
                             )
                     } else {
@@ -357,32 +563,32 @@ private struct GlassButtonView: View {
                             .fill(Color(NSColor.controlColor))
                     }
 
-                    // Refractive Specular Rim Bevel
+                    // Refractive Specular 3D Rim Bevel
                     Capsule()
                         .strokeBorder(
                             LinearGradient(
                                 stops: [
-                                    .init(color: Color.white.opacity(isProminent ? (isHovered ? 1.0 : 0.85) : (isHovered ? 0.85 * glassIntensity : 0.50 * glassIntensity)), location: 0.0),
-                                    .init(color: Color.white.opacity(0.20), location: 0.4),
-                                    .init(color: Color.white.opacity(0.04), location: 0.75),
-                                    .init(color: Color.white.opacity(isHovered ? 0.35 * glassIntensity : 0.15 * glassIntensity), location: 1.0)
+                                    .init(color: Color.white.opacity(isProminent ? (isHovered ? 1.0 : 0.95) : (isHovered ? 0.95 * glassIntensity : 0.75 * glassIntensity)), location: 0.0),
+                                    .init(color: Color.white.opacity(0.35), location: 0.35),
+                                    .init(color: Color.white.opacity(0.08), location: 0.65),
+                                    .init(color: Color.white.opacity(isHovered ? 0.60 * glassIntensity : 0.40 * glassIntensity), location: 1.0)
                                 ],
-                                startPoint: .top,
-                                endPoint: .bottom
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             ),
-                            lineWidth: 1.0
+                            lineWidth: 1.3
                         )
                 }
             )
             .foregroundColor(isProminent ? .white : .primary)
             .clipShape(Capsule())
             .shadow(
-                color: isProminent ? (customTint ?? Color.accentColor).opacity(isHovered ? 0.40 : 0.20) : Color.black.opacity(isGlassEnabled ? 0.06 * glassIntensity : 0.02),
-                radius: isHovered ? 6 : 3,
+                color: isProminent ? (customTint ?? Color.accentColor).opacity(isHovered ? 0.50 : 0.30) : Color.black.opacity(isGlassEnabled ? 0.08 * glassIntensity : 0.02),
+                radius: isHovered ? 8 : 4,
                 x: 0,
-                y: isHovered ? 2 : 1
+                y: isHovered ? 3 : 2
             )
-            .scaleEffect(configuration.isPressed ? 0.96 : (isHovered ? 1.02 : 1.0))
+            .scaleEffect(configuration.isPressed ? 0.96 : (isHovered ? 1.025 : 1.0))
             .animation(.spring(response: 0.22, dampingFraction: 0.75), value: isHovered)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
             .onHover { hovering in
@@ -391,7 +597,7 @@ private struct GlassButtonView: View {
     }
 }
 
-// MARK: - 7. View Extensions
+// MARK: - 9. View Extensions
 public extension View {
     /// Injects liquid glass configuration environment values
     func liquidGlassEnvironment(enabled: Bool, intensity: Double) -> some View {

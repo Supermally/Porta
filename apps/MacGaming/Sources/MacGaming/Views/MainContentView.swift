@@ -4,99 +4,107 @@ public struct MainContentView: View {
     @StateObject var engine = EngineService()
 
     public var body: some View {
-        NavigationSplitView {
-            List(selection: $engine.activeTab) {
-                Section {
-                    NavigationLink(value: NavigationTab.library) {
-                        Label {
-                            HStack {
-                                Text("Library")
-                                Spacer()
-                                if engine.games.count > 0 {
-                                    Text("\(engine.games.count)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+        ZStack {
+            // Ambient Chromatic Backdrop for Liquid Glass Refraction
+            AmbientChromaticBackdrop()
+
+            NavigationSplitView {
+                List(selection: $engine.activeTab) {
+                    Section {
+                        NavigationLink(value: NavigationTab.library) {
+                            Label {
+                                HStack {
+                                    Text("Library")
+                                    Spacer()
+                                    if engine.games.count > 0 {
+                                        Text("\(engine.games.count)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
+                            } icon: {
+                                Image(systemName: "square.grid.2x2")
                             }
-                        } icon: {
-                            Image(systemName: "square.grid.2x2")
+                        }
+                        .keyboardShortcut("1", modifiers: .command)
+
+                        NavigationLink(value: NavigationTab.discover) {
+                            Label("Discover", systemImage: "sparkles")
+                        }
+                        .keyboardShortcut("2", modifiers: .command)
+
+                        NavigationLink(value: NavigationTab.compatibility) {
+                            Label("Compatibility", systemImage: "checkmark.seal")
+                        }
+                        .keyboardShortcut("3", modifiers: .command)
+
+                        NavigationLink(value: NavigationTab.downloads) {
+                            Label("Downloads", systemImage: "arrow.down.circle")
+                        }
+                        .keyboardShortcut("4", modifiers: .command)
+                    }
+
+                    Section("Storefronts") {
+                        ForEach(StorefrontFilter.allCases) { sf in
+                            StorefrontSidebarRow(sf: sf, engine: engine)
                         }
                     }
-                    .keyboardShortcut("1", modifiers: .command)
 
-                    NavigationLink(value: NavigationTab.discover) {
-                        Label("Discover", systemImage: "sparkles")
-                    }
-                    .keyboardShortcut("2", modifiers: .command)
-
-                    NavigationLink(value: NavigationTab.compatibility) {
-                        Label("Compatibility", systemImage: "checkmark.seal")
-                    }
-                    .keyboardShortcut("3", modifiers: .command)
-
-                    NavigationLink(value: NavigationTab.downloads) {
-                        Label("Downloads", systemImage: "arrow.down.circle")
-                    }
-                    .keyboardShortcut("4", modifiers: .command)
-                }
-
-                Section("Storefronts") {
-                    ForEach(StorefrontFilter.allCases) { sf in
-                        StorefrontSidebarRow(sf: sf, engine: engine)
+                    Section {
+                        NavigationLink(value: NavigationTab.settings) {
+                            Label("Settings", systemImage: "gearshape")
+                        }
+                        .keyboardShortcut(",", modifiers: .command)
                     }
                 }
-
-                Section {
-                    NavigationLink(value: NavigationTab.settings) {
-                        Label("Settings", systemImage: "gearshape")
+                .listStyle(.sidebar)
+                .scrollContentBackground(.hidden)
+                .navigationTitle("Mac Gaming")
+                .frame(minWidth: 200, idealWidth: 220)
+            } content: {
+                Group {
+                    switch engine.activeTab {
+                    case .library:
+                        LibraryView(engine: engine)
+                            .frame(minWidth: 320, idealWidth: 380)
+                    case .discover:
+                        MacNativeSpotlightView(engine: engine)
+                    case .compatibility:
+                        UniversalSearchView(engine: engine)
+                    case .downloads:
+                        DownloadsView(engine: engine)
+                    case .settings:
+                        SettingsView(engine: engine)
                     }
-                    .keyboardShortcut(",", modifiers: .command)
                 }
+                .scrollContentBackground(.hidden)
+            } detail: {
+                Group {
+                    if let game = engine.selectedGame, engine.activeTab == .library {
+                        GameDetailView(engine: engine, game: game)
+                    } else if engine.activeTab == .discover {
+                        DeveloperDemandView(engine: engine)
+                    } else if engine.activeTab == .compatibility {
+                        LibraryAuditView(engine: engine)
+                    } else {
+                        VStack(spacing: 12) {
+                            Image(systemName: "gamecontroller")
+                                .font(.system(size: 48))
+                                .foregroundStyle(.secondary)
+                            Text("No Game Selected")
+                                .font(.headline)
+                            Text("Select a game from your library to view details and launch.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+                .scrollContentBackground(.hidden)
             }
-            .listStyle(.sidebar)
-            .navigationTitle("Mac Gaming")
-            .frame(minWidth: 200, idealWidth: 220)
-        } content: {
-            Group {
-                switch engine.activeTab {
-                case .library:
-                    LibraryView(engine: engine)
-                        .frame(minWidth: 320, idealWidth: 380)
-                case .discover:
-                    MacNativeSpotlightView(engine: engine)
-                case .compatibility:
-                    UniversalSearchView(engine: engine)
-                case .downloads:
-                    DownloadsView(engine: engine)
-                case .settings:
-                    SettingsView(engine: engine)
-                }
-            }
-        } detail: {
-            Group {
-                if let game = engine.selectedGame, engine.activeTab == .library {
-                    GameDetailView(engine: engine, game: game)
-                } else if engine.activeTab == .discover {
-                    DeveloperDemandView(engine: engine)
-                } else if engine.activeTab == .compatibility {
-                    LibraryAuditView(engine: engine)
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "gamecontroller")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-                        Text("No Game Selected")
-                            .font(.headline)
-                        Text("Select a game from your library to view details and launch.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
+            .liquidGlassEnvironment(enabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
         }
-        .liquidGlassEnvironment(enabled: engine.liquidGlassEnabled, intensity: engine.liquidGlassIntensity)
-        .frame(minWidth: 920, minHeight: 600)
+        .frame(minWidth: 940, minHeight: 620)
     }
 }
 
@@ -142,6 +150,6 @@ struct StorefrontSidebarRow: View {
             }
         }
         .buttonStyle(.plain)
-        .listRowBackground(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+        .listRowBackground(isSelected ? Color.accentColor.opacity(0.18) : Color.clear)
     }
 }

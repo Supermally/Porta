@@ -12,7 +12,7 @@ public struct GameDetailView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                // Background Extension Hero Artwork Banner
+                // Hero Artwork Banner with Liquid Glass Specular Rim
                 ZStack(alignment: .bottomLeading) {
                     if let heroPath = game.localHeroPath ?? game.localPosterPath,
                        let nsImage = NSImage(contentsOfFile: heroPath) {
@@ -61,9 +61,10 @@ public struct GameDetailView: View {
                             Text(game.storefront)
                                 .font(.caption)
                                 .fontWeight(.semibold)
-                                .padding(.horizontal, 8)
+                                .padding(.horizontal, 9)
                                 .padding(.vertical, 4)
                                 .background(.ultraThinMaterial, in: Capsule())
+                                .overlay(Capsule().strokeBorder(Color.white.opacity(0.3), lineWidth: 0.8))
                         }
 
                         Text(game.title)
@@ -78,6 +79,22 @@ public struct GameDetailView: View {
                     .padding(22)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.6), location: 0.0),
+                                    .init(color: Color.white.opacity(0.1), location: 0.5),
+                                    .init(color: Color.white.opacity(0.3), location: 1.0)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.0
+                        )
+                )
+                .shadow(color: Color.black.opacity(0.15), radius: 12, y: 6)
 
                 // Morphing Liquid Glass Action Controls (Apple MatchedGeometry Transitions)
                 HStack {
@@ -90,7 +107,7 @@ public struct GameDetailView: View {
                     Spacer()
                 }
 
-                // Session Status / Output Diagnostics
+                // Session Status / Output Diagnostics in Liquid Glass Card
                 if let msg = engine.launchOutputMessage {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Session Status")
@@ -101,8 +118,7 @@ public struct GameDetailView: View {
                             .font(.system(size: 12, design: .monospaced))
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .liquidGlassCard(cornerRadius: 12)
                     }
                 }
 
@@ -193,7 +209,9 @@ public struct GameDetailView: View {
                                 set: { _ in engine.toggleHud(for: game.id) }
                             ))
                         }
-                        .padding(.top, 8)
+                        .padding(14)
+                        .liquidGlassCard(cornerRadius: 12)
+                        .padding(.top, 4)
                     },
                     label: {
                         Label("Advanced Settings", systemImage: "gearshape.2")
@@ -214,7 +232,7 @@ public struct GameDetailView: View {
     }
 }
 
-// MARK: - Compatibility Item Row
+// MARK: - Compatibility Item Row (Liquid Glass)
 struct CompatibilityItemRow: View {
     let title: String
     let detail: String
@@ -223,7 +241,7 @@ struct CompatibilityItemRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: isSupported ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundColor(isSupported ? .green : .red)
+                .foregroundColor(isSupported ? Color(red: 0.20, green: 0.78, blue: 0.35) : Color(red: 0.92, green: 0.26, blue: 0.21))
                 .font(.title3)
 
             VStack(alignment: .leading, spacing: 1) {
@@ -237,13 +255,12 @@ struct CompatibilityItemRow: View {
 
             Spacer()
         }
-        .padding(10)
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(12)
+        .liquidGlassCard(cornerRadius: 12)
     }
 }
 
-// MARK: - Performance Metric Box
+// MARK: - Performance Metric Box (Liquid Glass)
 struct PerformanceMetricBox: View {
     let title: String
     let value: String
@@ -257,7 +274,7 @@ struct PerformanceMetricBox: View {
                 .foregroundStyle(.secondary)
             Text(value)
                 .font(.headline)
-                .foregroundColor(isHighlighted ? .green : .primary)
+                .foregroundColor(isHighlighted ? Color(red: 0.20, green: 0.78, blue: 0.35) : .primary)
                 .lineLimit(1)
             if let sub = subtitle {
                 Text(sub)
@@ -267,7 +284,6 @@ struct PerformanceMetricBox: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .liquidGlassCard(cornerRadius: 12)
     }
 }
