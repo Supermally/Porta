@@ -1735,15 +1735,14 @@ public class EngineService: ObservableObject {
         let cfgContent = "BootStrapperInhibitAll=Enable\nBootStrapperForceSelfUpdate=Disable\n"
         try? cfgContent.write(toFile: steamCfgPath, atomically: true, encoding: .utf8)
 
-        // 2. Write CEF flags file to directly force software rendering across all steamwebhelper child processes
+        // 2. Write CEF flags file with in-process-gpu to resolve Chromium shared-memory IPC hangs
         let cefFlagsContent = """
         --disable-gpu
         --disable-gpu-compositing
         --disable-direct-composition
         --disable-gpu-rasterization
-        --disable-software-rasterizer=false
+        --in-process-gpu
         --no-sandbox
-        --in-process-gpu=false
         --disable-features=TouchpadAndWheelScrollLatching,AsyncWheelEvents,DirectComposition,CanvasOopRasterization
         """
         try? cefFlagsContent.write(toFile: steamDir + "/bin/cef/cef.win64/steamwebhelper.exe.flags", atomically: true, encoding: .utf8)
@@ -1788,13 +1787,51 @@ public class EngineService: ObservableObject {
         let appHttpCache = steamDir + "/appcache/httpcache"
         try? FileManager.default.removeItem(atPath: appHttpCache)
 
+        // 4. CodeWeavers CrossOver Recipe: Apply targeted DllOverrides for steamwebhelper.exe and steam.exe in user.reg
+        let userRegPath = prefixPath + "/user.reg"
+        if var userRegContent = try? String(contentsOfFile: userRegPath, encoding: .utf8) {
+            var modified = false
+            if !userRegContent.contains("AppDefaults\\\\steamwebhelper.exe") {
+                let overrides = """
+                \n[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]
+                "d3d11"="builtin"
+                "d3d9"="builtin"
+                "dxgi"="builtin"
+                "dwrite"="builtin"
+                "riched20"="builtin"
+                "gdiplus"="builtin"
+
+                [Software\\\\Wine\\\\AppDefaults\\\\steam.exe\\\\DllOverrides]
+                "dwrite"="builtin"
+                "riched20"="builtin"
+                \n
+                """
+                userRegContent += overrides
+                modified = true
+            }
+            if !userRegContent.contains("\"Version\"=\"win10\"") {
+                let win10Ver = """
+                \n[Software\\\\Wine]
+                "Version"="win10"
+                \n
+                """
+                userRegContent += win10Ver
+                modified = true
+            }
+            if modified {
+                try? userRegContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
+                log("Applied CodeWeavers AppDefaults DllOverrides for steamwebhelper.exe into user.reg.", level: .info, source: "Provisioner")
+            }
+        }
+
         var env = ProcessInfo.processInfo.environment
         env["WINEPREFIX"] = prefixPath
         env["WINE_D3D_METAL"] = "1"
         env["WINE_LARGE_ADDRESS_AWARE"] = "1"
         env["WINE_ENABLE_FAST_SYNC"] = "1"
         env["WINEESYNC"] = "1"
-        env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;d3d9=n,b;d3dcompiler_47=n,b;dwrite=b,n;riched20=b,n"
+        env["WINEFSYNC"] = "1"
+        env["WINEDEBUG"] = "-all"
 
         let isNativeSteamRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: "com.valvesoftware.steam").isEmpty
         
