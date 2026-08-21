@@ -1894,6 +1894,8 @@ public class EngineService: ObservableObject {
                 "-tcp",
                 "-allosarches"
             ]
+        case .terminalLogin:
+            break
         }
 
         // Case 1: Steam.exe already installed
