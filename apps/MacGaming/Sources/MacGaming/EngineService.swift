@@ -1726,6 +1726,35 @@ public class EngineService: ObservableObject {
         let prefixPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/launchers/steam"
         let steamDir = prefixPath + "/drive_c/Program Files (x86)/Steam"
         let steamExe = steamDir + "/Steam.exe"
+
+        // Handle Terminal Login Mode
+        if mode == .terminalLogin {
+            log("Initiating Terminal Login via SteamCMD...", level: .info, source: "System")
+            self.launchOutputMessage = "🟢 Opening native macOS Terminal for SteamCMD login. Please follow the prompts in the Terminal window."
+            
+            let steamCmdDir = prefixPath + "/drive_c/steamcmd"
+            if !FileManager.default.fileExists(atPath: steamCmdDir + "/steamcmd.exe") {
+                try? FileManager.default.createDirectory(atPath: steamCmdDir, withIntermediateDirectories: true)
+                let dlProc = Process()
+                dlProc.executableURL = URL(fileURLWithPath: "/bin/bash")
+                dlProc.arguments = ["-c", "cd '\(steamCmdDir)' && curl -L -O https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip && unzip -o steamcmd.zip"]
+                try? dlProc.run()
+                dlProc.waitUntilExit()
+            }
+            
+            let script = """
+            tell application "Terminal"
+                do script "echo '\\n\\n=== MacGaming SteamCMD Login ===\\n1. Type \\\"login YOUR_USERNAME\\\" and hit Enter.\\n2. Enter your password and Steam Guard code when prompted.\\n3. Wait until you see \\\"Logged in OK\\\".\\n4. Type \\\"quit\\\" and return to MacGaming!\\n\\n' && export WINEPREFIX='\(prefixPath)' && export WINEDEBUG=-all && cd '\(steamCmdDir)' && '\(runner)' steamcmd.exe"
+                activate
+            end tell
+            """
+            
+            let osascript = Process()
+            osascript.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+            osascript.arguments = ["-e", script]
+            try? osascript.run()
+            return
+        }
         try? FileManager.default.createDirectory(atPath: steamDir + "/config", withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(atPath: steamDir + "/bin/cef/cef.win64", withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(atPath: steamDir + "/bin/cef/cef.win7x64", withIntermediateDirectories: true)
