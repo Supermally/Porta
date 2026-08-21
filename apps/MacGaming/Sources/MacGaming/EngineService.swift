@@ -1835,7 +1835,7 @@ public class EngineService: ObservableObject {
         let regContent = """
         REGEDIT4
 
-        [Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]
+        [HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\steamwebhelper.exe\\DllOverrides]
         "d3d11"="native,builtin"
         "d3d10core"="native,builtin"
         "d3d9"="native,builtin"
@@ -1845,11 +1845,11 @@ public class EngineService: ObservableObject {
         "riched20"="builtin"
         "gdiplus"="builtin"
 
-        [Software\\\\Wine\\\\AppDefaults\\\\steam.exe\\\\DllOverrides]
+        [HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\steam.exe\\DllOverrides]
         "dwrite"="builtin"
         "riched20"="builtin"
 
-        [Software\\\\Wine\\\\Mac Driver]
+        [HKEY_CURRENT_USER\\Software\\Wine\\Mac Driver]
         "Managed"="Y"
         "RetinaMode"="Y"
         "WindowCompositing"="Y"
