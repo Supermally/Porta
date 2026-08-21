@@ -1861,7 +1861,8 @@ public class EngineService: ObservableObject {
         var regEnv = ProcessInfo.processInfo.environment
         regEnv["WINEPREFIX"] = prefixPath
         regProcess.environment = regEnv
-        regProcess.arguments = ["regedit", regFilePath]
+        // Use a Windows path because Wine regedit fails to parse macOS paths with spaces natively and opens a GUI instead
+        regProcess.arguments = ["regedit", "C:\\Program Files (x86)\\Steam\\dxvk_overrides.reg"]
         try? regProcess.run()
         regProcess.waitUntilExit()
         log("Applied DXVK AppDefaults via regedit.", level: .info, source: "Provisioner")
