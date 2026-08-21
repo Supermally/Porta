@@ -703,6 +703,7 @@ public class EngineService: ObservableObject {
 
         // Locate Wine / GPTK runner on host machine
         let runnerPaths = [
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/Runner/Wine Staging.app/Contents/Resources/wine/bin/wine"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/bin/wine64"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/CrossOver/bin/wine64"),
             "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine64",
@@ -1195,6 +1196,7 @@ public class EngineService: ObservableObject {
         guard let cfgPath = game.configUtilityPath, FileManager.default.fileExists(atPath: cfgPath) else { return }
 
         let runnerPaths = [
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/Runner/Wine Staging.app/Contents/Resources/wine/bin/wine"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/bin/wine64"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/CrossOver/bin/wine64"),
             "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine64",
@@ -1701,6 +1703,7 @@ public class EngineService: ObservableObject {
 
     public func launchWindowsSteamSandbox(appId: String? = nil, mode: SteamLaunchMode = .virtualDesktop) {
         let runnerPaths = [
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/Runner/Wine Staging.app/Contents/Resources/wine/bin/wine"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/bin/wine64"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/CrossOver/bin/wine64"),
             "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine64",
@@ -2053,6 +2056,7 @@ public class EngineService: ObservableObject {
         pkillProc.waitUntilExit()
         
         let runnerPaths = [
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/Runner/Wine Staging.app/Contents/Resources/wine/bin/wine"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/bin/wine64"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/CrossOver/bin/wine64"),
             "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine64",
