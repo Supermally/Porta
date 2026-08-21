@@ -1829,6 +1829,7 @@ public class EngineService: ObservableObject {
                 "-allprocesscounter",
                 "-cef-disable-gpu",
                 "-cef-disable-d3d11",
+                "-cef-enable-software-rasterizer",
                 "-tcp",
                 "-allosarches"
             ]
