@@ -1699,6 +1699,53 @@ public class EngineService: ObservableObject {
         }
     }
 
+    /// Synchronously downloads and installs DXVK into the specified Wine Prefix to fix Chromium CEF hardware acceleration.
+    private func provisionDXVKSynchronously(prefixPath: String) {
+        let dxvkMarker = prefixPath + "/.dxvk-success"
+        if FileManager.default.fileExists(atPath: dxvkMarker) {
+            return
+        }
+        
+        log("Downloading and provisioning DXVK for Steam Prefix (bypassing macOS wined3d OpenGL bugs)...", level: .info, source: "Provisioner")
+        
+        let dxvkVersion = "1.10.3" // Most stable for macOS/MoltenVK
+        let script = """
+        set -e
+        cd /tmp
+        if [ ! -f "dxvk-\(dxvkVersion).tar.gz" ]; then
+            curl -L -o "dxvk-\(dxvkVersion).tar.gz" "https://github.com/doitsujin/dxvk/releases/download/v\(dxvkVersion)/dxvk-\(dxvkVersion).tar.gz"
+        fi
+        tar -xzf "dxvk-\(dxvkVersion).tar.gz"
+        
+        # Copy 64-bit DLLs
+        cp "dxvk-\(dxvkVersion)/x64/"*.dll "\(prefixPath)/drive_c/windows/system32/"
+        
+        # Copy 32-bit DLLs
+        cp "dxvk-\(dxvkVersion)/x32/"*.dll "\(prefixPath)/drive_c/windows/syswow64/"
+        
+        touch "\(dxvkMarker)"
+        """
+        
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = ["-c", script]
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        
+        try? process.run()
+        process.waitUntilExit()
+        
+        if process.terminationStatus == 0 {
+            log("Successfully installed DXVK into prefix.", level: .info, source: "Provisioner")
+        } else {
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+            log("Failed to provision DXVK: \(errorString)", level: .error, source: "Provisioner")
+        }
+    }
+
     public func launchWindowsSteamSandbox(appId: String? = nil, mode: SteamLaunchMode = .virtualDesktop) {
         let runnerPaths = [
             "/opt/homebrew/bin/wine64",
@@ -1729,6 +1776,9 @@ public class EngineService: ObservableObject {
         try? FileManager.default.createDirectory(atPath: steamDir + "/config", withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(atPath: steamDir + "/bin/cef/cef.win64", withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(atPath: steamDir + "/bin/cef/cef.win7x64", withIntermediateDirectories: true)
+        
+        // 0. Install DXVK to fix OpenGL wined3d swapchain crashes
+        provisionDXVKSynchronously(prefixPath: prefixPath)
 
         // 1. Pre-configure Steam configuration to disable CEF GPU crashes in Wine
         let steamCfgPath = steamDir + "/steam.cfg"
@@ -1780,22 +1830,23 @@ public class EngineService: ObservableObject {
         let appHttpCache = steamDir + "/appcache/httpcache"
         try? FileManager.default.removeItem(atPath: appHttpCache)
 
-        // 4. Force Pure GDI rendering for CEF by disabling d3d and dxgi in user.reg
+        // 4. Force DXVK for CEF by prioritizing native d3d/dxgi and disabling dcomp in user.reg
         let userRegPath = prefixPath + "/user.reg"
         if var userRegContent = try? String(contentsOfFile: userRegPath, encoding: .utf8) {
             var modified = false
             
-            // Aggressively clear out old 'builtin' overrides which crashed macOS OpenGL
-            if userRegContent.contains("\"d3d11\"=\"builtin\"") || !userRegContent.contains("AppDefaults\\\\steamwebhelper.exe") {
+            // Clear out old GDI/builtin overrides
+            if userRegContent.contains("\"d3d11\"=\"\"") || userRegContent.contains("\"d3d11\"=\"builtin\"") || !userRegContent.contains("AppDefaults\\\\steamwebhelper.exe") {
+                userRegContent = userRegContent.replacingOccurrences(of: "\n[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]\n\"d3d11\"=\"\"\n\"d3d10\"=\"\"\n\"d3d9\"=\"\"\n\"dxgi\"=\"\"\n\"opengl32\"=\"\"\n\"dwrite\"=\"builtin\"\n\"riched20\"=\"builtin\"\n\"gdiplus\"=\"builtin\"\n", with: "")
                 userRegContent = userRegContent.replacingOccurrences(of: "\n[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]\n\"d3d11\"=\"builtin\"\n\"d3d9\"=\"builtin\"\n\"dxgi\"=\"builtin\"\n\"dwrite\"=\"builtin\"\n\"riched20\"=\"builtin\"\n\"gdiplus\"=\"builtin\"\n", with: "")
                 
                 let overrides = """
                 \n[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]
-                "d3d11"=""
-                "d3d10"=""
-                "d3d9"=""
-                "dxgi"=""
-                "opengl32"=""
+                "d3d11"="native,builtin"
+                "d3d10core"="native,builtin"
+                "d3d9"="native,builtin"
+                "dxgi"="native,builtin"
+                "dcomp"=""
                 "dwrite"="builtin"
                 "riched20"="builtin"
                 "gdiplus"="builtin"
@@ -1853,8 +1904,6 @@ public class EngineService: ObservableObject {
             steamLaunchFlags = [
                 "-no-cef-sandbox",
                 "-allprocesscounter",
-                "-cef-disable-gpu",
-                "-cef-disable-d3d11",
                 "-cef-disable-breakpad",
                 "-cef-force-32bit",
                 "-tcp",
@@ -1864,15 +1913,9 @@ public class EngineService: ObservableObject {
             steamLaunchFlags = [
                 "-no-cef-sandbox",
                 "-allprocesscounter",
-                "-cef-disable-gpu",
-                "-cef-disable-d3d11",
                 "-cef-disable-breakpad",
                 "-cef-force-32bit",
-                "-cef-enable-software-rasterizer",
-                "-disable-gpu-compositing",
-                "-disable-gpu",
                 "-tcp",
-                "-vgui",
                 "-allosarches"
             ]
         case .miniLibrary:
@@ -1880,8 +1923,6 @@ public class EngineService: ObservableObject {
                 "-minigameslist",
                 "-no-cef-sandbox",
                 "-allprocesscounter",
-                "-cef-disable-gpu",
-                "-cef-disable-d3d11",
                 "-tcp",
                 "-allosarches"
             ]
