@@ -54,6 +54,11 @@ public struct DownloadsView: View {
                                 Label("Mini Library Mode (Fast)", systemImage: "list.bullet.rectangle")
                             }
                             Button {
+                                engine.launchWindowsSteamSandbox(mode: .terminalLogin)
+                            } label: {
+                                Label("Terminal Login (No UI / 2FA)", systemImage: "terminal")
+                            }
+                            Button {
                                 engine.launchWindowsSteamSandbox(mode: .standard)
                             } label: {
                                 Label("Direct Win32 Window", systemImage: "app.window.checkmark")
