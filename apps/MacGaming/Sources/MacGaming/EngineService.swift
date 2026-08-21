@@ -1800,9 +1800,6 @@ public class EngineService: ObservableObject {
             steamLaunchFlags = [
                 "-no-cef-sandbox",
                 "-allprocesscounter",
-                "-cef-disable-gpu",
-                "-cef-disable-d3d11",
-                "-cef-enable-software-rasterizer",
                 "-tcp",
                 "-allosarches"
             ]
@@ -1827,9 +1824,6 @@ public class EngineService: ObservableObject {
                 "-no-browser",
                 "-no-cef-sandbox",
                 "-allprocesscounter",
-                "-cef-disable-gpu",
-                "-cef-disable-d3d11",
-                "-cef-enable-software-rasterizer",
                 "-tcp",
                 "-allosarches"
             ]
