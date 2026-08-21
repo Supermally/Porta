@@ -1783,62 +1783,6 @@ public class EngineService: ObservableObject {
         let appHttpCache = steamDir + "/appcache/httpcache"
         try? FileManager.default.removeItem(atPath: appHttpCache)
 
-        // 4. Force Pure GDI rendering for CEF by disabling d3d and dxgi in user.reg
-        let userRegPath = prefixPath + "/user.reg"
-        if var userRegContent = try? String(contentsOfFile: userRegPath, encoding: .utf8) {
-            var modified = false
-            
-            // Aggressively clear out old 'builtin' overrides which crashed macOS OpenGL
-            if userRegContent.contains("\"d3d11\"=\"builtin\"") || !userRegContent.contains("AppDefaults\\\\steamwebhelper.exe") {
-                userRegContent = userRegContent.replacingOccurrences(of: "\n[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]\n\"d3d11\"=\"builtin\"\n\"d3d9\"=\"builtin\"\n\"dxgi\"=\"builtin\"\n\"dwrite\"=\"builtin\"\n\"riched20\"=\"builtin\"\n\"gdiplus\"=\"builtin\"\n", with: "")
-                
-                let overrides = """
-                \n[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]
-                "d3d11"=""
-                "d3d10"=""
-                "d3d9"=""
-                "dxgi"=""
-                "opengl32"=""
-                "dwrite"="builtin"
-                "riched20"="builtin"
-                "gdiplus"="builtin"
-
-                [Software\\\\Wine\\\\AppDefaults\\\\steam.exe\\\\DllOverrides]
-                "dwrite"="builtin"
-                "riched20"="builtin"
-                \n
-                """
-                if !userRegContent.contains("[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]") {
-                    userRegContent += overrides
-                    modified = true
-                }
-            }
-            if !userRegContent.contains("\"Version\"=\"win10\"") {
-                let win10Ver = """
-                \n[Software\\\\Wine]
-                "Version"="win10"
-                \n
-                """
-                userRegContent += win10Ver
-                modified = true
-            }
-            if !userRegContent.contains("Mac Driver") {
-                let macDriver = """
-                \n[Software\\\\Wine\\\\Mac Driver]
-                "Managed"="Y"
-                "RetinaMode"="Y"
-                "WindowCompositing"="Y"
-                \n
-                """
-                userRegContent += macDriver
-                modified = true
-            }
-            if modified {
-                try? userRegContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
-                log("Applied Pure GDI AppDefaults DllOverrides for steamwebhelper.exe into user.reg.", level: .info, source: "Provisioner")
-            }
-        }
-
         var env = ProcessInfo.processInfo.environment
         env["WINEPREFIX"] = prefixPath
         env["WINE_D3D_METAL"] = "1"
@@ -1856,10 +1800,6 @@ public class EngineService: ObservableObject {
             steamLaunchFlags = [
                 "-no-cef-sandbox",
                 "-allprocesscounter",
-                "-cef-disable-gpu",
-                "-cef-disable-d3d11",
-                "-cef-disable-breakpad",
-                "-cef-force-32bit",
                 "-tcp",
                 "-allosarches"
             ]
