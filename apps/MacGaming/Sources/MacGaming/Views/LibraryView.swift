@@ -107,11 +107,6 @@ public struct LibraryView: View {
                             Label("Mini Library Mode (Ultra-Fast)", systemImage: "list.bullet.rectangle")
                         }
                         Button {
-                            engine.launchWindowsSteamSandbox(mode: .terminalLogin)
-                        } label: {
-                            Label("Terminal Login (No UI / 2FA)", systemImage: "terminal")
-                        }
-                        Button {
                             engine.launchWindowsSteamSandbox(mode: .standard)
                         } label: {
                             Label("Direct Win32 Window", systemImage: "app.window.checkmark")

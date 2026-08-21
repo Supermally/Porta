@@ -34,7 +34,6 @@ public enum StorefrontFilter: String, CaseIterable, Identifiable {
 public enum SteamLaunchMode: String, CaseIterable, Identifiable {
     case virtualDesktop = "Virtual Desktop Container (Recommended)"
     case miniLibrary = "Mini Library Mode (Fast)"
-    case terminalLogin = "Terminal Login (No UI)"
     case standard = "Direct Win32 Window"
     case gamepadUI = "Gamepad / Big Picture Mode"
 
@@ -44,7 +43,6 @@ public enum SteamLaunchMode: String, CaseIterable, Identifiable {
         switch self {
         case .virtualDesktop: return "display"
         case .miniLibrary: return "list.bullet.rectangle"
-        case .terminalLogin: return "terminal"
         case .standard: return "app.window.checkmark"
         case .gamepadUI: return "gamecontroller"
         }
@@ -54,7 +52,6 @@ public enum SteamLaunchMode: String, CaseIterable, Identifiable {
         switch self {
         case .virtualDesktop: return "Runs in a managed Wine virtual desktop to ensure 100% visible CEF UI without black screens."
         case .miniLibrary: return "Ultra-fast native list mode that skips heavy CEF webviews."
-        case .terminalLogin: return "Bypasses all UI for an interactive terminal login via steamcmd. Great for 2FA."
         case .standard: return "Direct native Cocoa window mode."
         case .gamepadUI: return "Modern console-style Big Picture UI optimized for controllers."
         }
