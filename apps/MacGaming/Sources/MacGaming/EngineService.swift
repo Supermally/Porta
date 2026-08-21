@@ -1739,7 +1739,7 @@ public class EngineService: ObservableObject {
         try? cfgContent.write(toFile: steamCfgPath, atomically: true, encoding: .utf8)
 
         // 2. Write CEF flags file with single-line space-separated format (fixes Chromium tokenizer)
-        let cefFlagsContent = "--disable-gpu --disable-gpu-compositing --disable-direct-composition --disable-gpu-rasterization --use-gl=swiftshader --enable-begin-frame-scheduling --in-process-gpu --no-sandbox --disable-features=TouchpadAndWheelScrollLatching,AsyncWheelEvents,DirectComposition,CanvasOopRasterization"
+        let cefFlagsContent = "--disable-gpu --disable-gpu-compositing --disable-direct-composition --disable-gpu-rasterization --enable-begin-frame-scheduling --no-sandbox --disable-features=TouchpadAndWheelScrollLatching,AsyncWheelEvents,DirectComposition,CanvasOopRasterization"
 
         try? cefFlagsContent.write(toFile: steamDir + "/bin/cef/cef.win64/steamwebhelper.exe.flags", atomically: true, encoding: .utf8)
         try? cefFlagsContent.write(toFile: steamDir + "/bin/cef/cef.win7x64/steamwebhelper.exe.flags", atomically: true, encoding: .utf8)
@@ -1800,6 +1800,9 @@ public class EngineService: ObservableObject {
             steamLaunchFlags = [
                 "-no-cef-sandbox",
                 "-allprocesscounter",
+                "-cef-disable-gpu",
+                "-cef-disable-d3d11",
+                "-cef-enable-software-rasterizer",
                 "-tcp",
                 "-allosarches"
             ]
