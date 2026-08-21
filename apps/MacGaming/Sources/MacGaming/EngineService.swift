@@ -1830,62 +1830,41 @@ public class EngineService: ObservableObject {
         let appHttpCache = steamDir + "/appcache/httpcache"
         try? FileManager.default.removeItem(atPath: appHttpCache)
 
-        // 4. Force DXVK for CEF by prioritizing native d3d/dxgi and disabling dcomp in user.reg
-        let userRegPath = prefixPath + "/user.reg"
-        if var userRegContent = try? String(contentsOfFile: userRegPath, encoding: .utf8) {
-            var modified = false
-            
-            // Clear out old GDI/builtin overrides
-            if userRegContent.contains("\"d3d11\"=\"\"") || userRegContent.contains("\"d3d11\"=\"builtin\"") || !userRegContent.contains("AppDefaults\\\\steamwebhelper.exe") {
-                userRegContent = userRegContent.replacingOccurrences(of: "\n[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]\n\"d3d11\"=\"\"\n\"d3d10\"=\"\"\n\"d3d9\"=\"\"\n\"dxgi\"=\"\"\n\"opengl32\"=\"\"\n\"dwrite\"=\"builtin\"\n\"riched20\"=\"builtin\"\n\"gdiplus\"=\"builtin\"\n", with: "")
-                userRegContent = userRegContent.replacingOccurrences(of: "\n[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]\n\"d3d11\"=\"builtin\"\n\"d3d9\"=\"builtin\"\n\"dxgi\"=\"builtin\"\n\"dwrite\"=\"builtin\"\n\"riched20\"=\"builtin\"\n\"gdiplus\"=\"builtin\"\n", with: "")
-                
-                let overrides = """
-                \n[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]
-                "d3d11"="native,builtin"
-                "d3d10core"="native,builtin"
-                "d3d9"="native,builtin"
-                "dxgi"="native,builtin"
-                "dcomp"=""
-                "dwrite"="builtin"
-                "riched20"="builtin"
-                "gdiplus"="builtin"
+        // 4. Force DXVK for CEF by applying native overrides via Wine regedit
+        let regFilePath = steamDir + "/dxvk_overrides.reg"
+        let regContent = """
+        REGEDIT4
 
-                [Software\\\\Wine\\\\AppDefaults\\\\steam.exe\\\\DllOverrides]
-                "dwrite"="builtin"
-                "riched20"="builtin"
-                \n
-                """
-                if !userRegContent.contains("[Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]") {
-                    userRegContent += overrides
-                    modified = true
-                }
-            }
-            if !userRegContent.contains("\"Version\"=\"win10\"") {
-                let win10Ver = """
-                \n[Software\\\\Wine]
-                "Version"="win10"
-                \n
-                """
-                userRegContent += win10Ver
-                modified = true
-            }
-            if !userRegContent.contains("Mac Driver") {
-                let macDriver = """
-                \n[Software\\\\Wine\\\\Mac Driver]
-                "Managed"="Y"
-                "RetinaMode"="Y"
-                "WindowCompositing"="Y"
-                \n
-                """
-                userRegContent += macDriver
-                modified = true
-            }
-            if modified {
-                try? userRegContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
-                log("Applied Pure GDI AppDefaults DllOverrides for steamwebhelper.exe into user.reg.", level: .info, source: "Provisioner")
-            }
-        }
+        [Software\\\\Wine\\\\AppDefaults\\\\steamwebhelper.exe\\\\DllOverrides]
+        "d3d11"="native,builtin"
+        "d3d10core"="native,builtin"
+        "d3d9"="native,builtin"
+        "dxgi"="native,builtin"
+        "dcomp"=""
+        "dwrite"="builtin"
+        "riched20"="builtin"
+        "gdiplus"="builtin"
+
+        [Software\\\\Wine\\\\AppDefaults\\\\steam.exe\\\\DllOverrides]
+        "dwrite"="builtin"
+        "riched20"="builtin"
+
+        [Software\\\\Wine\\\\Mac Driver]
+        "Managed"="Y"
+        "RetinaMode"="Y"
+        "WindowCompositing"="Y"
+        """
+        try? regContent.write(toFile: regFilePath, atomically: true, encoding: .utf8)
+        
+        let regProcess = Process()
+        regProcess.executableURL = URL(fileURLWithPath: runner)
+        var regEnv = ProcessInfo.processInfo.environment
+        regEnv["WINEPREFIX"] = prefixPath
+        regProcess.environment = regEnv
+        regProcess.arguments = ["regedit", regFilePath]
+        try? regProcess.run()
+        regProcess.waitUntilExit()
+        log("Applied DXVK AppDefaults via regedit.", level: .info, source: "Provisioner")
 
         var env = ProcessInfo.processInfo.environment
         env["WINEPREFIX"] = prefixPath
