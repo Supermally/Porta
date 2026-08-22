@@ -3,14 +3,16 @@ import AppKit
 
 public struct FloatingGlassSidebarView: View {
     @ObservedObject var engine: EngineService
+    @Binding var isCollapsed: Bool
 
-    public init(engine: EngineService) {
+    public init(engine: EngineService, isCollapsed: Binding<Bool> = .constant(false)) {
         self.engine = engine
+        self._isCollapsed = isCollapsed
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // App Header Branding
+        VStack(alignment: .leading, spacing: 14) {
+            // App Header Branding & Collapse Toggle
             HStack(spacing: 10) {
                 ZStack {
                     Circle()
@@ -29,13 +31,28 @@ public struct FloatingGlassSidebarView: View {
                 }
                 .shadow(color: Color.blue.opacity(0.4), radius: 6, y: 2)
 
-                Text("Mac Gaming")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
+                if !isCollapsed {
+                    Text("Mac Gaming")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
 
-                Spacer()
+                    Spacer()
+
+                    Button(action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            isCollapsed.toggle()
+                        }
+                    }) {
+                        Image(systemName: "sidebar.left")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .padding(4)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Collapse sidebar")
+                }
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, isCollapsed ? 12 : 14)
             .padding(.top, 14)
 
             Divider()
@@ -48,6 +65,7 @@ public struct FloatingGlassSidebarView: View {
                     title: "Library",
                     icon: "square.grid.2x2",
                     badgeText: engine.games.count > 0 ? "\(engine.games.count)" : nil,
+                    isCollapsed: isCollapsed,
                     isSelected: engine.activeTab == .library && engine.selectedStorefront == .all
                 ) {
                     engine.selectedStorefront = .all
@@ -59,6 +77,7 @@ public struct FloatingGlassSidebarView: View {
                     title: "Discover",
                     icon: "sparkles",
                     badgeText: nil,
+                    isCollapsed: isCollapsed,
                     isSelected: engine.activeTab == .discover
                 ) {
                     engine.activeTab = .discover
@@ -69,6 +88,7 @@ public struct FloatingGlassSidebarView: View {
                     title: "Compatibility",
                     icon: "checkmark.seal",
                     badgeText: nil,
+                    isCollapsed: isCollapsed,
                     isSelected: engine.activeTab == .compatibility
                 ) {
                     engine.activeTab = .compatibility
@@ -79,6 +99,7 @@ public struct FloatingGlassSidebarView: View {
                     title: "Downloads",
                     icon: "arrow.down.circle",
                     badgeText: nil,
+                    isCollapsed: isCollapsed,
                     isSelected: engine.activeTab == .downloads
                 ) {
                     engine.activeTab = .downloads
@@ -89,40 +110,51 @@ public struct FloatingGlassSidebarView: View {
                     title: "Console",
                     icon: "terminal",
                     badgeText: "\(engine.consoleLogs.count)",
+                    isCollapsed: isCollapsed,
                     isSelected: engine.activeTab == .console
                 ) {
                     engine.activeTab = .console
                 }
                 .keyboardShortcut("d", modifiers: .command)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, isCollapsed ? 6 : 8)
 
-            // Storefronts Section
-            VStack(alignment: .leading, spacing: 6) {
-                Text("STOREFRONTS")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 6)
+            // Storefronts Section (Only shown when expanded)
+            if !isCollapsed {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Storefronts")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 14)
+                        .padding(.top, 4)
 
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 3) {
-                        ForEach(StorefrontFilter.allCases.filter { $0 != .all }) { sf in
-                            let count = countForStorefront(sf)
-                            SidebarStorefrontItem(
-                                title: sf.rawValue,
-                                icon: sf.icon,
-                                count: count,
-                                isSelected: engine.activeTab == .library && engine.selectedStorefront == sf
-                            ) {
-                                engine.selectedStorefront = sf
-                                engine.activeTab = .library
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 2) {
+                            ForEach([
+                                StorefrontFilter.all,
+                                StorefrontFilter.steam,
+                                StorefrontFilter.gog,
+                                StorefrontFilter.epic,
+                                StorefrontFilter.local
+                            ], id: \.self) { sf in
+                                let count = countForStorefront(sf)
+                                if count > 0 || sf == .all {
+                                    SidebarStorefrontItem(
+                                        title: sf.rawValue,
+                                        icon: sf.icon,
+                                        count: count,
+                                        isSelected: engine.selectedStorefront == sf && engine.activeTab == .library
+                                    ) {
+                                        engine.selectedStorefront = sf
+                                        engine.activeTab = .library
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                .padding(.horizontal, 8)
             }
-            .padding(.horizontal, 8)
 
             Spacer(minLength: 0)
 
@@ -130,26 +162,44 @@ public struct FloatingGlassSidebarView: View {
                 .opacity(0.15)
                 .padding(.horizontal, 10)
 
-            // Footer Settings
+            // Footer Settings & Expand Toggle
             VStack(spacing: 4) {
                 SidebarNavItem(
                     title: "Settings",
                     icon: "gearshape",
                     badgeText: nil,
+                    isCollapsed: isCollapsed,
                     isSelected: engine.activeTab == .settings
                 ) {
                     engine.activeTab = .settings
                 }
                 .keyboardShortcut(",", modifiers: .command)
+
+                if isCollapsed {
+                    Button(action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            isCollapsed.toggle()
+                        }
+                    }) {
+                        Image(systemName: "sidebar.left")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Expand sidebar")
+                }
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, isCollapsed ? 6 : 8)
             .padding(.bottom, 12)
         }
-        .frame(width: 220)
+        .frame(width: isCollapsed ? 56 : 220)
         .frame(maxHeight: .infinity)
         .crystalClearSidebarGlass(cornerRadius: 22)
         .padding(.leading, 14)
         .padding(.vertical, 14)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isCollapsed)
     }
 
     private func countForStorefront(_ sf: StorefrontFilter) -> Int {
@@ -175,6 +225,7 @@ private struct SidebarNavItem: View {
     let title: String
     let icon: String
     let badgeText: String?
+    var isCollapsed: Bool = false
     let isSelected: Bool
     let action: () -> Void
 
@@ -188,60 +239,38 @@ private struct SidebarNavItem: View {
                     .foregroundColor(isSelected ? .white : .primary)
                     .frame(width: 20)
 
-                Text(title)
-                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? .white : .primary)
+                if !isCollapsed {
+                    Text(title)
+                        .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                        .foregroundColor(isSelected ? .white : .primary)
 
-                Spacer()
+                    Spacer()
 
-                if let badge = badgeText {
-                    Text(badge)
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundColor(isSelected ? .white : .secondary)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(isSelected ? Color.white.opacity(0.25) : Color.white.opacity(0.08))
-                        )
+                    if let badge = badgeText {
+                        Text(badge)
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(isSelected ? .white : .secondary)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(isSelected ? Color.white.opacity(0.25) : Color.white.opacity(0.08))
+                            )
+                    }
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, isCollapsed ? 8 : 12)
             .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: isCollapsed ? .center : .leading)
             .background(
                 Group {
                     if isSelected {
                         Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color(red: 0.05, green: 0.48, blue: 0.98), Color(red: 0.02, green: 0.35, blue: 0.85)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(
-                                        LinearGradient(
-                                            stops: [
-                                                .init(color: Color.white.opacity(0.95), location: 0.0),
-                                                .init(color: Color.white.opacity(0.25), location: 0.5),
-                                                .init(color: Color.white.opacity(0.60), location: 1.0)
-                                            ],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1.1
-                                    )
-                            )
+                            .fill(Color.blue)
                             .shadow(color: Color.blue.opacity(0.35), radius: 6, y: 2)
                     } else if isHovered {
                         Capsule()
                             .fill(Color.white.opacity(0.09))
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.8)
-                            )
                     } else {
                         Color.clear
                     }
@@ -253,6 +282,7 @@ private struct SidebarNavItem: View {
             .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isSelected)
         }
         .buttonStyle(.plain)
+        .help(isCollapsed ? title : "")
         .onHover { hovering in
             isHovered = hovering
         }
@@ -302,10 +332,6 @@ private struct SidebarStorefrontItem: View {
                     if isSelected {
                         Capsule()
                             .fill(Color.blue)
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(Color.white.opacity(0.85), lineWidth: 1.0)
-                            )
                             .shadow(color: Color.blue.opacity(0.3), radius: 5, y: 2)
                     } else if isHovered {
                         Capsule()

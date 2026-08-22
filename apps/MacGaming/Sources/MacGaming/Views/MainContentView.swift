@@ -4,6 +4,10 @@ public struct MainContentView: View {
     @StateObject var engine = EngineService()
     @StateObject var setupManager = SetupManager.shared
 
+    @State private var isSidebarCollapsed: Bool = false
+    @State private var isTopBarCollapsed: Bool = false
+    @State private var isDetailPanelOpen: Bool = true
+
     public var body: some View {
         Group {
             if !setupManager.isSetupCompleted {
@@ -18,47 +22,97 @@ public struct MainContentView: View {
     }
 
     private var mainInterfaceView: some View {
-        ZStack(alignment: .leading) {
+        ZStack(alignment: .topLeading) {
             // 1. Native macOS Window Canvas Background
             Color(NSColor.windowBackgroundColor)
                 .ignoresSafeArea()
 
-            // 2. Full-Bleed Content Canvas (Extends edge-to-edge behind the floating sidebar)
+            // 2. Full-Bleed Content Canvas
             Group {
                 switch engine.activeTab {
                 case .library:
-                    HSplitView {
-                        LibraryView(engine: engine)
-                            .frame(minWidth: 340, idealWidth: 440)
-
-                        if let game = engine.selectedGame {
-                            GameDetailView(engine: engine, game: game)
-                                .frame(minWidth: 400)
-                        } else {
-                            emptyStateView
-                        }
-                    }
+                    LibraryView(
+                        engine: engine,
+                        leadingInset: isSidebarCollapsed ? 80 : 248,
+                        trailingInset: (isDetailPanelOpen && engine.selectedGame != nil) ? 470 : 20
+                    )
                 case .discover:
                     MacNativeSpotlightView(engine: engine)
-                        .padding(.leading, 248)
+                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
                 case .compatibility:
                     UniversalSearchView(engine: engine)
-                        .padding(.leading, 248)
+                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
                 case .downloads:
                     DownloadsView(engine: engine)
-                        .padding(.leading, 248)
+                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
                 case .console:
                     DeveloperConsoleView(engine: engine)
-                        .padding(.leading, 248)
+                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
                 case .settings:
                     SettingsView(engine: engine)
-                        .padding(.leading, 248)
+                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // 3. Floating Crystal-Clear Liquid Glass Sidebar (Floats Over the Content Canvas)
-            FloatingGlassSidebarView(engine: engine)
+            // 3. Detached Floating Liquid Glass Top Control Bar
+            if engine.activeTab == .library {
+                HStack {
+                    Spacer()
+                    FloatingTopGlassBar(engine: engine, isCollapsed: $isTopBarCollapsed)
+                        .padding(.top, 14)
+                    Spacer()
+                }
+                .padding(.leading, isSidebarCollapsed ? 70 : 230)
+                .padding(.trailing, (isDetailPanelOpen && engine.selectedGame != nil) ? 450 : 20)
+                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isSidebarCollapsed)
+                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isDetailPanelOpen)
+            }
+
+            // 4. Detached Floating Collapsible Sidebar (Left)
+            FloatingGlassSidebarView(engine: engine, isCollapsed: $isSidebarCollapsed)
+
+            // 5. Detached Floating Game Detail Inspector Panel (Right)
+            if let game = engine.selectedGame, engine.activeTab == .library {
+                HStack {
+                    Spacer()
+                    if isDetailPanelOpen {
+                        FloatingDetailGlassPanel(engine: engine, game: game) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                isDetailPanelOpen = false
+                            }
+                        }
+                    } else {
+                        // Collapsed Inspector Re-open Pill
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                isDetailPanelOpen = true
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "sidebar.right")
+                                Text("Details")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(.regularMaterial)
+                                    .shadow(color: Color.black.opacity(0.12), radius: 8, y: 3)
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 16)
+                        .padding(.top, 16)
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                }
+            }
         }
         .liquidGlassEnvironment(
             enabled: engine.liquidGlassEnabled,
@@ -68,19 +122,5 @@ public struct MainContentView: View {
             reduceTransparency: engine.reduceTransparency
         )
         .frame(minWidth: 980, minHeight: 640)
-    }
-
-    private var emptyStateView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "gamecontroller")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
-            Text("No Game Selected")
-                .font(.headline)
-            Text("Select a game from your library to view details and launch.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

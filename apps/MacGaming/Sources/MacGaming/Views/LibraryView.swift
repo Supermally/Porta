@@ -3,22 +3,27 @@ import AppKit
 
 public struct LibraryView: View {
     @ObservedObject var engine: EngineService
+    var leadingInset: CGFloat = 248
+    var trailingInset: CGFloat = 20
 
     private let gridColumns = [
-        GridItem(.adaptive(minimum: 160, maximum: 200), spacing: 20)
+        GridItem(.adaptive(minimum: 160, maximum: 220), spacing: 20)
     ]
 
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
+                // Top margin for floating top control bar
+                Spacer().frame(height: 52)
+
                 // Recently Played Shelf (Apple Horizontal Scrolling Under Sidebar)
                 if engine.searchText.isEmpty && engine.selectedFilter == nil && engine.selectedStorefront == .all {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Recently Played")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .padding(.leading, 248)
-                            .padding(.trailing, 20)
+                            .padding(.leading, leadingInset)
+                            .padding(.trailing, trailingInset)
 
                         // Extends to leading 0 so scrolling cards slide UNDER the floating glass sidebar!
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -29,8 +34,8 @@ public struct LibraryView: View {
                                     }
                                 }
                             }
-                            .padding(.leading, 248)
-                            .padding(.trailing, 20)
+                            .padding(.leading, leadingInset)
+                            .padding(.trailing, trailingInset)
                             .padding(.vertical, 4)
                         }
                     }
@@ -68,12 +73,13 @@ public struct LibraryView: View {
                         }
                     }
                 }
-                .padding(.leading, 248)
-                .padding(.trailing, 20)
+                .padding(.leading, leadingInset)
+                .padding(.trailing, trailingInset)
             }
             .padding(.vertical, 20)
         }
-        .searchable(text: $engine.searchText, prompt: "Search library...")
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: leadingInset)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: trailingInset)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Picker("View Mode", selection: $engine.libraryViewMode) {
