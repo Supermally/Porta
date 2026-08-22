@@ -19,8 +19,9 @@ public struct MainContentView: View {
 
     private var mainInterfaceView: some View {
         ZStack(alignment: .leading) {
-            // 1. Full-Window Ambient Backdrop (Canvas Background)
-            AmbientChromaticBackdrop()
+            // 1. Native macOS Window Canvas Background
+            Color(NSColor.windowBackgroundColor)
+                .ignoresSafeArea()
 
             // 2. Full-Bleed Content Canvas (Extends edge-to-edge behind the floating sidebar)
             Group {

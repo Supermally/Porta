@@ -253,7 +253,7 @@ struct GameListRow: View {
                         .font(.caption)
                         .padding(6)
                 }
-                .buttonStyle(LiquidGlassButtonStyle(isProminent: false))
+                .buttonStyle(.glass)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
