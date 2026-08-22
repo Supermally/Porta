@@ -31,33 +31,6 @@ public enum StorefrontFilter: String, CaseIterable, Identifiable {
     }
 }
 
-public enum SteamLaunchMode: String, CaseIterable, Identifiable {
-    case virtualDesktop = "Virtual Desktop Container (Recommended)"
-    case miniLibrary = "Mini Library Mode (Fast)"
-    case standard = "Direct Win32 Window"
-    case gamepadUI = "Gamepad / Big Picture Mode"
-
-    public var id: String { rawValue }
-
-    public var icon: String {
-        switch self {
-        case .virtualDesktop: return "display"
-        case .miniLibrary: return "list.bullet.rectangle"
-        case .standard: return "app.window.checkmark"
-        case .gamepadUI: return "gamecontroller"
-        }
-    }
-
-    public var description: String {
-        switch self {
-        case .virtualDesktop: return "Runs in a managed Wine virtual desktop to ensure 100% visible CEF UI without black screens."
-        case .miniLibrary: return "Ultra-fast native list mode that skips heavy CEF webviews."
-        case .standard: return "Direct native Cocoa window mode."
-        case .gamepadUI: return "Modern console-style Big Picture UI optimized for controllers."
-        }
-    }
-}
-
 public enum CompatibilityBadge: String, CaseIterable, Identifiable, Codable, Sendable {
     case native = "Native"
     case compatible = "Ready"

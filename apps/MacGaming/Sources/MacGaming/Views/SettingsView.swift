@@ -150,10 +150,48 @@ public struct SettingsView: View {
                 Text("Independently tunes light transmission (transparency), 3D specular rim reflections, and background diffusion across all floating panels and buttons.")
             }
 
+            // Managed Components & Runtimes
+            Section("Installed Components & Runtimes") {
+                ForEach(DependencyManager.shared.dependencies) { dep in
+                    HStack {
+                        Label(dep.name, systemImage: dep.category.icon)
+                        Spacer()
+                        switch dep.status {
+                        case .installed(let ver):
+                            Text("v\(ver) • Installed")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                        case .notInstalled:
+                            Text("Not Installed")
+                                .font(.system(size: 12))
+                                .foregroundColor(.red)
+                        case .outdated(_, let avail):
+                            Text("Update Available (v\(avail))")
+                                .font(.system(size: 12))
+                                .foregroundColor(.orange)
+                        case .downloading, .installing, .verifying:
+                            ProgressView()
+                                .controlSize(.small)
+                        case .failed:
+                            Text("Error")
+                                .font(.system(size: 12))
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+
+                Button {
+                    DependencyManager.shared.inspectAllDependencies()
+                } label: {
+                    Label("Re-verify Components", systemImage: "arrow.triangle.2.circlepath")
+                }
+                .buttonStyle(.plain)
+            }
+
             // Graphics & Compatibility Runtimes
             Section("Graphics & Compatibility Runtime") {
                 Picker("Wine Runner", selection: $wineVersion) {
-                    Text("Apple D3DMetal + Wine-CX-23.7 (Default)").tag("Apple D3DMetal + Wine-CX-23.7 (Default)")
+                    Text("MacGaming Managed Wine Staging (Default)").tag("MacGaming Managed Wine Staging (Default)")
                     Text("Whisky / CrossOver Wine-GE-Proton").tag("Whisky / CrossOver Wine-GE-Proton")
                     Text("Wine-Staging 9.0 (Custom)").tag("Wine-Staging 9.0 (Custom)")
                 }
