@@ -2,8 +2,22 @@ import SwiftUI
 
 public struct MainContentView: View {
     @StateObject var engine = EngineService()
+    @StateObject var setupManager = SetupManager.shared
 
     public var body: some View {
+        Group {
+            if !setupManager.isSetupCompleted {
+                SetupView(setupManager: setupManager)
+                    .transition(.opacity)
+            } else {
+                mainInterfaceView
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: setupManager.isSetupCompleted)
+    }
+
+    private var mainInterfaceView: some View {
         ZStack(alignment: .leading) {
             // 1. Full-Window Ambient Backdrop (Canvas Background)
             AmbientChromaticBackdrop()

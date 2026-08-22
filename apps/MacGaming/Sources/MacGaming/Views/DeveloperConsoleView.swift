@@ -74,18 +74,6 @@ public struct DeveloperConsoleView: View {
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
                 .frame(width: 200)
 
-                // Repair Steam Sandbox Button
-                Button {
-                    engine.repairSteamSandbox()
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "wrench.and.screwdriver")
-                        Text("Repair Sandbox")
-                    }
-                    .font(.system(size: 12, weight: .semibold))
-                }
-                .buttonStyle(.bordered)
-                .help("Kills zombie processes and wipes Steam CEF caches.")
 
                 // Copy to Clipboard Button
                 Button {
