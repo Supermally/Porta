@@ -97,18 +97,34 @@ public struct GameDetailView: View {
                 )
                 .shadow(color: Color.black.opacity(0.15), radius: 12, y: 6)
 
-                // Morphing Liquid Glass Action Controls (Apple MatchedGeometry Transitions)
+                // Coordinated Liquid Glass Action Bar
                 HStack {
-                    MorphingLaunchGlassControl(
-                        engine: engine,
-                        game: game,
-                        onShowTroubleshoot: { showingTroubleshootSheet = true },
-                        namespace: glassNamespace
-                    )
+                    MGActionGroup(spacing: 8) {
+                        MGPlayButton(
+                            state: engine.isLaunching ? (engine.isGameModeActive ? .running : .launching) : .idle,
+                            onPlay: { engine.launchGame(game) },
+                            onStop: { engine.stopGame() }
+                        )
+
+                        Button {
+                            showingAdvancedSettings.toggle()
+                        } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
+                        .buttonStyle(.glass)
+
+                        Button {
+                            showingTroubleshootSheet = true
+                        } label: {
+                            Label("Diagnostics", systemImage: "stethoscope")
+                        }
+                        .buttonStyle(.glass)
+                    }
+
                     Spacer()
                 }
 
-                // Session Status / Output Diagnostics in Liquid Glass Card
+                // Session Status / Output Diagnostics
                 if let msg = engine.launchOutputMessage {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Session Status")
@@ -119,7 +135,7 @@ public struct GameDetailView: View {
                             .font(.system(size: 12, design: .monospaced))
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .liquidGlassCard(cornerRadius: 12)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
                 }
 
@@ -238,7 +254,7 @@ public struct GameDetailView: View {
                             }
                         }
                         .padding(14)
-                        .liquidGlassCard(cornerRadius: 12)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .padding(.top, 4)
                     },
                     label: {
@@ -260,7 +276,7 @@ public struct GameDetailView: View {
     }
 }
 
-// MARK: - Compatibility Item Row (Liquid Glass)
+// MARK: - Compatibility Item Row
 struct CompatibilityItemRow: View {
     let title: String
     let detail: String
@@ -269,7 +285,7 @@ struct CompatibilityItemRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: isSupported ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundColor(isSupported ? Color(red: 0.20, green: 0.78, blue: 0.35) : Color(red: 0.92, green: 0.26, blue: 0.21))
+                .foregroundColor(isSupported ? Color.green : Color.red)
                 .font(.title3)
 
             VStack(alignment: .leading, spacing: 1) {
@@ -284,11 +300,15 @@ struct CompatibilityItemRow: View {
             Spacer()
         }
         .padding(12)
-        .liquidGlassCard(cornerRadius: 12)
+        .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        )
     }
 }
 
-// MARK: - Performance Metric Box (Liquid Glass)
+// MARK: - Performance Metric Box
 struct PerformanceMetricBox: View {
     let title: String
     let value: String
@@ -302,7 +322,7 @@ struct PerformanceMetricBox: View {
                 .foregroundStyle(.secondary)
             Text(value)
                 .font(.headline)
-                .foregroundColor(isHighlighted ? Color(red: 0.20, green: 0.78, blue: 0.35) : .primary)
+                .foregroundColor(isHighlighted ? Color.green : .primary)
                 .lineLimit(1)
             if let sub = subtitle {
                 Text(sub)
@@ -312,6 +332,10 @@ struct PerformanceMetricBox: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .liquidGlassCard(cornerRadius: 12)
+        .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        )
     }
 }
