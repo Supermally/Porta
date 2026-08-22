@@ -192,6 +192,8 @@ public class EngineService: ObservableObject {
         panel.allowedContentTypes = []
 
         if panel.runModal() == .OK, let url = panel.url {
+            PermissionManager.shared.persistBookmark(for: url)
+
             var isDir: ObjCBool = false
             FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
 
@@ -713,6 +715,10 @@ public class EngineService: ObservableObject {
         let detectedRunner = runnerPaths.first(where: { FileManager.default.fileExists(atPath: $0) })
 
         if let runner = detectedRunner, !game.executablePath.isEmpty && FileManager.default.fileExists(atPath: game.executablePath) {
+            // Ensure security-scoped access is active across app launches
+            _ = PermissionManager.shared.resolveAndAccessBookmark(for: game.executablePath)
+            _ = PermissionManager.shared.resolveAndAccessBookmark(for: game.installPath)
+
             let proc = Process()
             proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
             

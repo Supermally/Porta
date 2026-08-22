@@ -202,6 +202,55 @@ public struct SettingsView: View {
                 Toggle("Metal Performance HUD Overlay", isOn: $enableMetalHud)
             }
 
+            // Application Permissions & Sandboxing
+            Section("Application Permissions & Security") {
+                HStack {
+                    Label("Remembered File & Folder Access", systemImage: "lock.shield.fill")
+                    Spacer()
+                    Text("\(PermissionManager.shared.savedBookmarks.count) Saved Bookmarks")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+
+                HStack {
+                    Label("Accessibility / Gamepad Hooks", systemImage: "hand.tap.fill")
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Text(PermissionManager.shared.accessibilityStatus.rawValue)
+                            .font(.system(size: 12))
+                            .foregroundColor(PermissionManager.shared.accessibilityStatus == .authorized ? .green : .orange)
+
+                        if PermissionManager.shared.accessibilityStatus != .authorized {
+                            Button("Grant Access") {
+                                PermissionManager.shared.requestAccessibilityPermission()
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                    }
+                }
+
+                HStack {
+                    Label("Game Controller / Input Monitoring", systemImage: "gamecontroller.fill")
+                    Spacer()
+                    Button("Open Privacy Settings") {
+                        PermissionManager.shared.openSystemSettings(for: "inputMonitoring")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+
+                if !PermissionManager.shared.savedBookmarks.isEmpty {
+                    Button(role: .destructive) {
+                        PermissionManager.shared.clearAllSavedBookmarks()
+                    } label: {
+                        Label("Clear Saved File Access Permissions", systemImage: "trash")
+                            .foregroundColor(.red)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
             // Hardware & System Specifications
             Section("System & Hardware") {
                 LabeledContent("Chip", value: engine.hardware.chipName)
