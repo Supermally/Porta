@@ -5,6 +5,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSWindow.allowsAutomaticWindowTabbing = false
 
+        // Automatically restore and activate security-scoped bookmarks across app launches
+        Task { @MainActor in
+            PermissionManager.shared.restoreAllSecurityScopedBookmarks()
+            PermissionManager.shared.refreshSystemPermissions()
+        }
+
         DispatchQueue.main.async {
             for window in NSApplication.shared.windows {
                 window.isOpaque = false
@@ -14,6 +20,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 window.hasShadow = true
                 window.isMovableByWindowBackground = true
             }
+        }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        Task { @MainActor in
+            PermissionManager.shared.stopAccessingAll()
         }
     }
 }
