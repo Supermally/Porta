@@ -5,6 +5,8 @@ public struct FloatingTopGlassBar: View {
     @Binding var isCollapsed: Bool
 
     @FocusState private var isSearchFocused: Bool
+    @Namespace private var searchBubbleNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(engine: EngineService, isCollapsed: Binding<Bool>) {
         self.engine = engine
@@ -12,42 +14,78 @@ public struct FloatingTopGlassBar: View {
     }
 
     public var body: some View {
-        HStack(spacing: 10) {
+        ZStack {
             if isCollapsed {
-                collapsedBar
+                collapsedBubble
+                    .matchedGeometryEffect(id: "searchBarContainer", in: searchBubbleNamespace)
+                    .transition(reduceMotion ? .opacity : .identity)
             } else {
                 expandedBar
+                    .matchedGeometryEffect(id: "searchBarContainer", in: searchBubbleNamespace)
+                    .transition(reduceMotion ? .opacity : .identity)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(
-            Capsule()
-                .fill(.regularMaterial)
-                .shadow(color: Color.black.opacity(0.12), radius: 10, y: 4)
-        )
-        .overlay(
-            Capsule()
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isCollapsed)
+        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.75), value: isCollapsed)
         .animation(.spring(response: 0.25, dampingFraction: 0.8), value: engine.searchText.isEmpty)
     }
 
-    // MARK: - Expanded Top Bar
+    // MARK: - Collapsed State: Liquid Glass Search Bubble
+    private var collapsedBubble: some View {
+        Button(action: {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.75)) {
+                isCollapsed = false
+                isSearchFocused = true
+            }
+        }) {
+            ZStack {
+                Circle()
+                    .fill(.regularMaterial)
+                    .frame(width: 42, height: 42)
+                    .shadow(color: Color.black.opacity(0.16), radius: 10, y: 4)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.primary.opacity(0.10), lineWidth: 1)
+                    )
+
+                HStack(spacing: 3) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(engine.searchText.isEmpty ? .primary : .accentColor)
+
+                    if !engine.searchText.isEmpty {
+                        Circle()
+                            .fill(Color.accentColor)
+                            .frame(width: 6, height: 6)
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .help("Search & controls (⌘F)")
+        .keyboardShortcut("f", modifiers: .command)
+    }
+
+    // MARK: - Expanded State: Floating Glass Control Capsule
     private var expandedBar: some View {
         HStack(spacing: 12) {
             // 1. Search Field
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
 
                 TextField("Search games…", text: $engine.searchText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
-                    .frame(minWidth: 120, idealWidth: 160)
+                    .frame(minWidth: 140, idealWidth: 180)
+                    .onSubmit {
+                        if engine.searchText.isEmpty {
+                            withAnimation {
+                                isCollapsed = true
+                            }
+                        }
+                    }
 
                 if !engine.searchText.isEmpty {
                     Button(action: { engine.searchText = "" }) {
@@ -154,70 +192,31 @@ public struct FloatingTopGlassBar: View {
             .disabled(engine.isScanning)
 
             // 6. Collapse Bar Button
-            Button(action: { isCollapsed = true }) {
+            Button(action: {
+                withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.75)) {
+                    isSearchFocused = false
+                    isCollapsed = true
+                }
+            }) {
                 Image(systemName: "chevron.up")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundColor(.secondary)
-                    .padding(4)
+                    .padding(5)
             }
             .buttonStyle(.plain)
-            .help("Collapse control bar")
+            .help("Collapse to bubble (Esc)")
         }
-    }
-
-    // MARK: - Collapsed Top Bar
-    private var collapsedBar: some View {
-        HStack(spacing: 10) {
-            Button(action: {
-                isCollapsed = false
-                isSearchFocused = true
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 12, weight: .medium))
-                    if !engine.searchText.isEmpty {
-                        Text(engine.searchText)
-                            .font(.system(size: 12))
-                            .lineLimit(1)
-                    } else {
-                        Text("Search")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-
-            Divider()
-                .frame(height: 14)
-                .opacity(0.3)
-
-            Menu {
-                Button {
-                    engine.openNativeFilePicker(chooseFolder: true)
-                } label: {
-                    Label("Import Game Folder…", systemImage: "folder.badge.plus")
-                }
-                Button {
-                    engine.openNativeFilePicker(isUniversalApp: false, chooseFolder: false)
-                } label: {
-                    Label("Import Executable (.exe / .app)…", systemImage: "gamecontroller")
-                }
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.accentColor)
-            }
-            .menuStyle(.borderlessButton)
-
-            Button(action: { isCollapsed = false }) {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.secondary)
-            }
-            .buttonStyle(.plain)
-            .help("Expand control bar")
-        }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            Capsule()
+                .fill(.regularMaterial)
+                .shadow(color: Color.black.opacity(0.14), radius: 12, y: 4)
+        )
+        .overlay(
+            Capsule()
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+        .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 }
