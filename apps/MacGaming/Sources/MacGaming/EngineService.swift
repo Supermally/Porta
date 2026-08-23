@@ -642,7 +642,13 @@ public class EngineService: ObservableObject {
         for path in shaderPaths {
             guard FileManager.default.fileExists(atPath: path),
                   var content = try? String(contentsOf: URL(fileURLWithPath: path), encoding: .utf8) else { continue }
-            if content.contains("vec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);") && !content.contains("if (HasDiffuse == 1)") {
+            // Toolbox C# typo fix: The shader expects HasDiffuse but the C# binary passes HasDiffuseMap
+            if content.contains("uniform int HasDiffuse;") {
+                content = content.replacingOccurrences(of: "uniform int HasDiffuse;", with: "uniform int HasDiffuseMap;")
+                try? content.write(to: URL(fileURLWithPath: path), atomically: true, encoding: .utf8)
+            }
+
+            if content.contains("vec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);") && !content.contains("if (HasDiffuseMap == 1)") {
                 let buggy = """
 \tvec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);
 \tvec4 albedo = vec4(0);
@@ -654,7 +660,7 @@ public class EngineService: ObservableObject {
 """
                 let fixed = """
 \tvec4 albedo = vec4(0.85, 0.85, 0.85, 1.0);
-\tif (HasDiffuse == 1)
+\tif (HasDiffuseMap == 1)
 \t{
 \t\tvec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);
 \t\t//Comp Selectors
@@ -665,6 +671,8 @@ public class EngineService: ObservableObject {
 \t}
 """
                 content = content.replacingOccurrences(of: buggy, with: fixed)
+                // Also update any old instances of HasDiffuse == 1 that might have been applied before
+                content = content.replacingOccurrences(of: "if (HasDiffuse == 1)", with: "if (HasDiffuseMap == 1)")
                 try? content.write(to: URL(fileURLWithPath: path), atomically: true, encoding: .utf8)
             }
             if path.hasSuffix("BFRES.frag") && !content.contains("MacGaming View Mode Overrides:") {
