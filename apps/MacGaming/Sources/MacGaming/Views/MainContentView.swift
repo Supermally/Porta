@@ -64,7 +64,7 @@ public struct MainContentView: View {
                     Spacer()
                 }
                 .padding(.leading, isSidebarCollapsed ? 70 : 230)
-                .padding(.trailing, (isDetailPanelOpen && engine.selectedGame != nil) ? 450 : 20)
+                .padding(.trailing, (isDetailPanelOpen && engine.selectedGame != nil) ? 460 : 30)
                 .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isSidebarCollapsed)
                 .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isDetailPanelOpen)
             }
@@ -83,7 +83,7 @@ public struct MainContentView: View {
                             }
                         }
                     } else {
-                        // Collapsed Inspector Re-open Pill
+                        // Collapsed Inspector Re-open Pill (Docked cleanly below the top control bar)
                         Button(action: {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 isDetailPanelOpen = true
@@ -91,6 +91,7 @@ public struct MainContentView: View {
                         }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "sidebar.right")
+                                    .font(.system(size: 13, weight: .semibold))
                                 Text("Details")
                                     .font(.system(size: 12, weight: .semibold))
                             }
@@ -98,17 +99,18 @@ public struct MainContentView: View {
                             .padding(.vertical, 8)
                             .background(
                                 Capsule()
-                                    .fill(.regularMaterial)
-                                    .shadow(color: Color.black.opacity(0.12), radius: 8, y: 3)
+                                    .fill(Color.white.opacity(0.12))
+                                    .background(.regularMaterial, in: Capsule())
+                                    .shadow(color: Color.black.opacity(0.14), radius: 10, y: 4)
                             )
                             .overlay(
                                 Capsule()
-                                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                    .stroke(Color.primary.opacity(0.10), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
                         .padding(.trailing, 16)
-                        .padding(.top, 16)
+                        .padding(.top, 68) // Positioned with full clearance below top bar
                         .transition(.scale.combined(with: .opacity))
                     }
                 }

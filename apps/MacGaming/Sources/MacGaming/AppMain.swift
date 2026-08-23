@@ -18,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 window.titlebarAppearsTransparent = true
                 window.styleMask.insert(.fullSizeContentView)
                 window.hasShadow = true
-                window.isMovableByWindowBackground = true
+                window.isMovableByWindowBackground = false
             }
         }
     }
@@ -55,7 +55,7 @@ private struct WindowAccessor: NSViewRepresentable {
                 window.titlebarAppearsTransparent = true
                 window.styleMask.insert(.fullSizeContentView)
                 window.hasShadow = true
-                window.isMovableByWindowBackground = true
+                window.isMovableByWindowBackground = false
             }
         }
         return view
