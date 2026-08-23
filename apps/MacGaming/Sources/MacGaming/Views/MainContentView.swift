@@ -48,6 +48,9 @@ public struct MainContentView: View {
                 case .console:
                     DeveloperConsoleView(engine: engine)
                         .padding(.leading, isSidebarCollapsed ? 80 : 248)
+                case .debugLab:
+                    DebugLabView(engine: engine)
+                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
                 case .settings:
                     SettingsView(engine: engine)
                         .padding(.leading, isSidebarCollapsed ? 80 : 248)

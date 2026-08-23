@@ -116,6 +116,17 @@ public struct FloatingGlassSidebarView: View {
                     engine.activeTab = .console
                 }
                 .keyboardShortcut("d", modifiers: .command)
+
+                SidebarNavItem(
+                    title: "Debug Lab",
+                    icon: "testtube.2",
+                    badgeText: "Fork Ready",
+                    isCollapsed: isCollapsed,
+                    isSelected: engine.activeTab == .debugLab
+                ) {
+                    engine.activeTab = .debugLab
+                }
+                .keyboardShortcut("t", modifiers: .command)
             }
             .padding(.horizontal, isCollapsed ? 6 : 8)
 

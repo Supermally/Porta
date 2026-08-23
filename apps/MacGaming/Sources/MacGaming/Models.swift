@@ -92,6 +92,7 @@ public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
     case compatibility = "Compatibility"
     case downloads = "Downloads"
     case console = "Console"
+    case debugLab = "Debug Lab"
     case settings = "Settings"
 
     public var id: String { rawValue }
@@ -102,6 +103,7 @@ public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
         case .compatibility: return "checklist.checked"
         case .downloads: return "arrow.down.circle.fill"
         case .console: return "terminal.fill"
+        case .debugLab: return "testtube.2"
         case .settings: return "gearshape.fill"
         }
     }
@@ -113,6 +115,7 @@ public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
         case .compatibility: return "3"
         case .downloads: return "4"
         case .console: return "d"
+        case .debugLab: return "t"
         case .settings: return ","
         }
     }
