@@ -161,40 +161,40 @@ public struct CrystalClearSidebarGlassModifier: ViewModifier {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .fill(Color.white.opacity(0.04 * transparency))
 
-                        // 3. Top Specular Convex Lens Highlight
+                        // 3. Top Specular Convex Lens Highlight (Satin-soft)
                         if specularIntensity > 0.05 {
                             VStack {
                                 LinearGradient(
                                     stops: [
-                                        .init(color: Color.white.opacity(0.40 * specularIntensity), location: 0.0),
-                                        .init(color: Color.white.opacity(0.06 * specularIntensity), location: 0.4),
+                                        .init(color: Color.white.opacity(0.25 * specularIntensity), location: 0.0),
+                                        .init(color: Color.white.opacity(0.04 * specularIntensity), location: 0.4),
                                         .init(color: Color.clear, location: 1.0)
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 )
-                                .frame(height: 18)
+                                .frame(height: 16)
                                 Spacer()
                             }
                             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                         }
 
-                        // 4. Razor-Sharp 3D Specular Rim Bevel
+                        // 4. Subtle 3D Specular Rim Bevel
                         if specularIntensity > 0.05 {
                             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                                 .strokeBorder(
                                     LinearGradient(
                                         stops: [
-                                            .init(color: Color.white.opacity(0.95 * specularIntensity), location: 0.0),
-                                            .init(color: Color.white.opacity(0.35 * specularIntensity), location: 0.30),
-                                            .init(color: Color.white.opacity(0.06 * specularIntensity), location: 0.65),
-                                            .init(color: Color.white.opacity(0.30 * specularIntensity), location: 0.90),
-                                            .init(color: Color.white.opacity(0.60 * specularIntensity), location: 1.0)
+                                            .init(color: Color.white.opacity(0.55 * specularIntensity), location: 0.0),
+                                            .init(color: Color.white.opacity(0.18 * specularIntensity), location: 0.30),
+                                            .init(color: Color.white.opacity(0.04 * specularIntensity), location: 0.65),
+                                            .init(color: Color.white.opacity(0.15 * specularIntensity), location: 0.90),
+                                            .init(color: Color.white.opacity(0.30 * specularIntensity), location: 1.0)
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),
-                                    lineWidth: 1.2
+                                    lineWidth: 1.0
                                 )
                         }
                     } else {

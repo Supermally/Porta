@@ -16,10 +16,10 @@ public struct SettingsView: View {
         Form {
             // Apple-Standard Liquid Glass & Materials Editor
             Section {
-                Toggle("Enable Apple Liquid Glass Controls", isOn: $engine.liquidGlassEnabled)
+                MGGlassToggle("Enable Apple Liquid Glass Controls", isOn: $engine.liquidGlassEnabled)
 
                 if engine.liquidGlassEnabled {
-                    Toggle("Reduce Transparency (Accessibility Mode)", isOn: $engine.reduceTransparency)
+                    MGGlassToggle("Reduce Transparency (Accessibility Mode)", isOn: $engine.reduceTransparency)
 
                     if !engine.reduceTransparency {
                         // 1. Optical Transparency Slider
@@ -27,11 +27,16 @@ public struct SettingsView: View {
                             HStack {
                                 Label("Optical Transparency", systemImage: "square.2.layers.3d.top.filled")
                                 Spacer()
-                                Text("\(Int(engine.glassTransparency * 100))%")
+                                Text(String(format: "%.0f%%", engine.glassTransparency * 100))
                                     .font(.system(size: 13, weight: .bold, design: .monospaced))
                                     .foregroundStyle(.secondary)
                             }
-                            Slider(value: $engine.glassTransparency, in: 0.0...1.0, step: 0.05)
+                            MGGlassSlider(
+                                value: $engine.glassTransparency,
+                                in: 0.0...1.0,
+                                step: 0.01,
+                                gradientColors: [Color.blue.opacity(0.6), Color.cyan]
+                            )
                             HStack {
                                 Text("Opaque (0%)")
                                     .font(.caption2)
@@ -49,11 +54,16 @@ public struct SettingsView: View {
                             HStack {
                                 Label("Specular Rim & Flare Reflection", systemImage: "sparkles")
                                 Spacer()
-                                Text("\(Int(engine.glassSpecularIntensity * 100))%")
+                                Text(String(format: "%.0f%%", engine.glassSpecularIntensity * 100))
                                     .font(.system(size: 13, weight: .bold, design: .monospaced))
                                     .foregroundStyle(.secondary)
                             }
-                            Slider(value: $engine.glassSpecularIntensity, in: 0.0...1.0, step: 0.05)
+                            MGGlassSlider(
+                                value: $engine.glassSpecularIntensity,
+                                in: 0.0...1.0,
+                                step: 0.01,
+                                gradientColors: [Color.purple.opacity(0.6), Color.pink]
+                            )
                             HStack {
                                 Text("Matte (0%)")
                                     .font(.caption2)
@@ -71,11 +81,16 @@ public struct SettingsView: View {
                             HStack {
                                 Label("Optical Blur & Diffusion", systemImage: "aqi.medium")
                                 Spacer()
-                                Text("\(Int(engine.glassBlurRadius)) px")
+                                Text(String(format: "%.1f px", engine.glassBlurRadius))
                                     .font(.system(size: 13, weight: .bold, design: .monospaced))
                                     .foregroundStyle(.secondary)
                             }
-                            Slider(value: $engine.glassBlurRadius, in: 5.0...40.0, step: 1.0)
+                            MGGlassSlider(
+                                value: $engine.glassBlurRadius,
+                                in: 0.0...50.0,
+                                step: 0.5,
+                                gradientColors: [Color.orange.opacity(0.6), Color.yellow]
+                            )
                         }
                         .padding(.vertical, 4)
 
@@ -196,10 +211,10 @@ public struct SettingsView: View {
                     Text("Wine-Staging 9.0 (Custom)").tag("Wine-Staging 9.0 (Custom)")
                 }
 
-                Toggle("Eventfd Synchronization (Esync)", isOn: $enableEsync)
-                Toggle("Futex Synchronization (Fsync)", isOn: $enableFsync)
-                Toggle("Persist Shader Pre-Caching on Disk", isOn: $shaderCacheEnabled)
-                Toggle("Metal Performance HUD Overlay", isOn: $enableMetalHud)
+                MGGlassToggle("Eventfd Synchronization (Esync)", isOn: $enableEsync)
+                MGGlassToggle("Futex Synchronization (Fsync)", isOn: $enableFsync)
+                MGGlassToggle("Persist Shader Pre-Caching on Disk", isOn: $shaderCacheEnabled)
+                MGGlassToggle("Metal Performance HUD Overlay", isOn: $enableMetalHud)
             }
 
             // Application Permissions & Sandboxing

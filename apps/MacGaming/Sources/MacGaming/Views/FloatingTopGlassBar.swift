@@ -5,7 +5,8 @@ public struct FloatingTopGlassBar: View {
     @Binding var isCollapsed: Bool
 
     @FocusState private var isSearchFocused: Bool
-    @Namespace private var searchBubbleNamespace
+    @State private var hoverLocation: CGPoint = .zero
+    @State private var isHovered: Bool = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(engine: EngineService, isCollapsed: Binding<Bool>) {
@@ -16,37 +17,75 @@ public struct FloatingTopGlassBar: View {
     public var body: some View {
         ZStack {
             if isCollapsed {
-                collapsedBubble
-                    .matchedGeometryEffect(id: "searchBarContainer", in: searchBubbleNamespace)
-                    .transition(reduceMotion ? .opacity : .identity)
+                collapsedBubbleView
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
             } else {
-                expandedBar
-                    .matchedGeometryEffect(id: "searchBarContainer", in: searchBubbleNamespace)
-                    .transition(reduceMotion ? .opacity : .identity)
+                expandedGlassBarView
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.90).combined(with: .opacity))
             }
         }
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.75), value: isCollapsed)
-        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: engine.searchText.isEmpty)
+        .animation(.spring(response: 0.38, dampingFraction: 0.72), value: isCollapsed)
+        .onContinuousHover { phase in
+            switch phase {
+            case .active(let location):
+                hoverLocation = location
+                isHovered = true
+            case .ended:
+                isHovered = false
+            }
+        }
     }
 
-    // MARK: - Collapsed State: Liquid Glass Search Bubble
-    private var collapsedBubble: some View {
+    // MARK: - 1. Collapsed State: 3D Refractive Liquid Glass Bubble
+    private var collapsedBubbleView: some View {
         Button(action: {
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.75)) {
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
                 isCollapsed = false
                 isSearchFocused = true
             }
         }) {
             ZStack {
+                // Background Liquid Glass Orb
                 Circle()
-                    .fill(.regularMaterial)
-                    .frame(width: 42, height: 42)
+                    .fill(Color.white.opacity(0.12))
+                    .background(.regularMaterial, in: Circle())
+                    .frame(width: 44, height: 44)
                     .shadow(color: Color.black.opacity(0.16), radius: 10, y: 4)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.primary.opacity(0.10), lineWidth: 1)
-                    )
 
+                // Reactive Specular Lens Highlight (Tracks pointer location)
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color.white.opacity(0.55),
+                                Color.white.opacity(0.10),
+                                Color.clear
+                            ],
+                            center: isHovered ? UnitPoint(x: hoverLocation.x / 44, y: hoverLocation.y / 44) : .topLeading,
+                            startRadius: 2,
+                            endRadius: 22
+                        )
+                    )
+                    .frame(width: 44, height: 44)
+                    .clipShape(Circle())
+
+                // 3D Glass Bevel Rim
+                Circle()
+                    .strokeBorder(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color.white.opacity(0.85), location: 0.0),
+                                .init(color: Color.white.opacity(0.20), location: 0.5),
+                                .init(color: Color.white.opacity(0.50), location: 1.0)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.1
+                    )
+                    .frame(width: 44, height: 44)
+
+                // Magnifying Glass Search Icon
                 HStack(spacing: 3) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15, weight: .semibold))
@@ -55,21 +94,21 @@ public struct FloatingTopGlassBar: View {
                     if !engine.searchText.isEmpty {
                         Circle()
                             .fill(Color.accentColor)
-                            .frame(width: 6, height: 6)
+                            .frame(width: 5, height: 5)
                     }
                 }
             }
         }
         .buttonStyle(.plain)
-        .help("Search & controls (⌘F)")
+        .help("Search games (⌘F)")
         .keyboardShortcut("f", modifiers: .command)
     }
 
-    // MARK: - Expanded State: Floating Glass Control Capsule
-    private var expandedBar: some View {
+    // MARK: - 2. Expanded State: Organic Liquid Glass Control Capsule
+    private var expandedGlassBarView: some View {
         HStack(spacing: 12) {
             // 1. Search Field
-            HStack(spacing: 6) {
+            HStack(spacing: 7) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
@@ -81,7 +120,7 @@ public struct FloatingTopGlassBar: View {
                     .frame(minWidth: 140, idealWidth: 180)
                     .onSubmit {
                         if engine.searchText.isEmpty {
-                            withAnimation {
+                            withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
                                 isCollapsed = true
                             }
                         }
@@ -193,7 +232,7 @@ public struct FloatingTopGlassBar: View {
 
             // 6. Collapse Bar Button
             Button(action: {
-                withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.75)) {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
                     isSearchFocused = false
                     isCollapsed = true
                 }
@@ -206,17 +245,47 @@ public struct FloatingTopGlassBar: View {
             .buttonStyle(.plain)
             .help("Collapse to bubble (Esc)")
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(
-            Capsule()
-                .fill(.regularMaterial)
-                .shadow(color: Color.black.opacity(0.14), radius: 12, y: 4)
+            ZStack {
+                // 1. Crystal-clear transmission substrate
+                Capsule()
+                    .fill(Color.white.opacity(0.12))
+                    .background(.regularMaterial, in: Capsule())
+
+                // 2. Cursor-Reactive Specular Rim
+                Capsule()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color.white.opacity(0.40),
+                                Color.white.opacity(0.05),
+                                Color.clear
+                            ],
+                            center: isHovered ? UnitPoint(x: hoverLocation.x / 400, y: hoverLocation.y / 40) : .topLeading,
+                            startRadius: 5,
+                            endRadius: 180
+                        )
+                    )
+                    .clipShape(Capsule())
+
+                // 3. 3D Specular Bevel Rim
+                Capsule()
+                    .strokeBorder(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color.white.opacity(0.85), location: 0.0),
+                                .init(color: Color.white.opacity(0.20), location: 0.5),
+                                .init(color: Color.white.opacity(0.50), location: 1.0)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.0
+                    )
+            }
+            .shadow(color: Color.black.opacity(0.14), radius: 12, y: 4)
         )
-        .overlay(
-            Capsule()
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
-        .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 }
