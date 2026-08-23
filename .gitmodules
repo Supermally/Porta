@@ -1,0 +1,4 @@
+[submodule "runtime/wine"]
+	path = runtime/wine
+	url = https://github.com/wine-mirror/wine.git
+	branch = master
