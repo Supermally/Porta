@@ -54,18 +54,18 @@ public struct GameDetailView: View {
                         .frame(height: 220)
                     }
 
-                    // Hero Information & Compatibility Badge
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 8) {
+                    // Hero Information & Compatibility Badge Group
+                    VStack(alignment: .leading, spacing: 8) {
+                        GlassEffectContainer(spacing: 8) {
                             CompatibilityBadgeView(game.badge)
+                                .glassEffectID("gameBadge_\(game.id)", in: glassNamespace)
 
                             Text(game.storefront)
                                 .font(.caption)
                                 .fontWeight(.semibold)
                                 .padding(.horizontal, 9)
                                 .padding(.vertical, 4)
-                                .background(.ultraThinMaterial, in: Capsule())
-                                .overlay(Capsule().strokeBorder(Color.white.opacity(0.3), lineWidth: 0.8))
+                                .glassEffectID("gameStorefront_\(game.id)", in: glassNamespace)
                         }
 
                         Text(game.title)
