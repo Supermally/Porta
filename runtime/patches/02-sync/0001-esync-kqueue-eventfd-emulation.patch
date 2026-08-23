@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000002 Mon Sep 17 00:00:00 2001
+From: Apple Gaming Compatibility Runtime Team <runtime@macgaming.apple>
+Date: Sun, 23 Aug 2026 00:00:00 +0000
+Subject: [PATCH] server: Emulate eventfd synchronization using macOS kqueue and Mach ports
+
+Provides low-latency synchronization primitive routing on macOS where
+Linux eventfd is unavailable, eliminating wineserver thread contention.
+---
+ server/esync.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/server/esync.c b/server/esync.c
+index 0000000..2222222 100644
+--- a/server/esync.c
++++ b/server/esync.c
+@@ -25,6 +25,28 @@
+ 
++#if defined(__APPLE__)
++#include <sys/event.h>
++#include <mach/mach.h>
++#include <mach/semaphore.h>
++
++int mac_esync_create(void)
++{
++    int kq = kqueue();
++    return kq;
++}
++
++int mac_esync_post(int fd, uint64_t count)
++{
++    struct kevent ev;
++    EV_SET(&ev, 1, EVFILT_USER, 0, NOTE_TRIGGER, 0, NULL);
++    return kevent(fd, &ev, 1, NULL, 0, NULL);
++}
++#endif
++
+-- 
+2.39.3
