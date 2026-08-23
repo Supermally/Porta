@@ -6,13 +6,16 @@ public struct MGGlassToggle: View {
     public var accentColor: Color
 
     @State private var isHovered: Bool = false
+    @State private var isPressed: Bool = false
     @State private var dragOffset: CGFloat = 0
     @State private var isDragging: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.liquidGlassConfiguration) private var config
 
-    private let trackWidth: CGFloat = 50
+    private let trackWidth: CGFloat = 48
     private let trackHeight: CGFloat = 28
-    private let thumbSize: CGFloat = 24
-    private let thumbPadding: CGFloat = 2
+    private let thumbSize: CGFloat = 22
+    private let thumbPadding: CGFloat = 3
 
     public init(
         _ title: String = "",
@@ -28,14 +31,14 @@ public struct MGGlassToggle: View {
         HStack {
             if !title.isEmpty {
                 Text(title)
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.system(size: 13))
                     .foregroundColor(.primary)
                 Spacer()
             }
 
-            // Interactive Glass Toggle Track & Clear Capsule Thumb
+            // Interactive Liquid Glass Lens Toggle
             ZStack(alignment: .leading) {
-                // 1. Base Track
+                // 1. Resting Subordinate Track
                 Capsule()
                     .fill(
                         isOn
@@ -45,23 +48,24 @@ public struct MGGlassToggle: View {
                     .frame(width: trackWidth, height: trackHeight)
                     .overlay(
                         Capsule()
-                            .strokeBorder(isOn ? accentColor.opacity(0.5) : Color.primary.opacity(0.10), lineWidth: 0.8)
+                            .strokeBorder(isOn ? accentColor.opacity(0.40) : Color.primary.opacity(0.08), lineWidth: 0.8)
                     )
-                    .shadow(color: isOn ? accentColor.opacity(0.3) : Color.clear, radius: 6, y: 2)
+                    .shadow(color: isOn ? accentColor.opacity(0.25) : Color.clear, radius: 4, y: 1.5)
 
-                // 2. 3D Clear Refractive Glass Capsule Thumb
-                clearGlassThumb
+                // 2. Liquid Glass Lens Thumb (Materializes & Lifts on Interaction)
+                liquidGlassLensThumb
                     .offset(x: calculatedThumbOffset)
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                withAnimation(.spring(response: 0.30, dampingFraction: 0.75)) {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.76)) {
                     isOn.toggle()
                 }
             }
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        isPressed = true
                         isDragging = true
                         let maxOffset = trackWidth - thumbSize - (thumbPadding * 2)
                         let initial = isOn ? maxOffset : 0
@@ -69,10 +73,11 @@ public struct MGGlassToggle: View {
                         dragOffset = min(max(0, target), maxOffset)
                     }
                     .onEnded { value in
+                        isPressed = false
                         isDragging = false
                         let maxOffset = trackWidth - thumbSize - (thumbPadding * 2)
                         let threshold = maxOffset / 2
-                        withAnimation(.spring(response: 0.30, dampingFraction: 0.75)) {
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.76)) {
                             if dragOffset > threshold {
                                 isOn = true
                             } else {
@@ -98,54 +103,65 @@ public struct MGGlassToggle: View {
         return thumbPadding + (isOn ? maxOffset : 0)
     }
 
-    // MARK: - Clear Refractive Glass Thumb
-    private var clearGlassThumb: some View {
-        ZStack {
-            // Glass Substrate (Crystal Clear with subtle refraction)
-            Circle()
-                .fill(Color.white.opacity(0.15))
-                .background(.ultraThinMaterial, in: Circle())
-                .frame(width: thumbSize, height: thumbSize)
+    // MARK: - Liquid Glass Lens Thumb
+    private var isInteracting: Bool {
+        isPressed || isDragging || isHovered
+    }
 
-            // Specular Top Rim Reflection
-            VStack {
+    private var liquidGlassLensThumb: some View {
+        ZStack {
+            if isInteracting && config.enabled {
+                // ACTIVE LENS: Clear Refractive Substrate
                 Circle()
-                    .fill(
+                    .fill(Color.white.opacity(0.12))
+                    .background(.ultraThinMaterial, in: Circle())
+                    .frame(width: thumbSize, height: thumbSize)
+
+                // Specular Convex Lens Highlight
+                VStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: Color.white.opacity(0.65), location: 0.0),
+                                    .init(color: Color.white.opacity(0.12), location: 0.45),
+                                    .init(color: Color.clear, location: 1.0)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: thumbSize * 0.85, height: thumbSize * 0.45)
+                        .padding(.top, 1)
+                    Spacer()
+                }
+                .clipShape(Circle())
+
+                // 3D Glass Lens Rim
+                Circle()
+                    .strokeBorder(
                         LinearGradient(
                             stops: [
-                                .init(color: Color.white.opacity(0.65), location: 0.0),
-                                .init(color: Color.white.opacity(0.15), location: 0.45),
-                                .init(color: Color.clear, location: 1.0)
+                                .init(color: Color.white.opacity(0.85), location: 0.0),
+                                .init(color: Color.white.opacity(0.25), location: 0.5),
+                                .init(color: Color.white.opacity(0.55), location: 1.0)
                             ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.0
                     )
-                    .frame(width: thumbSize * 0.85, height: thumbSize * 0.45)
-                    .padding(.top, 1)
-                Spacer()
+                    .frame(width: thumbSize, height: thumbSize)
+            } else {
+                // RESTING THUMB: Clean & Quiet
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: thumbSize, height: thumbSize)
+                    .shadow(color: Color.black.opacity(0.14), radius: 2, y: 1)
             }
-            .clipShape(Circle())
-
-            // 3D Glass Bevel Rim Stroke
-            Circle()
-                .strokeBorder(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color.white.opacity(0.90), location: 0.0),
-                            .init(color: Color.white.opacity(0.30), location: 0.5),
-                            .init(color: Color.white.opacity(0.60), location: 1.0)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.0
-                )
-                .frame(width: thumbSize, height: thumbSize)
         }
-        .shadow(color: Color.black.opacity(0.18), radius: isHovered ? 4 : 2, y: 1.5)
-        .scaleEffect(isDragging ? 1.06 : (isHovered ? 1.03 : 1.0))
-        .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isHovered)
-        .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isDragging)
+        .scaleEffect(isInteracting ? LiquidGlassTokens.interactionScale : 1.0)
+        .shadow(color: Color.black.opacity(isInteracting ? 0.22 : 0.08), radius: isInteracting ? 6 : 2, y: isInteracting ? 3 : 1)
+        .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.74), value: isInteracting)
     }
 }
