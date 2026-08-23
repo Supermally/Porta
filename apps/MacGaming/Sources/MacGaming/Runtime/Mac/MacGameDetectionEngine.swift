@@ -36,7 +36,7 @@ public final class MacGameDetectionEngine: Sendable {
         }
 
         // 2. Engine & Renderer Heuristics
-        if directory.contains("engine/binaries") || filename.contains("ue4") || filename.contains("ue5") {
+        if directory.contains("engine/binaries") || directory.contains("babyinyellow") || filename.contains("win64-shipping") || filename.contains("ue4") || filename.contains("ue5") || filename.contains("babyinyellow") {
             engine = "Unreal Engine"
             renderer = .d3dmetal
             sync = .esync

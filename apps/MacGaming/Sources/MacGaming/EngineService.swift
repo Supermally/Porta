@@ -713,12 +713,29 @@ public class EngineService: ObservableObject {
             let proc = Process()
             proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
             
+            var resolvedExecPath = game.executablePath
+            let lowerExec = game.executablePath.lowercased()
+            let lowerInstall = game.installPath.lowercased()
+            let isUnreal = lowerExec.contains("babyinyellow") || lowerExec.contains("win64-shipping") || lowerExec.contains("engine/binaries") || lowerInstall.contains("babyinyellow") || lowerInstall.contains("unreal")
+
+            // If pointing to a root launcher exe (e.g. Game.exe) in an Unreal Engine game, search for the real Win64 shipping binary
+            if (lowerExec.hasSuffix("game.exe") || !lowerExec.contains("-shipping")) {
+                let gameDir = (game.executablePath as NSString).deletingLastPathComponent
+                let candidates = [
+                    gameDir + "/BabyInYellow/Binaries/Win64/Game-Win64-Shipping.exe",
+                    gameDir + "/Binaries/Win64/Game-Win64-Shipping.exe"
+                ]
+                if let shipping = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+                    resolvedExecPath = shipping
+                }
+            }
+
             var runArgs = ["-x86_64", runner]
             if game.displayResolution != "Native" {
                 runArgs.append("explorer.exe")
                 runArgs.append("/desktop=Game," + game.displayResolution)
             }
-            runArgs.append(game.executablePath)
+            runArgs.append(resolvedExecPath)
 
             // Special flags for Steam.exe to run without black screens or CEF sandbox crashes
             if game.executablePath.lowercased().contains("steam.exe") {
@@ -726,10 +743,18 @@ public class EngineService: ObservableObject {
                 runArgs.append("-allosarches")
             }
 
-            // Custom Engine & Unity Renderer Flags
+            // Custom Engine, Unreal & Unity Renderer Flags
             if !game.customLaunchArgs.isEmpty {
                 let extra = game.customLaunchArgs.components(separatedBy: " ").filter { !$0.isEmpty }
                 runArgs.append(contentsOf: extra)
+            } else if isUnreal {
+                if game.useD3DMetal {
+                    runArgs.append("-dx12")
+                } else {
+                    runArgs.append("-dx11")
+                    runArgs.append("-sm5")
+                    runArgs.append("-d3d11")
+                }
             } else if game.isUnityGame {
                 if game.useD3DMetal {
                     runArgs.append("-force-d3d12")
@@ -746,6 +771,12 @@ public class EngineService: ObservableObject {
             
             env["WINEPREFIX"] = prefixPath
             env["WINE_D3D_METAL"] = game.useD3DMetal ? "1" : "0"
+            env["D3DMetal_FEATURE_LEVEL"] = "11_1"
+            env["WINE_D3D11_FEATURE_LEVEL"] = "11_1"
+            env["DXVK_FEATURE_LEVEL"] = "11_1"
+            env["DXVK_CONFIG"] = "dxgi.maxFeatureLevel = 11_1; d3d11.maxFeatureLevel = 11_1; dxgi.customVendorId = 0x10de; dxgi.customDeviceId = 0x1e84; d3d11.shaderModel = 5"
+            env["DXVK_FILTER_DEVICE_NAME"] = "Apple M"
+            env["DXVK_ENABLE_NVAPI"] = "1"
             env["DXVK_HUD"] = game.enableHud ? "devinfo,fps" : "0"
             env["WINEESYNC"] = game.enableEsync ? "1" : "0"
             env["WINEFSYNC"] = game.enableFsync ? "1" : "0"

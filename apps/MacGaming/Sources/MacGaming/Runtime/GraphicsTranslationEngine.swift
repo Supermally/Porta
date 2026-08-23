@@ -43,20 +43,33 @@ public final class GraphicsTranslationEngine: Sendable {
 
         // 5. Graphics Backend Overrides (D3DMetal vs DXVK vs MoltenVK)
         var dllOverrides = ["winemenubuilder.exe": "d", "mscms": "d"]
+        env["D3DMetal_FEATURE_LEVEL"] = "11_1"
+        env["WINE_D3D11_FEATURE_LEVEL"] = "11_1"
+        env["DXVK_FEATURE_LEVEL"] = "11_1"
+        env["DXVK_CONFIG"] = "dxgi.maxFeatureLevel = 11_1; d3d11.maxFeatureLevel = 11_1; dxgi.customVendorId = 0x10de; dxgi.customDeviceId = 0x1e84; d3d11.shaderModel = 5"
+        env["DXVK_FILTER_DEVICE_NAME"] = "Apple M"
+        env["DXVK_ENABLE_NVAPI"] = "1"
+
         switch config.graphicsBackend {
         case .d3dmetal:
             dllOverrides["d3d12"] = "n,b"
             dllOverrides["d3d11"] = "n,b"
             dllOverrides["dxgi"] = "n,b"
+            dllOverrides["d3dcompiler_47"] = "n,b"
+            dllOverrides["d3dcompiler_43"] = "n,b"
             env["D3DMetal_LOG_LEVEL"] = "warn"
+            env["WINE_D3D_METAL"] = "1"
         case .dxvk:
             dllOverrides["d3d11"] = "n"
             dllOverrides["d3d10core"] = "n"
             dllOverrides["d3d9"] = "n"
             dllOverrides["dxgi"] = "n"
+            dllOverrides["d3dcompiler_47"] = "n,b"
+            dllOverrides["d3dcompiler_43"] = "n,b"
         case .dxmt:
             dllOverrides["d3d11"] = "n"
             dllOverrides["dxgi"] = "n"
+            dllOverrides["d3dcompiler_47"] = "n,b"
         case .moltenVK, .nativeMetal:
             break
         }
