@@ -667,6 +667,40 @@ public class EngineService: ObservableObject {
                 content = content.replacingOccurrences(of: buggy, with: fixed)
                 try? content.write(to: URL(fileURLWithPath: path), atomically: true, encoding: .utf8)
             }
+            if path.hasSuffix("BFRES.frag") && !content.contains("MacGaming View Mode Overrides:") {
+                let buggy2 = "    // Toggles rendering of individual color channels for all render modes.\n    fragColor.rgb *= vec3(renderR, renderG, renderB);"
+                let fixed2 = """
+    // Toggles rendering of individual color channels for all render modes.
+    // MacGaming View Mode Overrides:
+    if (renderType == 1) { // Normals
+        fragColor = vec4((N * 0.5) + 0.5, 1);
+    } else if (renderType == 2) { // Lighting
+        fragColor = vec4(vec3(max(dot(N, normalize(vec3(0,0,-1) * mat3(mtxCam))), 0.0)), 1);
+    } else if (renderType == 3) { // DiffuseColor
+        fragColor = vec4(albedo.rgb, 1);
+    } else if (renderType == 4) { // Display Normal Map
+        fragColor.rgb = texture(NormalMap, f_texcoord0).rgb;
+    } else if (renderType == 5) { // Vertex Color
+        fragColor = vert.vertexColor;
+    } else if (renderType == 6) { // Ambient Occlusion
+        fragColor = vec4(vec3(AoPass), 1);
+    } else if (renderType == 7) { // UV Coords
+        fragColor = vec4(f_texcoord0.x, f_texcoord0.y, 1, 1);
+    } else if (renderType == 9) { // Tangents
+        fragColor = vec4((vert.tangent * 0.5) + 0.5, 1);
+    } else if (renderType == 10) { // Bitangents
+        fragColor = vec4((vert.bitangent * 0.5) + 0.5, 1);
+    } else if (renderType == 11) { // Light map
+        fragColor = (HasLightMap == 1) ? vec4(texture(BakeLightMap, f_texcoord2).rgb, 1) : vec4(1);
+    } else if (renderType == 12) { // Bone Weights
+        fragColor.rgb = boneWeightsColored;
+    }
+
+    fragColor.rgb *= vec3(renderR, renderG, renderB);
+"""
+                content = content.replacingOccurrences(of: buggy2, with: fixed2)
+                try? content.write(to: URL(fileURLWithPath: path), atomically: true, encoding: .utf8)
+            }
         }
     }
 
@@ -878,6 +912,15 @@ public class EngineService: ObservableObject {
                 try? reg2.run()
                 reg2.waitUntilExit()
             }
+            // Prevent Win32 IO ERROR_NOT_READY crashes in .NET apps (e.g. Toolbox Console.WriteLine on close) by providing valid pipes
+            let outPipe = Pipe()
+            let errPipe = Pipe()
+            proc.standardOutput = outPipe
+            proc.standardError = errPipe
+
+            // Drain pipes asynchronously so the buffer doesn't fill up and block the process
+            outPipe.fileHandleForReading.readabilityHandler = { _ in }
+            errPipe.fileHandleForReading.readabilityHandler = { _ in }
 
             do {
                 try proc.run()
