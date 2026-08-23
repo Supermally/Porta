@@ -642,23 +642,10 @@ public class EngineService: ObservableObject {
         for path in shaderPaths {
             guard FileManager.default.fileExists(atPath: path),
                   var content = try? String(contentsOf: URL(fileURLWithPath: path), encoding: .utf8) else { continue }
-            // Toolbox C# typo fix: The shader expects HasDiffuse but the C# binary passes HasDiffuseMap
-            if content.contains("uniform int HasDiffuse;") {
-                content = content.replacingOccurrences(of: "uniform int HasDiffuse;", with: "uniform int HasDiffuseMap;")
-                try? content.write(to: URL(fileURLWithPath: path), atomically: true, encoding: .utf8)
-            }
-
-            if content.contains("vec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);") && !content.contains("if (HasDiffuseMap == 1)") {
-                let buggy = """
-\tvec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);
-\tvec4 albedo = vec4(0);
-\t//Comp Selectors
-\talbedo.r = GetComponent(RedChannel, diffuseMapColor);
-\talbedo.g = GetComponent(GreenChannel, diffuseMapColor);
-\talbedo.b = GetComponent(BlueChannel, diffuseMapColor);
-\talbedo.a = GetComponent(AlphaChannel, diffuseMapColor);
-"""
-                let fixed = """
+                  
+            // Unconditionally sample DiffuseMap since HasDiffuseMap isn't reliably provided.
+            // We strip out the HasDiffuse conditional if it was previously injected.
+            let oldBuggy1 = """
 \tvec4 albedo = vec4(0.85, 0.85, 0.85, 1.0);
 \tif (HasDiffuseMap == 1)
 \t{
@@ -670,9 +657,30 @@ public class EngineService: ObservableObject {
 \t\talbedo.a = GetComponent(AlphaChannel, diffuseMapColor);
 \t}
 """
-                content = content.replacingOccurrences(of: buggy, with: fixed)
-                // Also update any old instances of HasDiffuse == 1 that might have been applied before
-                content = content.replacingOccurrences(of: "if (HasDiffuse == 1)", with: "if (HasDiffuseMap == 1)")
+            let oldBuggy2 = """
+\tvec4 albedo = vec4(0.85, 0.85, 0.85, 1.0);
+\tif (HasDiffuse == 1)
+\t{
+\t\tvec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);
+\t\t//Comp Selectors
+\t\talbedo.r = GetComponent(RedChannel, diffuseMapColor);
+\t\talbedo.g = GetComponent(GreenChannel, diffuseMapColor);
+\t\talbedo.b = GetComponent(BlueChannel, diffuseMapColor);
+\t\talbedo.a = GetComponent(AlphaChannel, diffuseMapColor);
+\t}
+"""
+            let reverted = """
+\tvec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);
+\tvec4 albedo = vec4(0);
+\t//Comp Selectors
+\talbedo.r = GetComponent(RedChannel, diffuseMapColor);
+\talbedo.g = GetComponent(GreenChannel, diffuseMapColor);
+\talbedo.b = GetComponent(BlueChannel, diffuseMapColor);
+\talbedo.a = GetComponent(AlphaChannel, diffuseMapColor);
+"""
+            if content.contains(oldBuggy1) || content.contains(oldBuggy2) {
+                content = content.replacingOccurrences(of: oldBuggy1, with: reverted)
+                content = content.replacingOccurrences(of: oldBuggy2, with: reverted)
                 try? content.write(to: URL(fileURLWithPath: path), atomically: true, encoding: .utf8)
             }
             if path.hasSuffix("BFRES.frag") && !content.contains("MacGaming View Mode Overrides:") {
