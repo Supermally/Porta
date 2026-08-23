@@ -41,7 +41,7 @@ public struct MGGlassSlider: View {
                     .fill(Color.primary.opacity(0.08))
                     .frame(height: trackHeight)
 
-                // 2. Active Gradient Track (Revealed & refracted beneath the lens)
+                // 2. Active Gradient Track (Shows clearly under the lens)
                 Capsule()
                     .fill(
                         LinearGradient(
@@ -53,10 +53,10 @@ public struct MGGlassSlider: View {
                     .frame(width: max(trackHeight, currentOffset + (thumbWidth / 2)), height: trackHeight)
                     .clipShape(Capsule())
 
-                // 3. Liquid Glass Lens Knob (Active on Direct Drag/Press ONLY)
+                // 3. Crystal-Clear Liquid Glass Lens Knob (Lifts on Press/Drag)
                 lensKnob
                     .offset(x: currentOffset)
-                    .gesture(
+                    .simultaneousGesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { gesture in
                                 isPressed = true
@@ -107,7 +107,6 @@ public struct MGGlassSlider: View {
         .frame(height: 24)
     }
 
-    // MARK: - Direct Manipulation State (Strictly Press / Drag, NEVER Hover)
     private var isDirectlyManipulating: Bool {
         isPressed || isDragging
     }
@@ -117,39 +116,53 @@ public struct MGGlassSlider: View {
         return 1.0 + (abs(dragVelocity) * 0.14)
     }
 
+    // MARK: - Crystal-Clear Liquid Glass Lens Knob
     private var lensKnob: some View {
         ZStack {
-            if isDirectlyManipulating && config.enabled {
-                // ACTIVE LENS: Native Liquid Glass material with optical clarity
+            // Optical Glass Substrate (Borderline Transparent)
+            Capsule()
+                .fill(Color.white.opacity(isDirectlyManipulating ? 0.05 : 0.15))
+                .frame(width: thumbWidth, height: thumbHeight)
+                .glassEffect(isDirectlyManipulating ? .regular.interactive() : .regular, in: Capsule())
+
+            // Specular Convex Lens Highlight
+            VStack {
                 Capsule()
-                    .fill(Color.white.opacity(0.12))
-                    .frame(width: thumbWidth, height: thumbHeight)
-                    .glassEffect(.regular.interactive(), in: Capsule())
-                    .overlay(
-                        Capsule()
-                            .strokeBorder(
-                                LinearGradient(
-                                    stops: [
-                                        .init(color: Color.white.opacity(0.90), location: 0.0),
-                                        .init(color: Color.white.opacity(0.24), location: 0.45),
-                                        .init(color: Color.white.opacity(0.55), location: 1.0)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.0
-                            )
+                    .fill(
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color.white.opacity(isDirectlyManipulating ? 0.70 : 0.45), location: 0.0),
+                                .init(color: Color.white.opacity(0.08), location: 0.45),
+                                .init(color: Color.clear, location: 1.0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-            } else {
-                // RESTING STATE: Quiet, clean solid knob
-                Capsule()
-                    .fill(Color.white)
-                    .frame(width: thumbWidth, height: thumbHeight)
-                    .shadow(color: Color.black.opacity(0.12), radius: 2, y: 1)
+                    .frame(width: thumbWidth * 0.85, height: thumbHeight * 0.45)
+                    .padding(.top, 1)
+                Spacer()
             }
+            .clipShape(Capsule())
+
+            // 3D Specular Lens Rim
+            Capsule()
+                .strokeBorder(
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color.white.opacity(isDirectlyManipulating ? 0.90 : 0.60), location: 0.0),
+                            .init(color: Color.white.opacity(0.18), location: 0.45),
+                            .init(color: Color.white.opacity(isDirectlyManipulating ? 0.50 : 0.30), location: 1.0)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.0
+                )
+                .frame(width: thumbWidth, height: thumbHeight)
         }
         .scaleEffect(x: stretchFactor, y: isDirectlyManipulating ? 1.04 : 1.0)
-        .shadow(color: Color.black.opacity(isDirectlyManipulating ? 0.20 : 0.08), radius: isDirectlyManipulating ? 6 : 2, y: isDirectlyManipulating ? 3 : 1)
+        .shadow(color: Color.black.opacity(isDirectlyManipulating ? 0.20 : 0.08), radius: isDirectlyManipulating ? 6 : 2.5, y: isDirectlyManipulating ? 3 : 1)
         .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.74), value: isDirectlyManipulating)
         .animation(reduceMotion ? nil : .spring(response: 0.18, dampingFraction: 0.8), value: stretchFactor)
     }
