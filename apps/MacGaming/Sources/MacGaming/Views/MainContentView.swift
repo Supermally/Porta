@@ -116,13 +116,7 @@ public struct MainContentView: View {
                 }
             }
         }
-        .liquidGlassEnvironment(
-            enabled: engine.liquidGlassEnabled,
-            transparency: engine.glassTransparency,
-            specularIntensity: engine.glassSpecularIntensity,
-            blurRadius: engine.glassBlurRadius,
-            reduceTransparency: engine.reduceTransparency
-        )
+        .liquidGlassConfiguration(engine.glassConfig)
         .frame(minWidth: 980, minHeight: 640)
     }
 }
