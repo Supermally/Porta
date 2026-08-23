@@ -8,7 +8,11 @@ public struct SettingsView: View {
     @State private var shaderCacheEnabled: Bool = true
     @State private var enableMetalHud: Bool = false
     @State private var testVolume: Double = 0.75
-    @State private var testFpsTarget: Double = 120.0
+
+    // Developer Visual Debug Mode & Morph Test State
+    @State private var isDebugModeEnabled: Bool = false
+    @State private var isTestMorphExpanded: Bool = false
+    @Namespace private var testMorphNamespace
 
     public init(engine: EngineService) {
         self._engine = ObservedObject(wrappedValue: engine)
@@ -79,7 +83,7 @@ public struct SettingsView: View {
 
                             // Interactive Liquid Glass Lens Test Playground
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("Interactive Liquid Glass Lens Playground")
+                                Text("Interactive Liquid Glass Lens Playground (Press & Drag to Activate Lens)")
                                     .font(.system(size: 12, weight: .semibold))
                                     .foregroundColor(.secondary)
 
@@ -128,10 +132,10 @@ public struct SettingsView: View {
                                 }
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-                                // Live Slider Lens Test
+                                // Live Slider Lens Test (Direct Drag ONLY)
                                 VStack(alignment: .leading, spacing: 6) {
                                     HStack {
-                                        Text("Lens Slider Test (Drag to observe momentum stretch)")
+                                        Text("Slider Lens (Direct Drag Triggered)")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         Spacer()
@@ -164,7 +168,75 @@ public struct SettingsView: View {
                     }
                 }
 
-                // 2. Graphics & Compatibility Runtimes Card
+                // 2. Developer Visual Debug Mode & Morphing Test
+                settingsCard(title: "Developer Liquid Glass Diagnostics & Morph Test", icon: "wrench.and.screwdriver") {
+                    VStack(alignment: .leading, spacing: 14) {
+                        MGGlassToggle("Enable Visual Debug Diagnostic Mode", isOn: $isDebugModeEnabled)
+
+                        if isDebugModeEnabled {
+                            Divider().opacity(0.3)
+
+                            // Diagnostic State Badges
+                            HStack(spacing: 12) {
+                                diagnosticBadge(title: "GLASS", value: "NATIVE", color: .blue)
+                                diagnosticBadge(title: "LENS TRIGGER", value: "PRESS / DRAG ONLY", color: .green)
+                                diagnosticBadge(title: "MORPH", value: isTestMorphExpanded ? "EXPANDED" : "COLLAPSED", color: .purple)
+                            }
+
+                            Divider().opacity(0.3)
+
+                            // Extreme Geometry Morph Test (Circle <-> Large Capsule)
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Native GlassEffectContainer Morph Test (Circle ⟷ Large Capsule)")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.secondary)
+
+                                GlassEffectContainer(spacing: 40) {
+                                    if isTestMorphExpanded {
+                                        HStack(spacing: 14) {
+                                            Image(systemName: "magnifyingglass")
+                                                .font(.system(size: 15, weight: .semibold))
+                                            Text("Search library, filters & recents…")
+                                                .font(.system(size: 13))
+                                                .foregroundColor(.secondary)
+                                            Spacer()
+                                            Button {
+                                                withAnimation(.spring(response: 0.38, dampingFraction: 0.74)) {
+                                                    isTestMorphExpanded = false
+                                                }
+                                            } label: {
+                                                Image(systemName: "chevron.up")
+                                            }
+                                            .buttonStyle(.glass)
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 10)
+                                        .frame(height: 52)
+                                        .glassEffect(.regular.interactive(), in: Capsule())
+                                        .glassEffectID("morphTestElement", in: testMorphNamespace)
+                                    } else {
+                                        Button {
+                                            withAnimation(.spring(response: 0.38, dampingFraction: 0.74)) {
+                                                isTestMorphExpanded = true
+                                            }
+                                        } label: {
+                                            Image(systemName: "magnifyingglass")
+                                                .font(.system(size: 16, weight: .bold))
+                                                .frame(width: 48, height: 48)
+                                        }
+                                        .buttonStyle(.glass)
+                                        .clipShape(Circle())
+                                        .glassEffect(.regular.interactive(), in: Circle())
+                                        .glassEffectID("morphTestElement", in: testMorphNamespace)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    }
+                }
+
+                // 3. Graphics & Compatibility Runtimes Card
                 settingsCard(title: "Graphics & Compatibility Runtime", icon: "cpu") {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
@@ -188,7 +260,7 @@ public struct SettingsView: View {
                     }
                 }
 
-                // 3. Managed Components & Runtimes Card
+                // 4. Managed Components & Runtimes Card
                 settingsCard(title: "Installed Components & Runtimes", icon: "shippingbox.fill") {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(DependencyManager.shared.dependencies) { dep in
@@ -237,7 +309,7 @@ public struct SettingsView: View {
                     }
                 }
 
-                // 4. Application Permissions & Security Card
+                // 5. Application Permissions & Security Card
                 settingsCard(title: "Application Permissions & Security", icon: "lock.shield.fill") {
                     VStack(alignment: .leading, spacing: 14) {
                         HStack {
@@ -296,7 +368,7 @@ public struct SettingsView: View {
                     }
                 }
 
-                // 5. Hardware Specifications Card
+                // 6. Hardware Specifications Card
                 settingsCard(title: "System & Hardware", icon: "macmini.fill") {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
@@ -362,5 +434,23 @@ public struct SettingsView: View {
                     )
             )
         }
+    }
+
+    private func diagnosticBadge(title: String, value: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(color)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(color.opacity(0.12))
+                .overlay(Capsule().strokeBorder(color.opacity(0.30), lineWidth: 0.8))
+        )
     }
 }

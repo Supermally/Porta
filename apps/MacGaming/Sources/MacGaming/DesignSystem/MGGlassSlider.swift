@@ -6,7 +6,6 @@ public struct MGGlassSlider: View {
     public let step: Double
     public var gradientColors: [Color]
 
-    @State private var isHovered: Bool = false
     @State private var isDragging: Bool = false
     @State private var isPressed: Bool = false
     @State private var dragVelocity: CGFloat = 0.0
@@ -42,7 +41,7 @@ public struct MGGlassSlider: View {
                     .fill(Color.primary.opacity(0.08))
                     .frame(height: trackHeight)
 
-                // 2. Active Gradient Track (Shows under the lens)
+                // 2. Active Gradient Track (Revealed & refracted beneath the lens)
                 Capsule()
                     .fill(
                         LinearGradient(
@@ -54,8 +53,8 @@ public struct MGGlassSlider: View {
                     .frame(width: max(trackHeight, currentOffset + (thumbWidth / 2)), height: trackHeight)
                     .clipShape(Capsule())
 
-                // 3. Liquid Glass Lens Knob (Lifts & Stretches with momentum on drag)
-                liquidGlassLensKnob
+                // 3. Liquid Glass Lens Knob (Active on Direct Drag/Press ONLY)
+                lensKnob
                     .offset(x: currentOffset)
                     .gesture(
                         DragGesture(minimumDistance: 0)
@@ -63,10 +62,10 @@ public struct MGGlassSlider: View {
                                 isPressed = true
                                 isDragging = true
 
-                                // Calculate velocity for subtle elastic stretch
+                                // Momentum Velocity Tracking
                                 let delta = gesture.location.x - lastDragLocation
                                 lastDragLocation = gesture.location.x
-                                dragVelocity = min(max(-1.0, delta / 12.0), 1.0)
+                                dragVelocity = min(max(-1.0, delta / 10.0), 1.0)
 
                                 let rawFraction = (gesture.location.x - (thumbWidth / 2)) / availableWidth
                                 let clamped = min(max(0, rawFraction), 1.0)
@@ -82,7 +81,7 @@ public struct MGGlassSlider: View {
                             .onEnded { _ in
                                 isPressed = false
                                 isDragging = false
-                                withAnimation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.72)) {
+                                withAnimation(reduceMotion ? nil : .spring(response: 0.24, dampingFraction: 0.72)) {
                                     dragVelocity = 0.0
                                 }
                             }
@@ -104,80 +103,54 @@ public struct MGGlassSlider: View {
                     }
                 }
             }
-            .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    isHovered = hovering
-                }
-            }
         }
         .frame(height: 24)
     }
 
-    // MARK: - Liquid Glass Lens Knob
-    private var isInteracting: Bool {
-        isPressed || isDragging || isHovered
+    // MARK: - Direct Manipulation State (Strictly Press / Drag, NEVER Hover)
+    private var isDirectlyManipulating: Bool {
+        isPressed || isDragging
     }
 
     private var stretchFactor: CGFloat {
         if reduceMotion || !isDragging { return 1.0 }
-        return 1.0 + (abs(dragVelocity) * 0.15)
+        return 1.0 + (abs(dragVelocity) * 0.14)
     }
 
-    private var liquidGlassLensKnob: some View {
+    private var lensKnob: some View {
         ZStack {
-            if isInteracting && config.enabled {
-                // ACTIVE LENS: Clear Refractive Substrate
+            if isDirectlyManipulating && config.enabled {
+                // ACTIVE LENS: Native Liquid Glass material with optical clarity
                 Capsule()
-                    .fill(Color.white.opacity(0.14))
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .fill(Color.white.opacity(0.12))
                     .frame(width: thumbWidth, height: thumbHeight)
-
-                // Top Specular Convex Highlight
-                VStack {
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity(0.65), location: 0.0),
-                                    .init(color: Color.white.opacity(0.12), location: 0.45),
-                                    .init(color: Color.clear, location: 1.0)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
+                    .glassEffect(.regular.interactive(), in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .strokeBorder(
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: Color.white.opacity(0.90), location: 0.0),
+                                        .init(color: Color.white.opacity(0.24), location: 0.45),
+                                        .init(color: Color.white.opacity(0.55), location: 1.0)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.0
                             )
-                        )
-                        .frame(width: thumbWidth * 0.85, height: thumbHeight * 0.45)
-                        .padding(.top, 1)
-                    Spacer()
-                }
-                .clipShape(Capsule())
-
-                // 3D Specular Lens Rim
-                Capsule()
-                    .strokeBorder(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.white.opacity(0.90), location: 0.0),
-                                .init(color: Color.white.opacity(0.28), location: 0.45),
-                                .init(color: Color.white.opacity(0.60), location: 1.0)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
                     )
-                    .frame(width: thumbWidth, height: thumbHeight)
             } else {
-                // RESTING KNOB: Clean & Quiet
+                // RESTING STATE: Quiet, clean solid knob
                 Capsule()
                     .fill(Color.white)
                     .frame(width: thumbWidth, height: thumbHeight)
                     .shadow(color: Color.black.opacity(0.12), radius: 2, y: 1)
             }
         }
-        .scaleEffect(x: stretchFactor, y: isInteracting ? 1.04 : 1.0)
-        .shadow(color: Color.black.opacity(isInteracting ? 0.20 : 0.08), radius: isInteracting ? 6 : 2, y: isInteracting ? 3 : 1)
-        .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.74), value: isInteracting)
+        .scaleEffect(x: stretchFactor, y: isDirectlyManipulating ? 1.04 : 1.0)
+        .shadow(color: Color.black.opacity(isDirectlyManipulating ? 0.20 : 0.08), radius: isDirectlyManipulating ? 6 : 2, y: isDirectlyManipulating ? 3 : 1)
+        .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.74), value: isDirectlyManipulating)
         .animation(reduceMotion ? nil : .spring(response: 0.18, dampingFraction: 0.8), value: stretchFactor)
     }
 }

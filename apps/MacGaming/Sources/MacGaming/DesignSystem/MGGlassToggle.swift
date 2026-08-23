@@ -5,10 +5,9 @@ public struct MGGlassToggle: View {
     @Binding public var isOn: Bool
     public var accentColor: Color
 
-    @State private var isHovered: Bool = false
     @State private var isPressed: Bool = false
-    @State private var dragOffset: CGFloat = 0
     @State private var isDragging: Bool = false
+    @State private var dragOffset: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.liquidGlassConfiguration) private var config
 
@@ -36,7 +35,7 @@ public struct MGGlassToggle: View {
                 Spacer()
             }
 
-            // Interactive Liquid Glass Lens Toggle
+            // Direct Manipulation Liquid Glass Toggle Track & Lens
             ZStack(alignment: .leading) {
                 // 1. Resting Subordinate Track
                 Capsule()
@@ -52,8 +51,8 @@ public struct MGGlassToggle: View {
                     )
                     .shadow(color: isOn ? accentColor.opacity(0.25) : Color.clear, radius: 4, y: 1.5)
 
-                // 2. Liquid Glass Lens Thumb (Materializes & Lifts on Interaction)
-                liquidGlassLensThumb
+                // 2. Liquid Glass Lens Thumb (Direct Press/Drag Triggered ONLY)
+                lensThumb
                     .offset(x: calculatedThumbOffset)
             }
             .contentShape(Rectangle())
@@ -87,11 +86,6 @@ public struct MGGlassToggle: View {
                         }
                     }
             )
-            .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    isHovered = hovering
-                }
-            }
         }
     }
 
@@ -103,65 +97,44 @@ public struct MGGlassToggle: View {
         return thumbPadding + (isOn ? maxOffset : 0)
     }
 
-    // MARK: - Liquid Glass Lens Thumb
-    private var isInteracting: Bool {
-        isPressed || isDragging || isHovered
+    // MARK: - Direct Manipulation State (Strictly Press / Drag, NEVER Hover)
+    private var isDirectlyManipulating: Bool {
+        isPressed || isDragging
     }
 
-    private var liquidGlassLensThumb: some View {
+    private var lensThumb: some View {
         ZStack {
-            if isInteracting && config.enabled {
-                // ACTIVE LENS: Clear Refractive Substrate
+            if isDirectlyManipulating && config.enabled {
+                // ACTIVE LENS: Native Liquid Glass material with optical clarity
                 Circle()
                     .fill(Color.white.opacity(0.12))
-                    .background(.ultraThinMaterial, in: Circle())
                     .frame(width: thumbSize, height: thumbSize)
-
-                // Specular Convex Lens Highlight
-                VStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity(0.65), location: 0.0),
-                                    .init(color: Color.white.opacity(0.12), location: 0.45),
-                                    .init(color: Color.clear, location: 1.0)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .overlay(
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: Color.white.opacity(0.85), location: 0.0),
+                                        .init(color: Color.white.opacity(0.20), location: 0.5),
+                                        .init(color: Color.white.opacity(0.50), location: 1.0)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.0
                             )
-                        )
-                        .frame(width: thumbSize * 0.85, height: thumbSize * 0.45)
-                        .padding(.top, 1)
-                    Spacer()
-                }
-                .clipShape(Circle())
-
-                // 3D Glass Lens Rim
-                Circle()
-                    .strokeBorder(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.white.opacity(0.85), location: 0.0),
-                                .init(color: Color.white.opacity(0.25), location: 0.5),
-                                .init(color: Color.white.opacity(0.55), location: 1.0)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
                     )
-                    .frame(width: thumbSize, height: thumbSize)
             } else {
-                // RESTING THUMB: Clean & Quiet
+                // RESTING STATE: Quiet, clean solid thumb
                 Circle()
                     .fill(Color.white)
                     .frame(width: thumbSize, height: thumbSize)
-                    .shadow(color: Color.black.opacity(0.14), radius: 2, y: 1)
+                    .shadow(color: Color.black.opacity(0.12), radius: 2, y: 1)
             }
         }
-        .scaleEffect(isInteracting ? LiquidGlassTokens.interactionScale : 1.0)
-        .shadow(color: Color.black.opacity(isInteracting ? 0.22 : 0.08), radius: isInteracting ? 6 : 2, y: isInteracting ? 3 : 1)
-        .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.74), value: isInteracting)
+        .scaleEffect(isDirectlyManipulating ? LiquidGlassTokens.interactionScale : 1.0)
+        .shadow(color: Color.black.opacity(isDirectlyManipulating ? 0.20 : 0.08), radius: isDirectlyManipulating ? 6 : 2, y: isDirectlyManipulating ? 3 : 1)
+        .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.74), value: isDirectlyManipulating)
     }
 }
