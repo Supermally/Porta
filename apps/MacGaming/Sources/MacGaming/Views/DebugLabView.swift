@@ -354,7 +354,18 @@ public struct DebugLabView: View {
                     metrics: [
                         "CEF Multi-Process: Browser, Render, GPU",
                         "Mojo Pipes: Asynchronous Windows Pipes",
-                        "Shared Memory: POSIX shm Zero-Copy"
+                        "Process Topology: Supervision & kqueue"
+                    ]
+                )
+
+                SubsystemMetricCard(
+                    title: "Mach / POSIX Shared Memory",
+                    icon: "externaldrive.fill.badge.checkmark",
+                    color: .indigo,
+                    metrics: [
+                        "Allocation: 16KB Apple Hardware Alignment",
+                        "Windows Thunk: 64KB Granularity Mapping",
+                        "Lifetime: Global Reference Counting"
                     ]
                 )
             }
