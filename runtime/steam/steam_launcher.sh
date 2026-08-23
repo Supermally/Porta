@@ -7,7 +7,7 @@ export WINE_OPENGL_CORE=1
 export WINE_RETINA=1
 
 # Inject Stage 4 Chromium Sandbox bypass for steamwebhelper.exe
-export DYLD_INSERT_LIBRARIES="/opt/macgaming/lib/libsandbox_bypass.dylib"
+#export DYLD_INSERT_LIBRARIES="/opt/macgaming/lib/libsandbox_bypass.dylib"
 
 # Enable Apple Silicon optimisations for translation
 export DXVK_FILTER_DEVICE_NAME="Apple M"
