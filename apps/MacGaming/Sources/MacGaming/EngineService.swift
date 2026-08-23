@@ -633,6 +633,43 @@ public class EngineService: ObservableObject {
         return runnerPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) ?? "/opt/homebrew/bin/wine"
     }
 
+    public static func sanitizeShadersIfNeeded(at executablePath: String) {
+        let appDir = (executablePath as NSString).deletingLastPathComponent
+        let shaderPaths = [
+            appDir + "/Shader/Bfres/BFRES.frag",
+            appDir + "/Shader/Bfres/BFRES_Debug.frag"
+        ]
+        for path in shaderPaths {
+            guard FileManager.default.fileExists(atPath: path),
+                  var content = try? String(contentsOf: URL(fileURLWithPath: path), encoding: .utf8) else { continue }
+            if content.contains("vec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);") && !content.contains("if (HasDiffuse == 1)") {
+                let buggy = """
+\tvec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);
+\tvec4 albedo = vec4(0);
+\t//Comp Selectors
+\talbedo.r = GetComponent(RedChannel, diffuseMapColor);
+\talbedo.g = GetComponent(GreenChannel, diffuseMapColor);
+\talbedo.b = GetComponent(BlueChannel, diffuseMapColor);
+\talbedo.a = GetComponent(AlphaChannel, diffuseMapColor);
+"""
+                let fixed = """
+\tvec4 albedo = vec4(0.85, 0.85, 0.85, 1.0);
+\tif (HasDiffuse == 1)
+\t{
+\t\tvec4 diffuseMapColor = vec4(texture(DiffuseMap, f_texcoord0).rgba);
+\t\t//Comp Selectors
+\t\talbedo.r = GetComponent(RedChannel, diffuseMapColor);
+\t\talbedo.g = GetComponent(GreenChannel, diffuseMapColor);
+\t\talbedo.b = GetComponent(BlueChannel, diffuseMapColor);
+\t\talbedo.a = GetComponent(AlphaChannel, diffuseMapColor);
+\t}
+"""
+                content = content.replacingOccurrences(of: buggy, with: fixed)
+                try? content.write(to: URL(fileURLWithPath: path), atomically: true, encoding: .utf8)
+            }
+        }
+    }
+
     public func launchGame(_ game: GameItem) {
         isLaunching = true
         let translationLayer = game.isNative ? "Native macOS" : (game.useD3DMetal ? "D3DMetal (DirectX 12/Metal)" : "DXVK 2.3 (Vulkan/Metal)")
@@ -757,6 +794,9 @@ public class EngineService: ObservableObject {
                 runArgs.append("/desktop=Game," + game.displayResolution)
             }
             runArgs.append(resolvedExecPath)
+
+            // Automatically sanitize OpenGL shaders to avoid texture unit bleeding (e.g. ViewCube texture leaking onto untextured BFRES models)
+            Self.sanitizeShadersIfNeeded(at: resolvedExecPath)
 
             // Special flags for Steam.exe to run without black screens or CEF sandbox crashes
             if game.executablePath.lowercased().contains("steam.exe") {
