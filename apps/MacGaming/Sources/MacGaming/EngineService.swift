@@ -68,6 +68,10 @@ public class EngineService: ObservableObject {
     private var activeActivityToken: NSObjectProtocol?
     private var activeProcesses: [Process] = []
 
+    public func trackProcess(_ proc: Process) {
+        self.activeProcesses.append(proc)
+    }
+
     public init() {
         self.hardware = Self.probeHostHardware()
         log("MacGaming Engine initialized on \(hardware.chipName) (\(hardware.osVersion)).", level: .info, source: "System")

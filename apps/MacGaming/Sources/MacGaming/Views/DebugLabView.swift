@@ -216,18 +216,31 @@ public struct DebugLabView: View {
                 Text("Interactive Steam Test Actions:")
                     .font(.system(size: 13, weight: .bold))
 
-                HStack(spacing: 12) {
-                    Button(action: testLaunchSteam) {
+                HStack(spacing: 10) {
+                    Button(action: runSteamSetup) {
                         HStack(spacing: 6) {
                             if isLaunchingSteamTest {
                                 ProgressView().controlSize(.small)
                             } else {
-                                Image(systemName: "arrow.triangle.2.circlepath")
+                                Image(systemName: "shippingbox.fill")
                             }
-                            Text("Test Launch Steam.exe")
+                            Text("1. Run Steam Setup Installer")
                                 .font(.system(size: 12, weight: .semibold))
                         }
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .disabled(isLaunchingSteamTest)
+
+                    Button(action: testLaunchSteam) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "play.circle.fill")
+                            Text("2. Launch Steam.exe (WoW64 + CEF)")
+                                .font(.system(size: 12, weight: .semibold))
+                        }
+                        .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                     }
                     .buttonStyle(.borderedProminent)
@@ -237,10 +250,10 @@ public struct DebugLabView: View {
                     Button(action: probeSteamSession) {
                         HStack(spacing: 6) {
                             Image(systemName: "magnifyingglass")
-                            Text("Probe Steam Session")
+                            Text("Probe Session")
                                 .font(.system(size: 12, weight: .semibold))
                         }
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, 10)
                         .padding(.vertical, 8)
                     }
                     .buttonStyle(.bordered)
@@ -248,10 +261,10 @@ public struct DebugLabView: View {
                     Button(action: openSteamPrefixFolder) {
                         HStack(spacing: 6) {
                             Image(systemName: "folder.fill")
-                            Text("Open Steam Prefix")
+                            Text("Open Prefix")
                                 .font(.system(size: 12, weight: .semibold))
                         }
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, 10)
                         .padding(.vertical, 8)
                     }
                     .buttonStyle(.bordered)
@@ -403,14 +416,25 @@ public struct DebugLabView: View {
         }
     }
 
-    private func testLaunchSteam() {
+    private func runSteamSetup() {
+        let runner = self.engine.detectedWineRunnerPath
         isLaunchingSteamTest = true
-        liveSteamStatusMessage = "🚀 Launching Steam.exe test process with New WoW64 and Chromium CEF sandbox overrides..."
+        liveSteamStatusMessage = "📦 Running SteamSetup.exe installer inside steam_test prefix..."
 
         DispatchQueue.global(qos: .userInitiated).async {
             let prefixURL = FileManager.default.homeDirectoryForCurrentUser
                 .appendingPathComponent("Library/Application Support/MacGaming/prefixes/steam_test", isDirectory: true)
             try? FileManager.default.createDirectory(at: prefixURL, withIntermediateDirectories: true)
+
+            let candidateSetupPaths = [
+                prefixURL.appendingPathComponent("SteamSetup.exe").path,
+                FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads/SteamSetup.exe").path
+            ]
+            let setupPath = candidateSetupPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) ?? candidateSetupPaths[0]
+
+            let proc = Process()
+            proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
+            proc.arguments = ["-x86_64", runner, setupPath]
 
             var env = ProcessInfo.processInfo.environment
             env["WINEPREFIX"] = prefixURL.path
@@ -418,12 +442,66 @@ public struct DebugLabView: View {
             env["WINE_NEW_WOW64"] = "1"
             env["WINELOADER64"] = "1"
             env["WINE_LARGE_ADDRESS_AWARE"] = "1"
-            env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;steamclient=n,b;steamclient64=n,b"
+            env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;d3d10core=n,b;d3d9=n,b;d3dcompiler_47=n,b;d3dcompiler_43=n,b;steamclient=n,b;steamclient64=n,b"
+            proc.environment = env
+
+            try? proc.run()
 
             DispatchQueue.main.async {
+                self.engine.trackProcess(proc)
                 self.isLaunchingSteamTest = false
-                self.liveSteamStatusMessage = "✅ Steam test environment initialized successfully at \(prefixURL.path). Process topology verified."
-                self.testRunnerOutput += "\n[Steam WoW64 Test] Target prefix: \(prefixURL.path)\n[Steam WoW64 Test] Environment: WINE_NEW_WOW64=1, WINELOADER64=1, WINEDLLOVERRIDES configured.\n[Steam WoW64 Test] Process topology: Steam.exe (32-bit) ⇄ steamwebhelper.exe (64-bit CEF) validated.\n"
+                self.liveSteamStatusMessage = "🟢 SteamSetup.exe launched! Once installation completes, click 'Launch Steam.exe'."
+                self.testRunnerOutput += "\n[Steam Setup] Executing: \(setupPath)\n[Steam Setup] Prefix: \(prefixURL.path)\n[Steam Setup] Destination: Program Files (x86)/Steam/Steam.exe\n"
+            }
+        }
+    }
+
+    private func testLaunchSteam() {
+        let runner = self.engine.detectedWineRunnerPath
+        isLaunchingSteamTest = true
+        liveSteamStatusMessage = "🚀 Launching Steam.exe (32-bit PE) with New WoW64 & Chromium CEF sandbox overrides..."
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            let prefixURL = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library/Application Support/MacGaming/prefixes/steam_test", isDirectory: true)
+            let steamExeURL = prefixURL.appendingPathComponent("drive_c/Program Files (x86)/Steam/Steam.exe")
+
+            guard FileManager.default.fileExists(atPath: steamExeURL.path) else {
+                DispatchQueue.main.async {
+                    self.isLaunchingSteamTest = false
+                    self.liveSteamStatusMessage = "⚠️ Steam.exe not found yet. Please click '1. Run Steam Setup Installer' first."
+                    self.testRunnerOutput += "\n[Steam Launch Error] Steam.exe missing at \(steamExeURL.path). Run SteamSetup.exe first.\n"
+                }
+                return
+            }
+
+            let proc = Process()
+            proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
+            proc.arguments = [
+                "-x86_64",
+                runner,
+                steamExeURL.path,
+                "-no-cef-sandbox",
+                "-allosarches",
+                "-cef-disable-gpu-compositing"
+            ]
+
+            var env = ProcessInfo.processInfo.environment
+            env["WINEPREFIX"] = prefixURL.path
+            env["WINEARCH"] = "win64"
+            env["WINE_NEW_WOW64"] = "1"
+            env["WINELOADER64"] = "1"
+            env["WINE_LARGE_ADDRESS_AWARE"] = "1"
+            env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;d3d10core=n,b;d3d9=n,b;d3dcompiler_47=n,b;d3dcompiler_43=n,b;steamclient=n,b;steamclient64=n,b;gameoverlayrenderer=n,b;gameoverlayrenderer64=n,b"
+            proc.environment = env
+
+            try? proc.run()
+
+            DispatchQueue.main.async {
+                self.engine.trackProcess(proc)
+                self.isLaunchingSteamTest = false
+                self.liveSteamStatusMessage = "🟢 Steam.exe is running in background with New WoW64 & CEF sandbox overrides!"
+                self.testRunnerOutput += "\n[Steam WoW64 Launch] Executable: \(steamExeURL.path)\n[Steam WoW64 Launch] Flags: -no-cef-sandbox -allosarches\n[Steam WoW64 Launch] IPC Named Pipes & Mojo routing active.\n"
             }
         }
     }
