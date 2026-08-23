@@ -802,6 +802,13 @@ public class EngineService: ObservableObject {
             env["WINEESYNC"] = game.enableEsync ? "1" : "0"
             env["WINEFSYNC"] = game.enableFsync ? "1" : "0"
 
+            env["WINE_OPENGL_CORE"] = "1"
+            env["WINE_OPENGL_VERSION"] = "4.1"
+            env["MESA_GL_VERSION_OVERRIDE"] = "4.1COMPAT"
+            env["MESA_GLSL_VERSION_OVERRIDE"] = "410"
+            env["WINE_RETINA"] = "1"
+            env["WINE_ENABLE_HIDPI"] = "1"
+
             // Robust DirectX 9/10/11/12 & Vulkan Metal pipeline overrides
             if game.useD3DMetal {
                 env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;d3d9=n,b;d3dcompiler_47=n,b;d3dcompiler_43=n,b"
@@ -812,6 +819,25 @@ public class EngineService: ObservableObject {
             env["MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS"] = "1"
             env["MVK_ALLOW_METAL_EVENTS"] = "1"
             proc.environment = env
+
+            // Configure OpenGL 4.1 Core profile and Retina registry settings asynchronously
+            DispatchQueue.global(qos: .utility).async {
+                let reg1 = Process()
+                reg1.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
+                reg1.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Software\\Wine\\OpenGL", "/v", "MaxVersionGL", "/t", "REG_DWORD", "/d", "262145", "/f"]
+                var regEnv = ProcessInfo.processInfo.environment
+                regEnv["WINEPREFIX"] = prefixPath
+                reg1.environment = regEnv
+                try? reg1.run()
+                reg1.waitUntilExit()
+
+                let reg2 = Process()
+                reg2.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
+                reg2.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Software\\Wine\\Mac Driver", "/v", "Retina", "/t", "REG_SZ", "/d", "Y", "/f"]
+                reg2.environment = regEnv
+                try? reg2.run()
+                reg2.waitUntilExit()
+            }
 
             do {
                 try proc.run()
