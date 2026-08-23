@@ -612,6 +612,23 @@ public class EngineService: ObservableObject {
         NSWorkspace.shared.selectFile(instance.snapshotPath, inFileViewerRootedAtPath: instance.snapshotPath)
     }
 
+    public var detectedWineRunnerPath: String {
+        let runnerPaths = [
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/Runtimes/Wine/Contents/Resources/wine/bin/wine"),
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/Runner/Wine Staging.app/Contents/Resources/wine/bin/wine"),
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/bin/wine64"),
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/CrossOver/bin/wine64"),
+            "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine64",
+            "/opt/homebrew/bin/wine64",
+            "/usr/local/bin/wine64",
+            "/opt/homebrew/bin/wine",
+            "/usr/local/bin/wine",
+            "/Applications/Wine Devel.app/Contents/Resources/wine/bin/wine64",
+            "/Applications/Wine Stable.app/Contents/Resources/wine/bin/wine64"
+        ]
+        return runnerPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) ?? "/opt/homebrew/bin/wine"
+    }
+
     public func launchGame(_ game: GameItem) {
         isLaunching = true
         let translationLayer = game.isNative ? "Native macOS" : (game.useD3DMetal ? "D3DMetal (DirectX 12/Metal)" : "DXVK 2.3 (Vulkan/Metal)")
