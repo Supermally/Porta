@@ -1045,7 +1045,7 @@ public class EngineService: ObservableObject {
 
     public func probeActiveSteamSession() {
         let steamConfig = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/Steam/config/loginusers.vdf"
-        if FileManager.default.fileExists(atPath: steamConfig), let content = try? String(contentsOfFile: steamConfig) {
+        if FileManager.default.fileExists(atPath: steamConfig), let content = try? String(contentsOfFile: steamConfig, encoding: .utf8) {
             var steamId = "76561198334943786"
             var accountName = "fallon58"
             var personaName = "kermothy"
@@ -1097,7 +1097,7 @@ public class EngineService: ObservableObject {
         if let manifests = try? FileManager.default.contentsOfDirectory(atPath: steamappsPath) {
             for manifest in manifests where manifest.hasPrefix("appmanifest_") && manifest.hasSuffix(".acf") {
                 let manifestPath = steamappsPath + "/" + manifest
-                if let content = try? String(contentsOfFile: manifestPath) {
+                if let content = try? String(contentsOfFile: manifestPath, encoding: .utf8) {
                     var appid = manifest.replacingOccurrences(of: "appmanifest_", with: "").replacingOccurrences(of: ".acf", with: "")
                     var name = "Steam Game"
                     var installdir = ""

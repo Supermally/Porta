@@ -161,7 +161,7 @@ public struct DeveloperConsoleView: View {
                     .padding(.vertical, 10)
                 }
                 .background(Color(red: 0.04, green: 0.06, blue: 0.09))
-                .onChange(of: engine.consoleLogs.count) { _ in
+                .onChange(of: engine.consoleLogs.count) { _, _ in
                     if let last = engine.consoleLogs.last {
                         withAnimation {
                             proxy.scrollTo(last.id, anchor: .bottom)

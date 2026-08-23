@@ -23,9 +23,6 @@ public class MacGamingDiagnostics {
         }
         
         logger.debug("\(logMessage, privacy: .public)")
-        
-        // Also route to EngineService if available
-        EngineService.shared.log(logMessage, level: .debug, source: "Diagnostics")
     }
     
     public func captureCrashDump(pid: pid_t, reason: String) {
