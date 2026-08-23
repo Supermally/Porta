@@ -71,18 +71,18 @@ public struct GlassEffectContainer<Content: View>: View {
             ZStack {
                 if config.enabled && !reduceTransparency {
                     Capsule()
-                        .fill(Color.white.opacity(config.variant == .clear ? 0.08 : 0.14))
-                        .background(.regularMaterial, in: Capsule())
+                        .fill(Color.white.opacity(config.variant == .clear ? 0.02 : 0.08))
+                        .background(config.variant == .clear ? .ultraThinMaterial : .regularMaterial, in: Capsule())
                         .overlay(
                             Capsule()
-                                .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.8)
+                                .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.8)
                         )
                 } else {
                     Capsule()
                         .fill(Color(NSColor.controlBackgroundColor))
                 }
             }
-            .shadow(color: Color.black.opacity(0.10), radius: 8, y: 3)
+            .shadow(color: Color.black.opacity(0.08), radius: 8, y: 3)
         )
     }
 }
@@ -110,14 +110,8 @@ public struct LiquidGlassViewModifier: ViewModifier {
     public func body(content: Content) -> some View {
         content
             .background(contentShape)
-            .scaleEffect((config.isInteractive && globalConfig.interactionResponse == .full) ? (isPressed ? LiquidGlassTokens.pressingScale : (isHovered ? LiquidGlassTokens.interactionScale : 1.0)) : 1.0)
-            .animation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.75), value: isHovered)
+            .scaleEffect((config.isInteractive && globalConfig.interactionResponse == .full) ? (isPressed ? LiquidGlassTokens.pressingScale : 1.0) : 1.0)
             .animation(reduceMotion ? nil : .spring(response: 0.20, dampingFraction: 0.8), value: isPressed)
-            .onHover { hovering in
-                if config.isInteractive && globalConfig.interactionResponse != .off {
-                    isHovered = hovering
-                }
-            }
     }
 
     @ViewBuilder
@@ -129,19 +123,19 @@ public struct LiquidGlassViewModifier: ViewModifier {
                 .background(materialBackground, in: Capsule())
                 .overlay(
                     Capsule()
-                        .strokeBorder(strokeGradient, lineWidth: isHovered ? 1.1 : 0.8)
+                        .strokeBorder(strokeGradient, lineWidth: 0.8)
                 )
-                .shadow(color: Color.black.opacity(isHovered ? 0.14 : 0.08), radius: isHovered ? 8 : 4, y: 2)
+                .shadow(color: Color.black.opacity(0.08), radius: 4, y: 2)
 
         case .rect(let radius):
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
+            RoundedRectangle(cornerRadius: max(radius, 16), style: .continuous)
                 .fill(glassFillColor)
-                .background(materialBackground, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+                .background(materialBackground, in: RoundedRectangle(cornerRadius: max(radius, 16), style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .strokeBorder(strokeGradient, lineWidth: isHovered ? 1.1 : 0.8)
+                    RoundedRectangle(cornerRadius: max(radius, 16), style: .continuous)
+                        .strokeBorder(strokeGradient, lineWidth: 0.8)
                 )
-                .shadow(color: Color.black.opacity(isHovered ? 0.14 : 0.08), radius: isHovered ? 8 : 4, y: 2)
+                .shadow(color: Color.black.opacity(0.08), radius: 4, y: 2)
 
         case .circle:
             Circle()
@@ -149,9 +143,9 @@ public struct LiquidGlassViewModifier: ViewModifier {
                 .background(materialBackground, in: Circle())
                 .overlay(
                     Circle()
-                        .strokeBorder(strokeGradient, lineWidth: isHovered ? 1.1 : 0.8)
+                        .strokeBorder(strokeGradient, lineWidth: 0.8)
                 )
-                .shadow(color: Color.black.opacity(isHovered ? 0.14 : 0.08), radius: isHovered ? 8 : 4, y: 2)
+                .shadow(color: Color.black.opacity(0.08), radius: 4, y: 2)
         }
     }
 
@@ -161,11 +155,11 @@ public struct LiquidGlassViewModifier: ViewModifier {
     }
 
     private var glassFillColor: Color {
-        let baseOpacity: Double = effectiveVariant == .clear ? 0.06 : 0.14
+        let baseOpacity: Double = effectiveVariant == .clear ? 0.02 : 0.08
         if let tint = config.tintColor ?? globalConfig.accentTint {
-            return tint.opacity(isHovered ? baseOpacity + 0.06 : baseOpacity)
+            return tint.opacity(baseOpacity)
         }
-        return Color.white.opacity(isHovered ? baseOpacity + 0.05 : baseOpacity)
+        return Color.white.opacity(baseOpacity)
     }
 
     private var materialBackground: some ShapeStyle {
