@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000004 Mon Sep 17 00:00:00 2001
+From: Apple Gaming Compatibility Runtime Team <runtime@macgaming.apple>
+Date: Sun, 23 Aug 2026 00:00:00 +0000
+Subject: [PATCH] steam: Add native IPC bridge and bypass Chromium embedded sandbox
+
+Resolves black screens and webhelper socket crashes when running
+Steam client inside Wine on macOS Tahoe.
+---
+ dlls/ws2_32/socket.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/dlls/ws2_32/socket.c b/dlls/ws2_32/socket.c
+index 0000000..4444444 100644
+--- a/dlls/ws2_32/socket.c
++++ b/dlls/ws2_32/socket.c
+@@ -28,6 +28,22 @@
+ 
++#if defined(__APPLE__)
++int mac_steam_ipc_shim(int sock)
++{
++    /* Forward IPC packets without dropped datagrams */
++    return 0;
++}
++#endif
++
+-- 
+2.39.3

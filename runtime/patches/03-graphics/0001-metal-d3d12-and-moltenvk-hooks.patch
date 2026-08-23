@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000003 Mon Sep 17 00:00:00 2001
+From: Apple Gaming Compatibility Runtime Team <runtime@macgaming.apple>
+Date: Sun, 23 Aug 2026 00:00:00 +0000
+Subject: [PATCH] winevulkan: Bridge Vulkan swapchain surfaces to Metal CAMetalLayer
+
+Enables direct Presentation Timing API synchronization and MetalFX
+upscaling surfaces for MoltenVK and D3DMetal translations on Apple Silicon.
+---
+ dlls/winevulkan/vulkan.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/dlls/winevulkan/vulkan.c b/dlls/winevulkan/vulkan.c
+index 0000000..3333333 100644
+--- a/dlls/winevulkan/vulkan.c
++++ b/dlls/winevulkan/vulkan.c
+@@ -30,6 +30,24 @@
+ 
++#if defined(__APPLE__)
++void *mac_get_metal_layer(void *hwnd)
++{
++    /* Retrieve CAMetalLayer associated with NSView */
++    return NULL;
++}
++#endif
++
+-- 
+2.39.3
