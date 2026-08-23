@@ -14,96 +14,38 @@ public struct SettingsView: View {
 
     public var body: some View {
         Form {
-            // Apple-Standard Liquid Glass & Materials Editor
+            // Apple-Standard Liquid Glass Configuration
             Section {
-                MGGlassToggle("Enable Apple Liquid Glass Controls", isOn: $engine.liquidGlassEnabled)
+                MGGlassToggle("Enable Apple Liquid Glass", isOn: $engine.glassConfig.enabled)
 
-                if engine.liquidGlassEnabled {
-                    MGGlassToggle("Reduce Transparency (Accessibility Mode)", isOn: $engine.reduceTransparency)
-
-                    if !engine.reduceTransparency {
-                        // 1. Optical Transparency Slider
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Label("Optical Transparency", systemImage: "square.2.layers.3d.top.filled")
-                                Spacer()
-                                Text(String(format: "%.0f%%", engine.glassTransparency * 100))
-                                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                            }
-                            MGGlassSlider(
-                                value: $engine.glassTransparency,
-                                in: 0.0...1.0,
-                                step: 0.01,
-                                gradientColors: [Color.blue.opacity(0.6), Color.cyan]
-                            )
-                            HStack {
-                                Text("Opaque (0%)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Text("Crystal Clear (100%)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
+                if engine.glassConfig.enabled {
+                    Picker("Glass Appearance", selection: $engine.glassConfig.variant) {
+                        ForEach(GlassVariant.allCases) { variant in
+                            Text(variant.rawValue).tag(variant)
                         }
-                        .padding(.vertical, 4)
-
-                        // 2. Specular Rim & Flare Intensity Slider
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Label("Specular Rim & Flare Reflection", systemImage: "sparkles")
-                                Spacer()
-                                Text(String(format: "%.0f%%", engine.glassSpecularIntensity * 100))
-                                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                            }
-                            MGGlassSlider(
-                                value: $engine.glassSpecularIntensity,
-                                in: 0.0...1.0,
-                                step: 0.01,
-                                gradientColors: [Color.purple.opacity(0.6), Color.pink]
-                            )
-                            HStack {
-                                Text("Matte (0%)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Text("High-Gloss (100%)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(.vertical, 4)
-
-                        // 3. Blur Scattering Slider
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Label("Optical Blur & Diffusion", systemImage: "aqi.medium")
-                                Spacer()
-                                Text(String(format: "%.1f px", engine.glassBlurRadius))
-                                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                            }
-                            MGGlassSlider(
-                                value: $engine.glassBlurRadius,
-                                in: 0.0...50.0,
-                                step: 0.5,
-                                gradientColors: [Color.orange.opacity(0.6), Color.yellow]
-                            )
-                        }
-                        .padding(.vertical, 4)
-
-                        Button {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                engine.resetGlassDefaults()
-                            }
-                        } label: {
-                            Label("Reset to Apple Defaults", systemImage: "arrow.counterclockwise")
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.vertical, 2)
                     }
+
+                    Picker("Interactive Response", selection: $engine.glassConfig.interactionResponse) {
+                        ForEach(InteractionResponseLevel.allCases) { level in
+                            Text(level.rawValue).tag(level)
+                        }
+                    }
+
+                    Picker("Fluid Morphing Physics", selection: $engine.glassConfig.morphingMode) {
+                        ForEach(MorphingMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            engine.resetGlassDefaults()
+                        }
+                    } label: {
+                        Label("Reset to Apple Defaults", systemImage: "arrow.counterclockwise")
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 2)
 
                     // Live Interactive Optical Testing Playground
                     VStack(alignment: .leading, spacing: 10) {
@@ -129,7 +71,7 @@ public struct SettingsView: View {
 
                             // Live Liquid Glass Pods Floating Over the Stripes
                             HStack(spacing: 12) {
-                                PlayButton(isPlaying: false) {}
+                                PlayButton(state: .idle, onPlay: {})
 
                                 GlassEffectContainer(spacing: 8) {
                                     Button {} label: {
@@ -160,9 +102,9 @@ public struct SettingsView: View {
                     .padding(.top, 6)
                 }
             } header: {
-                Text("Liquid Glass Optics & Materials")
+                Text("Liquid Glass Material & Optics")
             } footer: {
-                Text("Independently tunes light transmission (transparency), 3D specular rim reflections, and background diffusion across all floating panels and buttons.")
+                Text("Applies Apple's native dynamic translucency, optical refraction, and fluid morphing transitions across all controls.")
             }
 
             // Managed Components & Runtimes

@@ -28,12 +28,7 @@ public class EngineService: ObservableObject {
     @Published public var activeTab: NavigationTab = .library
     @Published public var libraryViewMode: ViewMode = .grid
     @Published public var isDeveloperModeEnabled: Bool = false
-    @Published public var liquidGlassEnabled: Bool = true
-    @Published public var liquidGlassIntensity: Double = 0.85
-    @Published public var glassTransparency: Double = 0.90
-    @Published public var glassSpecularIntensity: Double = 0.90
-    @Published public var glassBlurRadius: Double = 20.0
-    @Published public var reduceTransparency: Bool = false
+    @Published public var glassConfig: LiquidGlassConfiguration = LiquidGlassConfiguration()
     @Published public var preparingGameItem: GameItem? = nil
     @Published public var preparationStep: Int = 0
     @Published public var consoleLogs: [ConsoleLogEntry] = []
@@ -66,11 +61,7 @@ public class EngineService: ObservableObject {
     }
 
     public func resetGlassDefaults() {
-        liquidGlassEnabled = true
-        glassTransparency = 0.90
-        glassSpecularIntensity = 0.90
-        glassBlurRadius = 20.0
-        reduceTransparency = false
+        glassConfig = LiquidGlassConfiguration()
         log("Reset Liquid Glass settings to Apple defaults.", level: .info, source: "Settings")
     }
 

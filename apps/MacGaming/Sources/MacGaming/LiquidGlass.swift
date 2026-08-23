@@ -2,117 +2,40 @@ import SwiftUI
 import AppKit
 
 // =============================================================================
-// MARK: - Crystal Clear Apple Liquid Glass Design System
-// Apple Native Optics: Independent Transparency, Specular Flare & Blur Scattering
+// MARK: - Native Apple Liquid Glass System
 // =============================================================================
 
-// MARK: - 1. Liquid Glass Configuration Environment
-private struct LiquidGlassEnabledKey: EnvironmentKey {
-    static let defaultValue: Bool = true
-}
-
-private struct GlassTransparencyKey: EnvironmentKey {
-    static let defaultValue: Double = 0.90
-}
-
-private struct GlassSpecularIntensityKey: EnvironmentKey {
-    static let defaultValue: Double = 0.90
-}
-
-private struct GlassBlurRadiusKey: EnvironmentKey {
-    static let defaultValue: Double = 20.0
-}
-
-private struct ReduceTransparencyKey: EnvironmentKey {
-    static let defaultValue: Bool = false
-}
-
-public extension EnvironmentValues {
-    var liquidGlassEnabled: Bool {
-        get { self[LiquidGlassEnabledKey.self] }
-        set { self[LiquidGlassEnabledKey.self] = newValue }
-    }
-
-    var glassTransparency: Double {
-        get { self[GlassTransparencyKey.self] }
-        set { self[GlassTransparencyKey.self] = newValue }
-    }
-
-    var glassSpecularIntensity: Double {
-        get { self[GlassSpecularIntensityKey.self] }
-        set { self[GlassSpecularIntensityKey.self] = newValue }
-    }
-
-    var glassBlurRadius: Double {
-        get { self[GlassBlurRadiusKey.self] }
-        set { self[GlassBlurRadiusKey.self] = newValue }
-    }
-
-    var reduceTransparency: Bool {
-        get { self[ReduceTransparencyKey.self] }
-        set { self[ReduceTransparencyKey.self] = newValue }
-    }
-
-    // Legacy alias for compatibility
-    var liquidGlassIntensity: Double {
-        get { self[GlassSpecularIntensityKey.self] }
-        set { self[GlassSpecularIntensityKey.self] = newValue }
-    }
-}
-
-// MARK: - 2. Native AppKit Visual Effect Blur (In-App Within-Window Glass)
-public struct VisualEffectBlurView: NSViewRepresentable {
-    public var material: NSVisualEffectView.Material
-    public var blendingMode: NSVisualEffectView.BlendingMode
-    public var state: NSVisualEffectView.State
-
-    public init(
-        material: NSVisualEffectView.Material = .sidebar,
-        blendingMode: NSVisualEffectView.BlendingMode = .withinWindow,
-        state: NSVisualEffectView.State = .active
-    ) {
-        self.material = material
-        self.blendingMode = blendingMode
-        self.state = state
-    }
-
-    public func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = state
-        view.isEmphasized = true
-        return view
-    }
-
-    public func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
-        nsView.state = state
-    }
-}
-
-// MARK: - 3. Liquid Glass Style & Shape Specifications
-public enum GlassShapeOption {
+// MARK: - 1. Glass Shape & Material Options
+public enum GlassShapeOption: Equatable, Sendable {
     case capsule
     case rect(cornerRadius: CGFloat)
     case circle
 }
 
-public struct GlassConfiguration {
+public struct GlassConfiguration: Equatable, Sendable {
+    public var variant: GlassVariant
     public var tintColor: Color?
     public var isInteractive: Bool
 
-    public init(tintColor: Color? = nil, isInteractive: Bool = false) {
+    public init(variant: GlassVariant = .regular, tintColor: Color? = nil, isInteractive: Bool = false) {
+        self.variant = variant
         self.tintColor = tintColor
         self.isInteractive = isInteractive
     }
 
     public static var regular: GlassConfiguration {
-        GlassConfiguration()
+        GlassConfiguration(variant: .regular)
     }
 
-    public func tint(_ color: Color) -> GlassConfiguration {
+    public static var clear: GlassConfiguration {
+        GlassConfiguration(variant: .clear)
+    }
+
+    public static var automatic: GlassConfiguration {
+        GlassConfiguration(variant: .automatic)
+    }
+
+    public func tint(_ color: Color?) -> GlassConfiguration {
         var copy = self
         copy.tintColor = color
         return copy
@@ -125,12 +48,149 @@ public struct GlassConfiguration {
     }
 }
 
-// MARK: - 4. Crystal-Clear Sidebar Glass Modifier (In-App Refraction)
+// MARK: - 2. Native Glass Effect Container
+public struct GlassEffectContainer<Content: View>: View {
+    @Environment(\.liquidGlassConfiguration) private var config
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    public let spacing: CGFloat
+    public let content: Content
+
+    public init(spacing: CGFloat = LiquidGlassTokens.standardSpacing, @ViewBuilder content: () -> Content) {
+        self.spacing = spacing
+        self.content = content()
+    }
+
+    public var body: some View {
+        HStack(spacing: spacing) {
+            content
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(
+            ZStack {
+                if config.enabled && !reduceTransparency {
+                    Capsule()
+                        .fill(Color.white.opacity(config.variant == .clear ? 0.08 : 0.14))
+                        .background(.regularMaterial, in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.8)
+                        )
+                } else {
+                    Capsule()
+                        .fill(Color(NSColor.controlBackgroundColor))
+                }
+            }
+            .shadow(color: Color.black.opacity(0.10), radius: 8, y: 3)
+        )
+    }
+}
+
+// MARK: - 3. Liquid Glass View Modifier
+public typealias CompatibilityBadgeView = MGCompatibilityBadge
+public typealias PlayButton = MGPlayButton
+
+public struct LiquidGlassViewModifier: ViewModifier {
+    @Environment(\.liquidGlassConfiguration) private var globalConfig
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    public let config: GlassConfiguration
+    public let shape: GlassShapeOption
+
+    @State private var isHovered: Bool = false
+    @State private var isPressed: Bool = false
+
+    public init(config: GlassConfiguration = .regular, shape: GlassShapeOption = .capsule) {
+        self.config = config
+        self.shape = shape
+    }
+
+    public func body(content: Content) -> some View {
+        content
+            .background(contentShape)
+            .scaleEffect((config.isInteractive && globalConfig.interactionResponse == .full) ? (isPressed ? LiquidGlassTokens.pressingScale : (isHovered ? LiquidGlassTokens.interactionScale : 1.0)) : 1.0)
+            .animation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.75), value: isHovered)
+            .animation(reduceMotion ? nil : .spring(response: 0.20, dampingFraction: 0.8), value: isPressed)
+            .onHover { hovering in
+                if config.isInteractive && globalConfig.interactionResponse != .off {
+                    isHovered = hovering
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var contentShape: some View {
+        switch shape {
+        case .capsule:
+            Capsule()
+                .fill(glassFillColor)
+                .background(materialBackground, in: Capsule())
+                .overlay(
+                    Capsule()
+                        .strokeBorder(strokeGradient, lineWidth: isHovered ? 1.1 : 0.8)
+                )
+                .shadow(color: Color.black.opacity(isHovered ? 0.14 : 0.08), radius: isHovered ? 8 : 4, y: 2)
+
+        case .rect(let radius):
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(glassFillColor)
+                .background(materialBackground, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .strokeBorder(strokeGradient, lineWidth: isHovered ? 1.1 : 0.8)
+                )
+                .shadow(color: Color.black.opacity(isHovered ? 0.14 : 0.08), radius: isHovered ? 8 : 4, y: 2)
+
+        case .circle:
+            Circle()
+                .fill(glassFillColor)
+                .background(materialBackground, in: Circle())
+                .overlay(
+                    Circle()
+                        .strokeBorder(strokeGradient, lineWidth: isHovered ? 1.1 : 0.8)
+                )
+                .shadow(color: Color.black.opacity(isHovered ? 0.14 : 0.08), radius: isHovered ? 8 : 4, y: 2)
+        }
+    }
+
+    private var effectiveVariant: GlassVariant {
+        if config.variant != .automatic { return config.variant }
+        return globalConfig.variant == .clear ? .clear : .regular
+    }
+
+    private var glassFillColor: Color {
+        let baseOpacity: Double = effectiveVariant == .clear ? 0.06 : 0.14
+        if let tint = config.tintColor ?? globalConfig.accentTint {
+            return tint.opacity(isHovered ? baseOpacity + 0.06 : baseOpacity)
+        }
+        return Color.white.opacity(isHovered ? baseOpacity + 0.05 : baseOpacity)
+    }
+
+    private var materialBackground: some ShapeStyle {
+        effectiveVariant == .clear ? .ultraThinMaterial : .regularMaterial
+    }
+
+    private var strokeGradient: LinearGradient {
+        let topOpacity = isHovered ? 0.65 : 0.40
+        let bottomOpacity = isHovered ? 0.30 : 0.15
+        return LinearGradient(
+            stops: [
+                .init(color: Color.white.opacity(topOpacity), location: 0.0),
+                .init(color: Color.white.opacity(0.10), location: 0.5),
+                .init(color: Color.white.opacity(bottomOpacity), location: 1.0)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+}
+
+// MARK: - 4. Crystal Clear Sidebar Glass Modifier
 public struct CrystalClearSidebarGlassModifier: ViewModifier {
-    @Environment(\.liquidGlassEnabled) private var isGlassEnabled
-    @Environment(\.glassTransparency) private var transparency
-    @Environment(\.glassSpecularIntensity) private var specularIntensity
-    @Environment(\.reduceTransparency) private var isReducedTransparency
+    @Environment(\.liquidGlassConfiguration) private var config
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     public let cornerRadius: CGFloat
 
@@ -142,61 +202,25 @@ public struct CrystalClearSidebarGlassModifier: ViewModifier {
         content
             .background(
                 ZStack {
-                    if isGlassEnabled && !isReducedTransparency {
-                        // 1. In-App Within-Window Visual Effect (Refracts sliding content behind it)
-                        VisualEffectBlurView(
-                            material: .hudWindow,
-                            blendingMode: .withinWindow,
-                            state: .active
-                        )
-                        .opacity(transparency > 0.05 ? max(0.20, transparency * 0.90) : 0.0)
-
-                        // 2. Optical Substrate (Controls transmission from solid opaque to 100% clear)
+                    if config.enabled && !reduceTransparency {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(
-                                Color(NSColor.windowBackgroundColor)
-                                    .opacity((1.0 - transparency) * 0.85)
+                            .fill(Color.white.opacity(config.variant == .clear ? 0.06 : 0.10))
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            stops: [
+                                                .init(color: Color.white.opacity(0.50), location: 0.0),
+                                                .init(color: Color.white.opacity(0.12), location: 0.4),
+                                                .init(color: Color.white.opacity(0.25), location: 1.0)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
                             )
-
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(Color.white.opacity(0.04 * transparency))
-
-                        // 3. Top Specular Convex Lens Highlight (Satin-soft)
-                        if specularIntensity > 0.05 {
-                            VStack {
-                                LinearGradient(
-                                    stops: [
-                                        .init(color: Color.white.opacity(0.25 * specularIntensity), location: 0.0),
-                                        .init(color: Color.white.opacity(0.04 * specularIntensity), location: 0.4),
-                                        .init(color: Color.clear, location: 1.0)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                                .frame(height: 16)
-                                Spacer()
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                        }
-
-                        // 4. Subtle 3D Specular Rim Bevel
-                        if specularIntensity > 0.05 {
-                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        stops: [
-                                            .init(color: Color.white.opacity(0.55 * specularIntensity), location: 0.0),
-                                            .init(color: Color.white.opacity(0.18 * specularIntensity), location: 0.30),
-                                            .init(color: Color.white.opacity(0.04 * specularIntensity), location: 0.65),
-                                            .init(color: Color.white.opacity(0.15 * specularIntensity), location: 0.90),
-                                            .init(color: Color.white.opacity(0.30 * specularIntensity), location: 1.0)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.0
-                                )
-                        }
                     } else {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .fill(Color(NSColor.windowBackgroundColor))
@@ -204,592 +228,11 @@ public struct CrystalClearSidebarGlassModifier: ViewModifier {
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .shadow(color: Color.black.opacity(isGlassEnabled && !isReducedTransparency ? 0.14 : 0.04), radius: 14, x: 0, y: 6)
+            .shadow(color: Color.black.opacity(0.12), radius: 14, x: 0, y: 6)
     }
 }
 
-// MARK: - 5. GlassEffectContainer (In-App Blended Container)
-public struct GlassEffectContainer<Content: View>: View {
-    @Environment(\.liquidGlassEnabled) private var isGlassEnabled
-    @Environment(\.glassTransparency) private var transparency
-    @Environment(\.glassSpecularIntensity) private var specularIntensity
-    @Environment(\.reduceTransparency) private var isReducedTransparency
-
-    public let spacing: CGFloat
-    public let content: Content
-
-    public init(spacing: CGFloat = 8, @ViewBuilder content: () -> Content) {
-        self.spacing = spacing
-        self.content = content()
-    }
-
-    public var body: some View {
-        HStack(spacing: spacing) {
-            content
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(
-            ZStack {
-                if isGlassEnabled && !isReducedTransparency {
-                    VisualEffectBlurView(
-                        material: .hudWindow,
-                        blendingMode: .withinWindow,
-                        state: .active
-                    )
-                    .opacity(transparency > 0.05 ? max(0.20, transparency * 0.85) : 0.0)
-
-                    Capsule()
-                        .fill(
-                            Color(NSColor.controlBackgroundColor)
-                                .opacity((1.0 - transparency) * 0.85)
-                        )
-
-                    Capsule()
-                        .fill(Color.white.opacity(0.05 * transparency))
-
-                    if specularIntensity > 0.05 {
-                        VStack {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        stops: [
-                                            .init(color: Color.white.opacity(0.25 * specularIntensity), location: 0.0),
-                                            .init(color: Color.white.opacity(0.03 * specularIntensity), location: 0.5),
-                                            .init(color: Color.clear, location: 1.0)
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                                .frame(height: 12)
-                            Spacer()
-                        }
-                        .clipShape(Capsule())
-
-                        Capsule()
-                            .strokeBorder(
-                                LinearGradient(
-                                    stops: [
-                                        .init(color: Color.white.opacity(0.95 * specularIntensity), location: 0.0),
-                                        .init(color: Color.white.opacity(0.35 * specularIntensity), location: 0.35),
-                                        .init(color: Color.white.opacity(0.08 * specularIntensity), location: 0.65),
-                                        .init(color: Color.white.opacity(0.45 * specularIntensity), location: 1.0)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.2
-                            )
-                    }
-                } else {
-                    Capsule()
-                        .fill(Color(NSColor.controlBackgroundColor))
-                }
-            }
-        )
-        .clipShape(Capsule())
-        .shadow(color: Color.black.opacity(isGlassEnabled && !isReducedTransparency ? 0.08 : 0.03), radius: 6, x: 0, y: 3)
-    }
-}
-
-public typealias GlassActionGroup = GlassEffectContainer
-
-// MARK: - 6. Liquid Glass Modifier (Crystal Clear In-App Pane)
-public struct LiquidGlassViewModifier: ViewModifier {
-    @Environment(\.liquidGlassEnabled) private var isGlassEnabled
-    @Environment(\.glassTransparency) private var transparency
-    @Environment(\.glassSpecularIntensity) private var specularIntensity
-    @Environment(\.reduceTransparency) private var isReducedTransparency
-
-    public let config: GlassConfiguration
-    public let shape: GlassShapeOption
-    @State private var isHovered: Bool = false
-
-    public init(config: GlassConfiguration = .regular, shape: GlassShapeOption = .capsule) {
-        self.config = config
-        self.shape = shape
-    }
-
-    public func body(content: Content) -> some View {
-        content
-            .background(
-                Group {
-                    if isGlassEnabled && !isReducedTransparency {
-                        glassBackground
-                    } else {
-                        fallbackBackground
-                    }
-                }
-            )
-            .scaleEffect(config.isInteractive && isHovered ? 1.025 : 1.0)
-            .animation(.spring(response: 0.22, dampingFraction: 0.75), value: isHovered)
-            .onHover { hovering in
-                if config.isInteractive {
-                    isHovered = hovering
-                }
-            }
-    }
-
-    @ViewBuilder
-    private var glassBackground: some View {
-        switch shape {
-        case .capsule:
-            ZStack {
-                VisualEffectBlurView(
-                    material: .hudWindow,
-                    blendingMode: .withinWindow,
-                    state: .active
-                )
-                .opacity(transparency > 0.05 ? max(0.20, transparency * 0.85) : 0.0)
-
-                Capsule()
-                    .fill(
-                        Color(NSColor.controlBackgroundColor)
-                            .opacity((1.0 - transparency) * 0.85)
-                    )
-
-                Capsule()
-                    .fill(Color.white.opacity((isHovered ? 0.09 : 0.04) * transparency))
-
-                if let tint = config.tintColor {
-                    Capsule()
-                        .fill(tint.opacity(0.12 * transparency))
-                }
-
-                if specularIntensity > 0.05 {
-                    VStack {
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    stops: [
-                                        .init(color: Color.white.opacity((isHovered ? 0.35 : 0.22) * specularIntensity), location: 0.0),
-                                        .init(color: Color.white.opacity(0.04 * specularIntensity), location: 0.4),
-                                        .init(color: Color.clear, location: 1.0)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .frame(height: 12)
-                        Spacer()
-                    }
-                    .clipShape(Capsule())
-
-                    Capsule()
-                        .strokeBorder(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity((isHovered ? 1.0 : 0.90) * specularIntensity), location: 0.0),
-                                    .init(color: Color.white.opacity(0.35 * specularIntensity), location: 0.35),
-                                    .init(color: Color.white.opacity(0.08 * specularIntensity), location: 0.65),
-                                    .init(color: Color.white.opacity(0.40 * specularIntensity), location: 1.0)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.2
-                        )
-                }
-            }
-            .clipShape(Capsule())
-            .shadow(color: Color.black.opacity(0.06), radius: isHovered ? 6 : 3, y: isHovered ? 2 : 1)
-
-        case .rect(let radius):
-            ZStack {
-                VisualEffectBlurView(
-                    material: .hudWindow,
-                    blendingMode: .withinWindow,
-                    state: .active
-                )
-                .opacity(transparency > 0.05 ? max(0.20, transparency * 0.85) : 0.0)
-
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(
-                        Color(NSColor.controlBackgroundColor)
-                            .opacity((1.0 - transparency) * 0.85)
-                    )
-
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(Color.white.opacity((isHovered ? 0.08 : 0.04) * transparency))
-
-                if let tint = config.tintColor {
-                    RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .fill(tint.opacity(0.10 * transparency))
-                }
-
-                if specularIntensity > 0.05 {
-                    VStack {
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.white.opacity((isHovered ? 0.35 : 0.22) * specularIntensity), location: 0.0),
-                                .init(color: Color.white.opacity(0.04 * specularIntensity), location: 0.4),
-                                .init(color: Color.clear, location: 1.0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: max(14, radius * 0.8))
-                        Spacer()
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-
-                    RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity((isHovered ? 0.95 : 0.85) * specularIntensity), location: 0.0),
-                                    .init(color: Color.white.opacity(0.30 * specularIntensity), location: 0.30),
-                                    .init(color: Color.white.opacity(0.06 * specularIntensity), location: 0.65),
-                                    .init(color: Color.white.opacity(0.30 * specularIntensity), location: 0.90),
-                                    .init(color: Color.white.opacity(0.55 * specularIntensity), location: 1.0)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.2
-                        )
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .shadow(color: Color.black.opacity(0.06), radius: isHovered ? 8 : 4, y: isHovered ? 3 : 2)
-
-        case .circle:
-            ZStack {
-                VisualEffectBlurView(
-                    material: .hudWindow,
-                    blendingMode: .withinWindow,
-                    state: .active
-                )
-                .opacity(transparency > 0.05 ? max(0.20, transparency * 0.85) : 0.0)
-
-                Circle()
-                    .fill(
-                        Color(NSColor.controlBackgroundColor)
-                            .opacity((1.0 - transparency) * 0.85)
-                    )
-
-                Circle()
-                    .fill(Color.white.opacity((isHovered ? 0.10 : 0.05) * transparency))
-
-                if let tint = config.tintColor {
-                    Circle()
-                        .fill(tint.opacity(0.12 * transparency))
-                }
-
-                if specularIntensity > 0.05 {
-                    Circle()
-                        .strokeBorder(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: Color.white.opacity((isHovered ? 1.0 : 0.90) * specularIntensity), location: 0.0),
-                                    .init(color: Color.white.opacity(0.35 * specularIntensity), location: 0.35),
-                                    .init(color: Color.white.opacity(0.08 * specularIntensity), location: 0.65),
-                                    .init(color: Color.white.opacity(0.40 * specularIntensity), location: 1.0)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.2
-                        )
-                }
-            }
-            .clipShape(Circle())
-            .shadow(color: Color.black.opacity(0.06), radius: isHovered ? 6 : 3, y: isHovered ? 2 : 1)
-        }
-    }
-
-    @ViewBuilder
-    private var fallbackBackground: some View {
-        switch shape {
-        case .capsule:
-            Capsule().fill(Color(NSColor.controlBackgroundColor))
-        case .rect(let radius):
-            RoundedRectangle(cornerRadius: radius, style: .continuous).fill(Color(NSColor.controlBackgroundColor))
-        case .circle:
-            Circle().fill(Color(NSColor.controlBackgroundColor))
-        }
-    }
-}
-
-// MARK: - 7. View Extensions (Skill API Surface)
-public extension View {
-    /// Applies true in-app crystal clear liquid glass to a floating sidebar
-    func crystalClearSidebarGlass(cornerRadius: CGFloat = 22) -> some View {
-        self.modifier(CrystalClearSidebarGlassModifier(cornerRadius: cornerRadius))
-    }
-
-    /// Applies Liquid Glass with configuration and shape
-    func glassEffect(_ config: GlassConfiguration = .regular, in shape: GlassShapeOption = .capsule) -> some View {
-        self.modifier(LiquidGlassViewModifier(config: config, shape: shape))
-    }
-
-    /// Shortcut for card glass
-    func liquidGlassCard(cornerRadius: CGFloat = 16, tintColor: Color? = nil) -> some View {
-        self.glassEffect(.regular.tint(tintColor ?? Color.clear), in: .rect(cornerRadius: cornerRadius))
-    }
-
-    /// Injects all liquid glass optics configuration environment values
-    func liquidGlassEnvironment(
-        enabled: Bool,
-        transparency: Double,
-        specularIntensity: Double,
-        blurRadius: Double,
-        reduceTransparency: Bool
-    ) -> some View {
-        self
-            .environment(\.liquidGlassEnabled, enabled)
-            .environment(\.glassTransparency, transparency)
-            .environment(\.glassSpecularIntensity, specularIntensity)
-            .environment(\.glassBlurRadius, blurRadius)
-            .environment(\.reduceTransparency, reduceTransparency)
-    }
-
-    /// Applies the standard Liquid Glass button style
-    func glassButton(isProminent: Bool = false, tint: Color? = nil) -> some View {
-        self.buttonStyle(LiquidGlassButtonStyle(isProminent: isProminent, customTint: tint))
-    }
-}
-
-// MARK: - 8. Ambient Chromatic Background (For Liquid Glass Refraction)
-public struct AmbientChromaticBackdrop: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    public init() {}
-
-    public var body: some View {
-        ZStack {
-            (colorScheme == .dark ? Color(red: 0.06, green: 0.09, blue: 0.14) : Color(red: 0.94, green: 0.96, blue: 0.99))
-                .ignoresSafeArea()
-
-            GeometryReader { proxy in
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    Color(red: 0.0, green: 0.45, blue: 0.95).opacity(0.22),
-                                    Color(red: 0.1, green: 0.6, blue: 0.9).opacity(0.10),
-                                    Color.clear
-                                ],
-                                center: .center,
-                                startRadius: 10,
-                                endRadius: proxy.size.width * 0.45
-                            )
-                        )
-                        .frame(width: proxy.size.width * 0.85, height: proxy.size.width * 0.85)
-                        .position(x: proxy.size.width * 0.15, y: proxy.size.height * 0.20)
-                        .blur(radius: 60)
-
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    Color(red: 0.40, green: 0.20, blue: 0.90).opacity(0.18),
-                                    Color(red: 0.15, green: 0.35, blue: 0.80).opacity(0.08),
-                                    Color.clear
-                                ],
-                                center: .center,
-                                startRadius: 10,
-                                endRadius: proxy.size.width * 0.40
-                            )
-                        )
-                        .frame(width: proxy.size.width * 0.75, height: proxy.size.width * 0.75)
-                        .position(x: proxy.size.width * 0.85, y: proxy.size.height * 0.85)
-                        .blur(radius: 70)
-                }
-            }
-            .ignoresSafeArea()
-        }
-    }
-}
-
-// MARK: - 9. Morphing Launch Glass Control
-public struct MorphingLaunchGlassControl: View {
-    @ObservedObject var engine: EngineService
-    let game: GameItem
-    let onShowTroubleshoot: () -> Void
-    var namespace: Namespace.ID
-
-    public init(engine: EngineService, game: GameItem, onShowTroubleshoot: @escaping () -> Void, namespace: Namespace.ID) {
-        self.engine = engine
-        self.game = game
-        self.onShowTroubleshoot = onShowTroubleshoot
-        self.namespace = namespace
-    }
-
-    public var body: some View {
-        Group {
-            if engine.isGameModeActive {
-                HStack(spacing: 12) {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color.green)
-                            .frame(width: 8, height: 8)
-                            .shadow(color: Color.green.opacity(0.9), radius: 5)
-
-                        Text("Running in D3DMetal Sandbox")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.primary)
-                    }
-                    .padding(.leading, 6)
-
-                    Divider()
-                        .frame(height: 14)
-                        .opacity(0.3)
-
-                    Button {
-                        engine.runBenchmark(for: game)
-                    } label: {
-                        Label("HUD", systemImage: "gauge.with.needle")
-                    }
-                    .buttonStyle(.plain)
-                    .font(.caption)
-
-                    Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            engine.stopGame()
-                        }
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: "stop.fill")
-                                .font(.system(size: 11, weight: .bold))
-                            Text("Stop")
-                                .font(.system(size: 12, weight: .bold))
-                        }
-                    }
-                    .buttonStyle(LiquidGlassButtonStyle(isProminent: true, customTint: .red))
-                    .matchedGeometryEffect(id: "primaryAction", in: namespace)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(Color.white.opacity(0.06))
-                        .overlay(
-                            Capsule()
-                                .strokeBorder(
-                                    LinearGradient(
-                                        stops: [
-                                            .init(color: Color.white.opacity(0.95), location: 0.0),
-                                            .init(color: Color.white.opacity(0.3), location: 0.5),
-                                            .init(color: Color.white.opacity(0.6), location: 1.0)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.2
-                                )
-                        )
-                )
-                .shadow(color: Color.green.opacity(0.25), radius: 10, y: 4)
-            } else {
-                HStack(spacing: 12) {
-                    PlayButton(isPlaying: false) {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            engine.launchGame(game)
-                        }
-                    }
-                    .matchedGeometryEffect(id: "primaryAction", in: namespace)
-
-                    GlassEffectContainer(spacing: 8) {
-                        Button {
-                            engine.runBenchmark(for: game)
-                        } label: {
-                            Label("Benchmark", systemImage: "gauge.with.needle")
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-
-                        Divider()
-                            .frame(height: 14)
-                            .opacity(0.3)
-
-                        Button {
-                            engine.runTroubleshooter(for: game)
-                            onShowTroubleshoot()
-                        } label: {
-                            Label("Troubleshoot", systemImage: "wrench.and.screwdriver")
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-
-                        if !game.installPath.isEmpty {
-                            Divider()
-                                .frame(height: 14)
-                                .opacity(0.3)
-
-                            Button {
-                                NSWorkspace.shared.selectFile(game.executablePath.isEmpty ? game.installPath : game.executablePath, inFileViewerRootedAtPath: game.installPath)
-                            } label: {
-                                Image(systemName: "folder")
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .help("Show game files in Finder")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 10. Compatibility Badge View (Crystal Clear Semantic Glass)
-public struct CompatibilityBadgeView: View {
-    public let badge: CompatibilityBadge
-
-    public init(_ badge: CompatibilityBadge) {
-        self.badge = badge
-    }
-
-    public var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: badge.iconName)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(badge.color)
-
-            Text(badge.rawValue)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(.primary)
-        }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 4)
-        .glassEffect(.regular.tint(badge.color.opacity(0.25)), in: .capsule)
-    }
-}
-
-// MARK: - 11. Play Button (Crystal Sapphire Glass Action)
-public struct PlayButton: View {
-    public let isPlaying: Bool
-    public let action: () -> Void
-
-    public init(isPlaying: Bool = false, action: @escaping () -> Void) {
-        self.isPlaying = isPlaying
-        self.action = action
-    }
-
-    public var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-                    .font(.system(size: 13, weight: .bold))
-                Text(isPlaying ? "Stop Session" : "Play")
-                    .font(.system(size: 14, weight: .bold))
-            }
-        }
-        .buttonStyle(LiquidGlassButtonStyle(
-            isProminent: true,
-            customTint: isPlaying ? Color.red : Color(red: 0.05, green: 0.48, blue: 0.98)
-        ))
-        .fixedSize()
-    }
-}
-
-// MARK: - 12. Liquid Glass Button Style (Crystal Clear Standard & Prominent Glass)
+// MARK: - 5. Liquid Glass Button Styles
 public struct LiquidGlassButtonStyle: ButtonStyle {
     public var isProminent: Bool
     public var customTint: Color?
@@ -815,10 +258,9 @@ public extension ButtonStyle where Self == LiquidGlassButtonStyle {
 }
 
 private struct GlassButtonView: View {
-    @Environment(\.liquidGlassEnabled) private var isGlassEnabled
-    @Environment(\.glassTransparency) private var transparency
-    @Environment(\.glassSpecularIntensity) private var specularIntensity
-    @Environment(\.reduceTransparency) private var isReducedTransparency
+    @Environment(\.liquidGlassConfiguration) private var globalConfig
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let configuration: ButtonStyle.Configuration
     let isProminent: Bool
@@ -828,108 +270,82 @@ private struct GlassButtonView: View {
 
     var body: some View {
         configuration.label
-            .font(.system(size: 13, weight: .bold))
+            .font(.system(size: 13, weight: .semibold))
             .lineLimit(1)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 8)
-            .frame(height: 34)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 7)
             .background(
                 ZStack {
                     if isProminent {
+                        let activeColor = customTint ?? globalConfig.accentTint ?? Color.blue
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [
-                                        (customTint ?? Color(red: 0.05, green: 0.48, blue: 0.98)),
-                                        (customTint ?? Color(red: 0.02, green: 0.35, blue: 0.85))
-                                    ],
+                                    colors: [activeColor, activeColor.opacity(0.85)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .opacity(configuration.isPressed ? 0.85 : 1.0)
-
-                        if isGlassEnabled && !isReducedTransparency && specularIntensity > 0.05 {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        stops: [
-                                            .init(color: Color.white.opacity(isHovered ? 0.70 * specularIntensity : 0.50 * specularIntensity), location: 0.0),
-                                            .init(color: Color.white.opacity(0.12 * specularIntensity), location: 0.45),
-                                            .init(color: Color.clear, location: 1.0)
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                        }
-                    } else if isGlassEnabled && !isReducedTransparency {
-                        VisualEffectBlurView(
-                            material: .hudWindow,
-                            blendingMode: .withinWindow,
-                            state: .active
-                        )
-                        .opacity(transparency > 0.05 ? max(0.20, transparency * 0.85) : 0.0)
-
-                        Capsule()
-                            .fill(
-                                Color(NSColor.controlBackgroundColor)
-                                    .opacity((1.0 - transparency) * 0.85)
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(Color.white.opacity(0.40), lineWidth: 0.8)
                             )
-
+                            .shadow(color: activeColor.opacity(0.35), radius: isHovered ? 6 : 3, y: 2)
+                    } else if globalConfig.enabled && !reduceTransparency {
                         Capsule()
-                            .fill(Color.white.opacity((isHovered ? 0.12 : 0.06) * transparency))
-
-                        if specularIntensity > 0.05 {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        stops: [
-                                            .init(color: Color.white.opacity(isHovered ? 0.35 * specularIntensity : 0.20 * specularIntensity), location: 0.0),
-                                            .init(color: Color.white.opacity(0.04 * specularIntensity), location: 0.4),
-                                            .init(color: Color.clear, location: 1.0)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
+                            .fill(Color.white.opacity(isHovered ? 0.18 : 0.10))
+                            .background(.regularMaterial, in: Capsule())
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            stops: [
+                                                .init(color: Color.white.opacity(isHovered ? 0.60 : 0.35), location: 0.0),
+                                                .init(color: Color.white.opacity(0.10), location: 0.5),
+                                                .init(color: Color.white.opacity(isHovered ? 0.30 : 0.15), location: 1.0)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 0.8
                                     )
-                                )
-                        }
+                            )
+                            .shadow(color: Color.black.opacity(0.08), radius: isHovered ? 5 : 2, y: 1.5)
                     } else {
                         Capsule()
-                            .fill(Color(NSColor.controlColor))
-                    }
-
-                    if specularIntensity > 0.05 && (!isReducedTransparency || isProminent) {
-                        Capsule()
-                            .strokeBorder(
-                                LinearGradient(
-                                    stops: [
-                                        .init(color: Color.white.opacity(isProminent ? (isHovered ? 1.0 : 0.95) : (isHovered ? 0.95 * specularIntensity : 0.75 * specularIntensity)), location: 0.0),
-                                        .init(color: Color.white.opacity(0.35), location: 0.35),
-                                        .init(color: Color.white.opacity(0.08), location: 0.65),
-                                        .init(color: Color.white.opacity(isHovered ? 0.60 * specularIntensity : 0.40 * specularIntensity), location: 1.0)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.3
-                            )
+                            .fill(Color(NSColor.controlBackgroundColor))
                     }
                 }
             )
-            .foregroundColor(isProminent ? .white : .primary)
-            .clipShape(Capsule())
-            .shadow(
-                color: isProminent ? (customTint ?? Color.accentColor).opacity(isHovered ? 0.50 : 0.30) : Color.black.opacity(isGlassEnabled && !isReducedTransparency ? 0.06 : 0.02),
-                radius: isHovered ? 8 : 4,
-                x: 0,
-                y: isHovered ? 3 : 2
-            )
-            .scaleEffect(configuration.isPressed ? 0.96 : (isHovered ? 1.025 : 1.0))
-            .animation(.spring(response: 0.22, dampingFraction: 0.75), value: isHovered)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .scaleEffect((globalConfig.interactionResponse == .full) ? (configuration.isPressed ? LiquidGlassTokens.pressingScale : (isHovered ? LiquidGlassTokens.interactionScale : 1.0)) : 1.0)
+            .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.75), value: isHovered)
+            .animation(reduceMotion ? nil : .spring(response: 0.18, dampingFraction: 0.8), value: configuration.isPressed)
             .onHover { hovering in
-                isHovered = hovering
+                if globalConfig.interactionResponse != .off {
+                    isHovered = hovering
+                }
             }
+    }
+}
+
+// MARK: - 6. View Modifiers & Helpers
+public extension View {
+    func crystalClearSidebarGlass(cornerRadius: CGFloat = 22) -> some View {
+        self.modifier(CrystalClearSidebarGlassModifier(cornerRadius: cornerRadius))
+    }
+
+    func glassEffect(_ config: GlassConfiguration = .regular, in shape: GlassShapeOption = .capsule) -> some View {
+        self.background(
+            Color.clear
+                .modifier(LiquidGlassViewModifier(config: config, shape: shape))
+        )
+    }
+
+    func glassEffectID(_ id: String, in namespace: Namespace.ID) -> some View {
+        self.matchedGeometryEffect(id: id, in: namespace)
+    }
+
+    func glassEffectUnion(id: String, namespace: Namespace.ID) -> some View {
+        self.matchedGeometryEffect(id: id, in: namespace, isSource: true)
     }
 }
