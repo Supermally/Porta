@@ -1488,6 +1488,21 @@ public class EngineService: ObservableObject {
         self.launchOutputMessage = "☁️ Deep Steam Sync Complete: Verified active user '\(user)' (fallon58) and loaded \(discoveredGames.count) installed Steam titles directly into your library!"
     }
 
+    public func launchSteam() {
+        if let steamApp = self.universalApplications.first(where: { $0.id == "steam_launcher" }) {
+            self.launchApplication(steamApp)
+        } else if let steamGame = self.games.first(where: { $0.id == "steam_windows_client" || $0.executablePath.lowercased().contains("steam.exe") }) {
+            self.launchGame(steamGame)
+        } else {
+            let sikarugirSteam = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app"
+            if FileManager.default.fileExists(atPath: sikarugirSteam) {
+                NSWorkspace.shared.open(URL(fileURLWithPath: sikarugirSteam))
+            } else {
+                syncSteamLibrary()
+            }
+        }
+    }
+
     public func openSteamStore(for appId: String) {
         if let url = URL(string: "https://store.steampowered.com/app/\(appId)") {
             NSWorkspace.shared.open(url)
