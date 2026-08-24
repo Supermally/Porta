@@ -85,7 +85,8 @@ public final class DataCacheService: @unchecked Sendable {
         if FileManager.default.fileExists(atPath: diskURL.path),
            let diskData = try? Data(contentsOf: diskURL),
            let diskImage = NSImage(data: diskData) {
-            imageMemoryCache.setObject(diskImage, forKey: key)
+            let cost = diskData.count
+            imageMemoryCache.setObject(diskImage, forKey: key, cost: cost)
             return diskImage
         }
 
@@ -100,22 +101,20 @@ public final class DataCacheService: @unchecked Sendable {
             let diskURL = self.diskCacheURL(for: url)
             if let tiffData = image.tiffRepresentation,
                let bitmap = NSBitmapImageRep(data: tiffData),
-               let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.88]) {
+               let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.85]) {
                 try? jpegData.write(to: diskURL, options: .atomic)
             }
         }
     }
 
     public func prefetchArtwork(urls: [URL]) {
-        cacheQueue.async {
-            for url in urls {
-                if self.getCachedImage(for: url) == nil {
-                    // Download and cache quietly in background
-                    if let data = try? Data(contentsOf: url),
-                       let image = NSImage(data: data) {
-                        self.cacheImage(image, for: url)
-                    }
-                }
+        let session = URLSession.shared
+        for url in urls {
+            if self.getCachedImage(for: url) == nil {
+                session.dataTask(with: url) { [weak self] data, _, error in
+                    guard let self = self, let data = data, error == nil, let image = NSImage(data: data) else { return }
+                    self.cacheImage(image, for: url)
+                }.resume()
             }
         }
     }
@@ -172,15 +171,13 @@ public struct CachedArtworkImageView: View {
             return
         }
 
-        // Asynchronous background fetch
-        DispatchQueue.global(qos: .userInitiated).async {
-            if let data = try? Data(contentsOf: url),
-               let image = NSImage(data: data) {
-                DataCacheService.shared.cacheImage(image, for: url)
-                DispatchQueue.main.async {
-                    self.loadedImage = image
-                }
+        // Asynchronous non-blocking network fetch with URLSession
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            guard let data = data, error == nil, let image = NSImage(data: data) else { return }
+            DataCacheService.shared.cacheImage(image, for: url)
+            DispatchQueue.main.async {
+                self.loadedImage = image
             }
-        }
+        }.resume()
     }
 }
