@@ -116,20 +116,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func buildNativeAppMenu() {
         let mainMenu = NSMenu()
 
-        // 1. App Menu (Forge)
+        // 1. App Menu (Porta)
         let appMenuItem = NSMenuItem()
-        let appMenu = NSMenu(title: "Forge")
-        appMenu.addItem(withTitle: "About Forge", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let appMenu = NSMenu(title: "Porta")
+        appMenu.addItem(withTitle: "About Porta", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(NSMenuItem.separator())
         let pref = appMenu.addItem(withTitle: "Settings…", action: #selector(MenuActionsHandler.shared.openSettingsTab), keyEquivalent: ",")
         pref.target = MenuActionsHandler.shared
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Hide Forge", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: "Hide Porta", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         let hideOthers = appMenu.addItem(withTitle: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
         hideOthers.keyEquivalentModifierMask = [.command, .option]
         appMenu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Quit Forge", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit Porta", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appMenuItem.submenu = appMenu
         mainMenu.addItem(appMenuItem)
 
@@ -214,7 +214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct MacGamingApp: App {
+struct PortaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @ObservedObject private var engine = EngineService.shared
 

@@ -37,13 +37,16 @@ public struct FloatingGlassSidebarView: View {
                     .shadow(color: Color.blue.opacity(0.35), radius: 6, y: 2)
                 }
                 .buttonStyle(.plain)
-                .help(isCollapsed ? "Expand sidebar" : "Forge Platform")
+                .help(isCollapsed ? "Expand sidebar" : "Porta • Powered by Forge Engine")
 
                 if !isCollapsed {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("Forge")
+                        Text("Porta")
                             .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
+                        Text("Forge Engine")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.secondary)
                     }
 
                     Spacer()

@@ -56,7 +56,7 @@ public struct SetupView: View {
             .shadow(color: Color.blue.opacity(0.3), radius: 10, y: 4)
 
             VStack(spacing: 6) {
-                Text("Welcome to Forge")
+                Text("Welcome to Porta")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
 
                 Text("Run Windows software seamlessly on macOS.")
@@ -64,7 +64,7 @@ public struct SetupView: View {
                     .foregroundColor(.secondary)
             }
 
-            Text("Forge configures an optimized Windows compatibility runtime powered by Apple Silicon unified memory and Apple D3DMetal.")
+            Text("Porta configures an optimized Windows compatibility runtime powered by the Forge Engine, Apple Silicon unified memory, and Apple D3DMetal.")
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -91,7 +91,7 @@ public struct SetupView: View {
     private var installingScreen: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Preparing Forge")
+                Text("Preparing Forge Engine")
                     .font(.system(size: 20, weight: .bold))
                 Text("Configuring compatibility components and runtime environments")
                     .font(.system(size: 12))
@@ -161,7 +161,7 @@ public struct SetupView: View {
                 .foregroundColor(.green)
 
             VStack(spacing: 6) {
-                Text("Forge is Ready")
+                Text("Porta is Ready")
                     .font(.system(size: 24, weight: .bold))
 
                 Text("Your Windows compatibility environment is configured.")
@@ -182,7 +182,7 @@ public struct SetupView: View {
                     setupManager.finalizeSetup()
                 }
             }) {
-                Text("Enter Forge")
+                Text("Enter Porta")
                     .font(.system(size: 14, weight: .semibold))
                     .frame(width: 140, height: 32)
             }

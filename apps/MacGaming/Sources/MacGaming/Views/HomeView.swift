@@ -44,10 +44,10 @@ public struct HomeView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Forge")
+                Text("Porta")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
-                Text("Windows Software Platform for Apple Silicon")
+                Text("Windows Software Platform for Apple Silicon • Powered by Forge Engine")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
             }

@@ -258,7 +258,7 @@ public struct ApplicationDetailView: View {
                 }) {
                     HStack {
                         Image(systemName: "trash")
-                        Text("Remove from Forge")
+                        Text("Remove from Porta")
                         Spacer()
                     }
                     .font(.system(size: 12))
