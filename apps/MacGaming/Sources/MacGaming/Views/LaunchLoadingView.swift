@@ -441,7 +441,7 @@ private struct LaunchLoadingLightView: View {
     }
 }
 
-// MARK: - 100% Clear Iridescent Soap Bubble (Hollow Center, Organic Point Glints, Defined Drop Shadows)
+// MARK: - 100% Clear Iridescent Soap Bubble (Pure Glass Smooth Surface, Zero Point Spots)
 private struct ClearSoapBubbleTile: View {
     let time: Double
     let settleProgress: Double
@@ -485,7 +485,7 @@ private struct ClearSoapBubbleTile: View {
         let edgeR = 15.0 * p
 
         ZStack {
-            // Layer 1A: Deep Obsidian Contrast Shadow (gives clear separation against backgrounds)
+            // Layer 1A: Deep Obsidian Contrast Shadow (distinct contour separation against backgrounds)
             Canvas { context, size in
                 context.addFilter(.alphaThreshold(min: 0.5, color: Color.black.opacity(isDarkMode ? 0.65 : 0.22)))
                 context.addFilter(.blur(radius: 12))
@@ -567,70 +567,7 @@ private struct ClearSoapBubbleTile: View {
                 }
             )
 
-            // Layer 4: Natural Curved Specular Glints (Soft Organic Ellipses, Zero Rectangular Streaks)
-            Canvas { context, size in
-                let center = CGPoint(x: size.width / 2, y: size.height / 2)
-
-                // 4A: Top-Left Primary Specular Light Glint
-                let g1X = (center.x - 14 * p) + (c1X * 0.45 * invP)
-                let g1Y = (center.y - 14 * p) + (c1Y * 0.45 * invP)
-                let g1W = (16.0 * p) + (14.0 * invP)
-                let g1H = (12.0 * p) + (10.0 * invP)
-
-                let glint1Path = Path(ellipseIn: CGRect(x: g1X - g1W / 2, y: g1Y - g1H / 2, width: g1W, height: g1H))
-                context.fill(
-                    glint1Path,
-                    with: .radialGradient(
-                        Gradient(colors: [Color.white.opacity(0.95), Color.white.opacity(0.40), Color.clear]),
-                        center: CGPoint(x: g1X, y: g1Y),
-                        startRadius: 0,
-                        endRadius: g1W * 0.7
-                    )
-                )
-
-                // 4B: Secondary Subtle Corner Droplet Glint
-                let g2X = (center.x - 6 * p) + (c1X * 0.25 * invP) - 8
-                let g2Y = (center.y - 18 * p) + (c1Y * 0.25 * invP)
-                let glint2Path = Path(ellipseIn: CGRect(x: g2X - 3, y: g2Y - 3, width: 6, height: 6))
-                context.fill(
-                    glint2Path,
-                    with: .radialGradient(
-                        Gradient(colors: [Color.white.opacity(0.85), Color.clear]),
-                        center: CGPoint(x: g2X, y: g2Y),
-                        startRadius: 0,
-                        endRadius: 3.5
-                    )
-                )
-
-                // 4C: Bottom-Right Soft Ground Bounce Glint
-                let g3X = (center.x + 12 * p) + (c3X * 0.40 * invP)
-                let g3Y = (center.y + 12 * p) + (c3Y * 0.40 * invP)
-                let g3W = (14.0 * p) + (12.0 * invP)
-                let g3H = (9.0 * p) + (8.0 * invP)
-
-                let glint3Path = Path(ellipseIn: CGRect(x: g3X - g3W / 2, y: g3Y - g3H / 2, width: g3W, height: g3H))
-                context.fill(
-                    glint3Path,
-                    with: .radialGradient(
-                        Gradient(colors: [Color.white.opacity(0.55), Color.cyan.opacity(0.35), Color.clear]),
-                        center: CGPoint(x: g3X, y: g3Y),
-                        startRadius: 0,
-                        endRadius: g3W * 0.6
-                    )
-                )
-            }
-            .mask(
-                Canvas { context, size in
-                    context.addFilter(.alphaThreshold(min: 0.48, color: .white))
-                    context.addFilter(.blur(radius: 11))
-                    context.drawLayer { ctx in
-                        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                        drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
-                    }
-                }
-            )
-
-            // Layer 5: High-Contrast Crisp Soap Film Outer Rim Line
+            // Layer 4: High-Contrast Crisp Soap Film Outer Rim Line (Specular Glass Contour)
             LinearGradient(
                 colors: [
                     Color.white.opacity(0.98),
@@ -666,7 +603,7 @@ private struct ClearSoapBubbleTile: View {
             )
             .opacity((0.85 * invP) + (1.0 * p))
 
-            // Layer 6: Embedded Icon Glyph (Suspended Inside the Clear Bubble Volume)
+            // Layer 5: Embedded Icon Glyph (Suspended Inside the Clear Bubble Volume)
             Image(systemName: "cube.fill")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.white)
