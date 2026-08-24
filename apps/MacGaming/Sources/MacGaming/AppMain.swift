@@ -1,9 +1,91 @@
 import SwiftUI
 import AppKit
 
+// MARK: - Native AppKit Menu Bar Action Handlers
+@MainActor
+final class MenuActionsHandler: NSObject {
+    static let shared = MenuActionsHandler()
+
+    @objc func importGameFolder() {
+        EngineService.shared.openNativeFilePicker(chooseFolder: true)
+    }
+
+    @objc func importGameExecutable() {
+        EngineService.shared.openNativeFilePicker(isUniversalApp: false, chooseFolder: false)
+    }
+
+    @objc func importUniversalApp() {
+        EngineService.shared.openNativeFilePicker(isUniversalApp: true, chooseFolder: false)
+    }
+
+    @objc func rescanEnvironments() {
+        EngineService.shared.scanAllLaunchers()
+    }
+
+    @objc func launchSteam() {
+        EngineService.shared.launchSteam()
+    }
+
+    @objc func syncSteam() {
+        EngineService.shared.syncSteamLibrary()
+    }
+
+    @objc func setGridView() {
+        EngineService.shared.libraryViewMode = .grid
+    }
+
+    @objc func setListView() {
+        EngineService.shared.libraryViewMode = .list
+    }
+
+    @objc func openLibraryTab() {
+        EngineService.shared.activeTab = .library
+    }
+
+    @objc func openApplicationsTab() {
+        EngineService.shared.activeTab = .applications
+    }
+
+    @objc func openActivityTab() {
+        EngineService.shared.activeTab = .activity
+    }
+
+    @objc func openDownloadsTab() {
+        EngineService.shared.activeTab = .downloads
+    }
+
+    @objc func openDiscoverTab() {
+        EngineService.shared.activeTab = .discover
+    }
+
+    @objc func openSettingsTab() {
+        EngineService.shared.activeTab = .settings
+    }
+
+    @objc func openDebugLabTab() {
+        EngineService.shared.activeTab = .debugLab
+    }
+
+    @objc func openConsoleTab() {
+        EngineService.shared.activeTab = .console
+    }
+
+    @objc func toggleDeveloperMode() {
+        EngineService.shared.isDeveloperModeEnabled.toggle()
+    }
+}
+
+// MARK: - NSApplicationDelegate
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Set regular activation policy and bring to front so the macOS system menu bar is fully clickable
+        NSApplication.shared.setActivationPolicy(.regular)
+        NSApplication.shared.activate(ignoringOtherApps: true)
         NSWindow.allowsAutomaticWindowTabbing = false
+
+        // Build complete AppKit main menu hierarchy
+        buildNativeAppMenu()
 
         // Automatically restore and activate security-scoped bookmarks asynchronously
         Task.detached(priority: .utility) {
@@ -31,6 +113,99 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.collectionBehavior.insert([.fullScreenPrimary, .managed])
     }
 
+    private func buildNativeAppMenu() {
+        let mainMenu = NSMenu()
+
+        // 1. App Menu (Forge)
+        let appMenuItem = NSMenuItem()
+        let appMenu = NSMenu(title: "Forge")
+        appMenu.addItem(withTitle: "About Forge", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(NSMenuItem.separator())
+        let pref = appMenu.addItem(withTitle: "Settings…", action: #selector(MenuActionsHandler.shared.openSettingsTab), keyEquivalent: ",")
+        pref.target = MenuActionsHandler.shared
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(withTitle: "Hide Forge", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        let hideOthers = appMenu.addItem(withTitle: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
+        hideOthers.keyEquivalentModifierMask = [.command, .option]
+        appMenu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
+        appMenu.addItem(NSMenuItem.separator())
+        appMenu.addItem(withTitle: "Quit Forge", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+
+        // 2. File Menu
+        let fileMenuItem = NSMenuItem()
+        let fileMenu = NSMenu(title: "File")
+        let importFolder = fileMenu.addItem(withTitle: "Import Game Folder…", action: #selector(MenuActionsHandler.shared.importGameFolder), keyEquivalent: "o")
+        importFolder.target = MenuActionsHandler.shared
+        let importExe = fileMenu.addItem(withTitle: "Import Windows Executable (.exe)…", action: #selector(MenuActionsHandler.shared.importGameExecutable), keyEquivalent: "O")
+        importExe.target = MenuActionsHandler.shared
+        let importUniversal = fileMenu.addItem(withTitle: "Import Universal Application…", action: #selector(MenuActionsHandler.shared.importUniversalApp), keyEquivalent: "I")
+        importUniversal.target = MenuActionsHandler.shared
+        fileMenu.addItem(NSMenuItem.separator())
+        let rescan = fileMenu.addItem(withTitle: "Rescan All Environments & Storefronts", action: #selector(MenuActionsHandler.shared.rescanEnvironments), keyEquivalent: "r")
+        rescan.target = MenuActionsHandler.shared
+        fileMenuItem.submenu = fileMenu
+        mainMenu.addItem(fileMenuItem)
+
+        // 3. Launchers Menu
+        let launchersMenuItem = NSMenuItem()
+        let launchersMenu = NSMenu(title: "Launchers")
+        let openSteam = launchersMenu.addItem(withTitle: "Open Steam (Wine 10)", action: #selector(MenuActionsHandler.shared.launchSteam), keyEquivalent: "1")
+        openSteam.keyEquivalentModifierMask = [.command, .option]
+        openSteam.target = MenuActionsHandler.shared
+        let syncSteam = launchersMenu.addItem(withTitle: "Sync Steam Cloud & Library", action: #selector(MenuActionsHandler.shared.syncSteam), keyEquivalent: "")
+        syncSteam.target = MenuActionsHandler.shared
+        launchersMenuItem.submenu = launchersMenu
+        mainMenu.addItem(launchersMenuItem)
+
+        // 4. View Menu
+        let viewMenuItem = NSMenuItem()
+        let viewMenu = NSMenu(title: "View")
+        let gridView = viewMenu.addItem(withTitle: "Grid View", action: #selector(MenuActionsHandler.shared.setGridView), keyEquivalent: "1")
+        gridView.target = MenuActionsHandler.shared
+        let listView = viewMenu.addItem(withTitle: "List View", action: #selector(MenuActionsHandler.shared.setListView), keyEquivalent: "2")
+        listView.target = MenuActionsHandler.shared
+        viewMenu.addItem(NSMenuItem.separator())
+        let libTab = viewMenu.addItem(withTitle: "Library / Games", action: #selector(MenuActionsHandler.shared.openLibraryTab), keyEquivalent: "G")
+        libTab.target = MenuActionsHandler.shared
+        let appTab = viewMenu.addItem(withTitle: "Universal Applications", action: #selector(MenuActionsHandler.shared.openApplicationsTab), keyEquivalent: "A")
+        appTab.target = MenuActionsHandler.shared
+        let actTab = viewMenu.addItem(withTitle: "Activity & Audit Logs", action: #selector(MenuActionsHandler.shared.openActivityTab), keyEquivalent: "")
+        actTab.target = MenuActionsHandler.shared
+        let downTab = viewMenu.addItem(withTitle: "Downloads & Updates", action: #selector(MenuActionsHandler.shared.openDownloadsTab), keyEquivalent: "")
+        downTab.target = MenuActionsHandler.shared
+        let discTab = viewMenu.addItem(withTitle: "Mac Native Discover", action: #selector(MenuActionsHandler.shared.openDiscoverTab), keyEquivalent: "")
+        discTab.target = MenuActionsHandler.shared
+        viewMenuItem.submenu = viewMenu
+        mainMenu.addItem(viewMenuItem)
+
+        // 5. Settings Menu
+        let settingsMenuItem = NSMenuItem()
+        let settingsMenu = NSMenu(title: "Settings")
+        let prefItem = settingsMenu.addItem(withTitle: "Preferences / Settings…", action: #selector(MenuActionsHandler.shared.openSettingsTab), keyEquivalent: ",")
+        prefItem.target = MenuActionsHandler.shared
+        let debugLab = settingsMenu.addItem(withTitle: "Graphics & D3DMetal Debug Lab…", action: #selector(MenuActionsHandler.shared.openDebugLabTab), keyEquivalent: "D")
+        debugLab.target = MenuActionsHandler.shared
+        let console = settingsMenu.addItem(withTitle: "Developer Console & Logs…", action: #selector(MenuActionsHandler.shared.openConsoleTab), keyEquivalent: "C")
+        console.target = MenuActionsHandler.shared
+        settingsMenu.addItem(NSMenuItem.separator())
+        let devMode = settingsMenu.addItem(withTitle: "Toggle Developer Mode", action: #selector(MenuActionsHandler.shared.toggleDeveloperMode), keyEquivalent: "")
+        devMode.target = MenuActionsHandler.shared
+        settingsMenuItem.submenu = settingsMenu
+        mainMenu.addItem(settingsMenuItem)
+
+        // 6. Window Menu
+        let windowMenuItem = NSMenuItem()
+        let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+        windowMenu.addItem(withTitle: "Zoom", action: #selector(NSWindow.performZoom(_:)), keyEquivalent: "")
+        windowMenuItem.submenu = windowMenu
+        mainMenu.addItem(windowMenuItem)
+
+        NSApplication.shared.mainMenu = mainMenu
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         Task { @MainActor in
             PermissionManager.shared.stopAccessingAll()
@@ -49,140 +224,6 @@ struct MacGamingApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
-        .commands {
-            // 1. File Menu Enhancements
-            CommandGroup(replacing: .newItem) {
-                Button("Import Game Folder…") {
-                    engine.openNativeFilePicker(chooseFolder: true)
-                }
-                .keyboardShortcut("o", modifiers: .command)
-
-                Button("Import Windows Executable (.exe)…") {
-                    engine.openNativeFilePicker(isUniversalApp: false, chooseFolder: false)
-                }
-                .keyboardShortcut("o", modifiers: [.command, .shift])
-
-                Button("Import Universal Application…") {
-                    engine.openNativeFilePicker(isUniversalApp: true, chooseFolder: false)
-                }
-                .keyboardShortcut("i", modifiers: [.command, .shift])
-
-                Divider()
-
-                Button("Rescan All Environments & Storefronts") {
-                    engine.scanAllLaunchers()
-                }
-                .keyboardShortcut("r", modifiers: .command)
-            }
-
-            // 2. Launchers Menu
-            CommandMenu("Launchers") {
-                Section("Storefront Integration") {
-                    Button("Open Steam (Wine 10)") {
-                        engine.launchSteam()
-                    }
-                    .keyboardShortcut("1", modifiers: [.command, .option])
-
-                    Button("Sync Steam Cloud & Library") {
-                        engine.syncSteamLibrary()
-                    }
-                }
-
-                Divider()
-
-                Section("Filter Storefront View") {
-                    ForEach(StorefrontFilter.allCases, id: \.self) { filter in
-                        Button(filter.rawValue) {
-                            engine.selectedStorefront = filter
-                            engine.activeTab = .library
-                        }
-                    }
-                }
-            }
-
-            // 3. View Menu
-            CommandMenu("View") {
-                Section("Layout Style") {
-                    Button("Grid View") {
-                        engine.libraryViewMode = .grid
-                    }
-                    .keyboardShortcut("1", modifiers: .command)
-
-                    Button("List View") {
-                        engine.libraryViewMode = .list
-                    }
-                    .keyboardShortcut("2", modifiers: .command)
-                }
-
-                Divider()
-
-                Section("Navigation") {
-                    Button("Library / Games") {
-                        engine.activeTab = .library
-                    }
-                    .keyboardShortcut("g", modifiers: [.command, .shift])
-
-                    Button("Universal Applications") {
-                        engine.activeTab = .applications
-                    }
-                    .keyboardShortcut("a", modifiers: [.command, .shift])
-
-                    Button("Activity & Audit Logs") {
-                        engine.activeTab = .activity
-                    }
-
-                    Button("Downloads & Updates") {
-                        engine.activeTab = .downloads
-                    }
-
-                    Button("Mac Native Discover") {
-                        engine.activeTab = .discover
-                    }
-                }
-
-                Divider()
-
-                Section("Compatibility Tiers") {
-                    Button("Show All Games") {
-                        engine.selectedFilter = nil
-                    }
-
-                    ForEach(CompatibilityBadge.allCases, id: \.self) { tier in
-                        Button(tier.rawValue) {
-                            engine.selectedFilter = tier
-                        }
-                    }
-                }
-            }
-
-            // 4. Settings & Tools Menu
-            CommandMenu("Settings") {
-                Section("Configuration") {
-                    Button("Preferences / Settings…") {
-                        engine.activeTab = .settings
-                    }
-                    .keyboardShortcut(",", modifiers: .command)
-
-                    Button("Graphics & D3DMetal Debug Lab…") {
-                        engine.activeTab = .debugLab
-                    }
-                    .keyboardShortcut("d", modifiers: [.command, .shift])
-
-                    Button("Developer Console & Logs…") {
-                        engine.activeTab = .console
-                    }
-                    .keyboardShortcut("c", modifiers: [.command, .shift])
-                }
-
-                Divider()
-
-                Section("Developer Options") {
-                    Button(engine.isDeveloperModeEnabled ? "Disable Developer Mode" : "Enable Developer Mode") {
-                        engine.isDeveloperModeEnabled.toggle()
-                    }
-                }
-            }
-        }
     }
 }
 
