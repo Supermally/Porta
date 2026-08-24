@@ -4,9 +4,9 @@ import Combine
 
 public enum PresenceMode: String, CaseIterable, Identifiable, Codable, Sendable {
     case idle = "Idle"
-    case developing = "Developing Forge"
+    case developing = "Developing Porta"
     case testing = "Testing Compatibility"
-    case debugging = "Debugging Subsystem"
+    case debugging = "Debugging Direct3D 12"
     case installing = "Installing Software"
     case runningSoftware = "Running Windows Software"
     case runningGame = "Running Game"
@@ -222,8 +222,8 @@ public final class DiscordRichPresenceService: ObservableObject, @unchecked Send
                         "details": self.statusDetail,
                         "state": self.stateMessage,
                         "assets": [
-                            "large_image": "forge_logo",
-                            "large_text": "Forge Platform",
+                            "large_image": "porta_logo",
+                            "large_text": "Porta • Powered by Forge Engine",
                             "small_image": "apple_silicon",
                             "small_text": "Apple Silicon • Metal 3"
                         ],

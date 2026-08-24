@@ -217,7 +217,7 @@ public struct LibraryView: View {
         } else if let filter = engine.selectedFilter {
             return "No games currently match the \(filter.rawValue) compatibility rating tier."
         } else {
-            return "No games have been imported into Forge yet. Import a game folder or Windows executable to begin."
+            return "No games have been imported into Porta yet. Import a game folder or Windows executable to begin."
         }
     }
 }

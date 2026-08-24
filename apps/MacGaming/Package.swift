@@ -2,20 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "MacGaming",
+    name: "Porta",
     platforms: [
         .macOS("26.0")
     ],
     products: [
         .executable(
-            name: "MacGaming",
-            targets: ["MacGaming"]
+            name: "Porta",
+            targets: ["Porta"]
         ),
     ],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "MacGaming",
+            name: "Porta",
             dependencies: [],
             path: "Sources/MacGaming"
         ),

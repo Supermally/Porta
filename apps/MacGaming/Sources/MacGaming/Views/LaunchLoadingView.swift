@@ -7,7 +7,7 @@ public struct LaunchLoadingView: View {
     @Environment(\.colorScheme) var colorScheme
 
     @State private var progress: Double = 0.0
-    @State private var statusText: String = "Starting Forge..."
+    @State private var statusText: String = "Starting Porta..."
     @State private var isFadingOut: Bool = false
     @State private var pulseGlow: Bool = false
 
@@ -92,12 +92,12 @@ public struct LaunchLoadingView: View {
 
                 // Brand Typography
                 VStack(spacing: 4) {
-                    Text("Forge")
+                    Text("Porta")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
                         .foregroundColor(colorScheme == .light ? Color(red: 0.08, green: 0.08, blue: 0.12) : .white)
                         .tracking(0.8)
 
-                    Text("Windows Software Platform")
+                    Text("Powered by Forge Engine")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(colorScheme == .light ? Color(red: 0.45, green: 0.48, blue: 0.55) : .white.opacity(0.65))
                         .tracking(0.3)
@@ -162,7 +162,7 @@ public struct LaunchLoadingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
             withAnimation(.easeInOut(duration: 0.65)) {
                 self.progress = 0.75
-                self.statusText = "Warming translation engine..."
+                self.statusText = "Warming Forge engine..."
             }
 
             // Stage 3: Finalizing launch (1.1s - 1.6s)

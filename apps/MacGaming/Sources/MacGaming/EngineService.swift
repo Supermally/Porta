@@ -138,7 +138,7 @@ public class EngineService: ObservableObject {
         }
         recordActivity(
             title: "Application Registered",
-            details: "\(app.name) (\(app.category.rawValue)) added to Forge.",
+            details: "\(app.name) (\(app.category.rawValue)) added to Porta.",
             category: "Installation",
             severity: .success
         )
@@ -246,7 +246,7 @@ public class EngineService: ObservableObject {
 
     public init() {
         self.hardware = Self.probeHostHardware()
-        log("Forge Platform initialized on \(hardware.chipName) (\(hardware.osVersion)).", level: .info, source: "System")
+        log("Porta initialized on \(hardware.chipName) (\(hardware.osVersion)) powered by Forge Engine.", level: .info, source: "System")
         loadInitialData()
         loadCommunityReviews()
         loadCatalogEntries()
@@ -286,8 +286,8 @@ public class EngineService: ObservableObject {
                 DataCacheService.shared.prefetchArtwork(urls: artworkURLs)
 
                 self.recordActivity(
-                    title: "Forge Platform Initialized",
-                    details: "Running on \(self.hardware.chipName) with Apple D3DMetal translation pipeline.",
+                    title: "Porta Initialized",
+                    details: "Running on \(self.hardware.chipName) with Forge Engine (Apple D3DMetal translation pipeline).",
                     category: "Platform",
                     severity: .info
                 )
