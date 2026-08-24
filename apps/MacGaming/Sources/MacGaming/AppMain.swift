@@ -36,11 +36,35 @@ struct MacGamingApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainContentView()
-                .background(WindowAccessor())
+            RootAppContainerView()
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
+    }
+}
+
+// MARK: - Root App Container with Instant Launch Loading Transition
+private struct RootAppContainerView: View {
+    @State private var isLaunchLoading: Bool = true
+
+    var body: some View {
+        ZStack {
+            if isLaunchLoading {
+                LaunchLoadingView {
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        isLaunchLoading = false
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(2)
+            } else {
+                MainContentView()
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
+        }
+        .animation(.easeInOut(duration: 0.35), value: isLaunchLoading)
+        .background(WindowAccessor())
     }
 }
 
