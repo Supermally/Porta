@@ -5,19 +5,28 @@ Cargo.lock
 # Swift / Xcode / SPM
 .build/
 .swiftpm/
+apps/*/.build/
+apps/*/.swiftpm/
 *.xcodeproj
 *.xcworkspace
 DerivedData/
 
 # macOS
 .DS_Store
+**/.DS_Store
 .AppleDouble
 .LSOverride
 ._*
 .Spotlight-V100
 .Trashes
 
-# User Prefix Scratch
+# Logs, Screenshots & Temporary Artifacts
+*.log
+*.png
+*.jpg
+*.jpeg
+*.tmp
 prefixes/
 tmp/
-*.log
+__pycache__/
+*.pyc
