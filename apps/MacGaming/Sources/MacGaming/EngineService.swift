@@ -352,24 +352,34 @@ public class EngineService: ObservableObject {
     }
 
     public var filteredGames: [GameItem] {
-        games.filter { game in
-            let matchesSearch = searchText.isEmpty || game.title.localizedCaseInsensitiveContains(searchText)
-            let matchesBadge = selectedFilter == nil || game.badge == selectedFilter
-            let matchesStorefront: Bool = {
-                switch selectedStorefront {
-                case .all: return true
-                case .steam: return game.storefront == "Steam"
-                case .gog: return game.storefront == "GOG Galaxy"
-                case .epic: return game.storefront == "Epic Games" || game.storefront == "Heroic Games"
-                case .itch: return game.storefront == "itch.io"
-                case .ubisoft: return game.storefront == "Ubisoft" || game.storefront == "Ubisoft Connect"
-                case .ea: return game.storefront == "EA App" || game.storefront == "Origin"
-                case .battlenet: return game.storefront == "Battle.net"
-                case .universalApp: return game.isUniversalApp
-                case .local: return game.storefront == "Local / Custom" || game.storefront == "Local / Sideloaded"
-                }
-            }()
-            return matchesSearch && matchesBadge && matchesStorefront
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let hasQuery = !query.isEmpty
+        let activeFilter = selectedFilter
+        let storefront = selectedStorefront
+
+        return games.filter { game in
+            if let activeFilter = activeFilter, game.badge != activeFilter {
+                return false
+            }
+
+            switch storefront {
+            case .all: break
+            case .steam: if game.storefront != "Steam" { return false }
+            case .gog: if game.storefront != "GOG Galaxy" { return false }
+            case .epic: if game.storefront != "Epic Games" && game.storefront != "Heroic Games" { return false }
+            case .itch: if game.storefront != "itch.io" { return false }
+            case .ubisoft: if game.storefront != "Ubisoft" && game.storefront != "Ubisoft Connect" { return false }
+            case .ea: if game.storefront != "EA App" && game.storefront != "Origin" { return false }
+            case .battlenet: if game.storefront != "Battle.net" { return false }
+            case .universalApp: if !game.isUniversalApp { return false }
+            case .local: if game.storefront != "Local / Custom" && game.storefront != "Local / Sideloaded" { return false }
+            }
+
+            if hasQuery {
+                return game.title.lowercased().contains(query) || (game.steamAppId?.contains(query) == true)
+            }
+
+            return true
         }
     }
 

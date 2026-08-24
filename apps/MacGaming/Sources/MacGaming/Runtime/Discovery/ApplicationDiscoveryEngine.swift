@@ -122,19 +122,22 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
     }
 
     private func parseSteamManifest(content: String, steamAppsPath: String, environmentId: String) -> AppItem? {
-        func extractValue(for key: String) -> String? {
-            let pattern = "\"\(key)\"\\s+\"([^\"]+)\""
-            guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
-                  let match = regex.firstMatch(in: content, range: NSRange(content.startIndex..., in: content)),
-                  let range = Range(match.range(at: 1), in: content) else {
-                return nil
+        var dict: [String: String] = [:]
+        content.enumerateLines { line, _ in
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.hasPrefix("\"") {
+                let parts = trimmed.components(separatedBy: "\"")
+                if parts.count >= 4 {
+                    let key = parts[1].lowercased()
+                    let val = parts[3]
+                    dict[key] = val
+                }
             }
-            return String(content[range])
         }
 
-        guard let appId = extractValue(for: "appid"),
-              let name = extractValue(for: "name"),
-              let installDir = extractValue(for: "installdir") else {
+        guard let appId = dict["appid"],
+              let name = dict["name"],
+              let installDir = dict["installdir"] else {
             return nil
         }
 
@@ -146,7 +149,7 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
         let gameDir = steamAppsPath + "/common/" + installDir
         let (execPath, architecture) = findPrimaryExecutable(in: gameDir)
 
-        let sizeBytes = Int64(extractValue(for: "SizeOnDisk") ?? "0") ?? 0
+        let sizeBytes = Int64(dict["sizeondisk"] ?? "0") ?? 0
 
         return AppItem(
             id: "steam_game_\(appId)",
@@ -190,46 +193,49 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
             prefix + "/drive_c/ProgramData/Microsoft/Windows/Start Menu/Programs"
         ]
 
+        let excludedSubstrings = [
+            "unins", "uninst", "helper", "crash", "update", "steam.exe", "steamwebhelper",
+            "steamservice", "steamerrorreporter", "winedevice", "wineserver", "explorer.exe",
+            "iexplore", "internet explorer", "wine", "winebrowser", "winemine", "wordpad",
+            "services.exe", "svchost", "winlogon", "msiexec", "dxdiag", "rundll32",
+            "regedit", "reg.exe", "cmd.exe", "conhost", "taskkill", "tasklist",
+            "winemenubuilder", "winhlp32", "wordpad", "write.exe", "control.exe",
+            "hh.exe", "attrib", "cacls", "fc.exe", "find.exe", "findstr", "help.exe",
+            "hostname", "ipconfig", "net.exe", "netstat", "ping.exe", "route.exe",
+            "sc.exe", "shutdown", "sort.exe", "subst.exe", "systeminfo", "tracert",
+            "xcopy", "cabarc", "expand.exe", "extrac32", "chkdsk", "diskmgmt",
+            "dxsetup", "vcredist", "vc_redist", "dotnet", "directx", "redist",
+            "gldriverquery", "vulkaninfo", "cef", "subprocess", "driver", "vulkan",
+            "d3d11", "d3d12", "unitycrash", "install", "setup.exe", "autorun"
+        ]
+
         for dir in searchDirs {
+            let dirURL = URL(fileURLWithPath: dir)
             guard fileManager.fileExists(atPath: dir),
-                  let enumerator = fileManager.enumerator(atPath: dir) else { continue }
+                  let enumerator = fileManager.enumerator(at: dirURL, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsPackageDescendants, .skipsHiddenFiles]) else { continue }
 
-            for case let relativePath as String in enumerator {
-                if relativePath.lowercased().hasSuffix(".exe") {
-                    let fullPath = dir + "/" + relativePath
-                    let fileName = (relativePath as NSString).lastPathComponent
-                    let lowerName = fileName.lowercased()
-                    let lowerRel = relativePath.lowercased()
+            for case let fileURL as URL in enumerator {
+                let path = fileURL.path
+                let lowerPath = path.lowercased()
 
-                    // Skip anything inside Steam or Windows system internals
-                    if lowerRel.contains("steam") || lowerRel.contains("windows") || lowerRel.contains("system32") || lowerRel.contains("syswow64") {
+                if (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                    if lowerPath.contains("/windows") || lowerPath.contains("/system32") || lowerPath.contains("/syswow64") || lowerPath.contains("/steam") || lowerPath.contains("/temp") || lowerPath.contains("/node_modules") || lowerPath.contains("/cache") {
+                        enumerator.skipDescendants()
                         continue
                     }
+                }
 
-                    // Filter out Windows internal services, helpers, redistributables, and Wine daemons
-                    let excludedPatterns = [
-                        "unins", "uninst", "helper", "crash", "update", "steam.exe", "steamwebhelper",
-                        "steamservice", "steamerrorreporter", "winedevice", "wineserver", "explorer.exe",
-                        "iexplore", "internet explorer", "wine", "winebrowser", "winemine", "wordpad",
-                        "services.exe", "svchost", "winlogon", "msiexec", "dxdiag", "rundll32",
-                        "regedit", "reg.exe", "cmd.exe", "conhost", "taskkill", "tasklist",
-                        "winemenubuilder", "winhlp32", "wordpad", "write.exe", "control.exe",
-                        "hh.exe", "attrib", "cacls", "fc.exe", "find.exe", "findstr", "help.exe",
-                        "hostname", "ipconfig", "net.exe", "netstat", "ping.exe", "route.exe",
-                        "sc.exe", "shutdown", "sort.exe", "subst.exe", "systeminfo", "tracert",
-                        "xcopy", "cabarc", "expand.exe", "extrac32", "chkdsk", "diskmgmt",
-                        "dxsetup", "vcredist", "vc_redist", "dotnet", "directx", "redist",
-                        "gldriverquery", "vulkaninfo", "cef", "subprocess", "driver", "vulkan",
-                        "d3d11", "d3d12", "unitycrash", "install", "setup.exe", "autorun"
-                    ]
+                if fileURL.pathExtension.lowercased() == "exe" {
+                    let fileName = fileURL.lastPathComponent
+                    let lowerName = fileName.lowercased()
 
-                    let shouldExclude = excludedPatterns.contains { lowerName.contains($0) || lowerRel.contains($0) }
+                    let shouldExclude = excludedSubstrings.contains { lowerName.contains($0) || lowerPath.contains($0) }
                     if shouldExclude {
                         continue
                     }
 
                     let cleanName = (fileName as NSString).deletingPathExtension
-                    let category = inferCategory(for: cleanName, path: fullPath)
+                    let category = inferCategory(for: cleanName, path: path)
 
                     let app = AppItem(
                         id: "env_\(environment.id)_\(cleanName.lowercased())",
@@ -239,8 +245,8 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
                         version: "1.0",
                         architecture: "x64",
                         headerImageUrl: nil,
-                        executablePath: fullPath,
-                        workingDirectory: (fullPath as NSString).deletingLastPathComponent,
+                        executablePath: path,
+                        workingDirectory: (path as NSString).deletingLastPathComponent,
                         environmentId: environment.id,
                         runtimeId: environment.defaultRuntimeId,
                         launcherProvider: .standalone,
