@@ -1452,8 +1452,8 @@ public class EngineService: ObservableObject {
             env["WINE_OPENGL_VERSION"] = "4.1"
             env["MESA_GL_VERSION_OVERRIDE"] = "4.1COMPAT"
             env["MESA_GLSL_VERSION_OVERRIDE"] = "410"
-            env["WINE_RETINA"] = "1"
-            env["WINE_ENABLE_HIDPI"] = "1"
+            env["WINE_RETINA"] = "0"
+            env["WINE_ENABLE_HIDPI"] = "0"
             env["WINE_LARGE_ADDRESS_AWARE"] = "1"
             env["STAGING_SHARED_MEMORY"] = "1"
 
@@ -1469,7 +1469,7 @@ public class EngineService: ObservableObject {
             env["MVK_ALLOW_METAL_EVENTS"] = "1"
             proc.environment = env
 
-            // Configure OpenGL 4.1 Core profile and Retina registry settings asynchronously
+            // Configure OpenGL 4.1 Core profile and correct display scaling (prevent 4x super-sampled 5880x3824 bug)
             DispatchQueue.global(qos: .utility).async {
                 let reg1 = Process()
                 reg1.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
@@ -1480,12 +1480,21 @@ public class EngineService: ObservableObject {
                 try? reg1.run()
                 reg1.waitUntilExit()
 
+                // Set Retina mode to 'N' so Wine reports true native display points without 4x doubling
                 let reg2 = Process()
                 reg2.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
-                reg2.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Software\\Wine\\Mac Driver", "/v", "Retina", "/t", "REG_SZ", "/d", "Y", "/f"]
+                reg2.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Software\\Wine\\Mac Driver", "/v", "Retina", "/t", "REG_SZ", "/d", "N", "/f"]
                 reg2.environment = regEnv
                 try? reg2.run()
                 reg2.waitUntilExit()
+
+                // Set standard 96 DPI in Windows desktop registry to avoid oversized windows
+                let reg3 = Process()
+                reg3.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
+                reg3.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Control Panel\\Desktop", "/v", "LogPixels", "/t", "REG_DWORD", "/d", "96", "/f"]
+                reg3.environment = regEnv
+                try? reg3.run()
+                reg3.waitUntilExit()
             }
             // Prevent Win32 IO ERROR_NOT_READY crashes by providing valid non-blocking drained pipes
             let outPipe = Pipe()
