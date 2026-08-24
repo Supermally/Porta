@@ -15,7 +15,7 @@ public struct FloatingTopGlassBar: View {
     }
 
     public var body: some View {
-        GlassEffectContainer(spacing: 36) {
+        GlassEffectContainer(spacing: 24) {
             if isCollapsed {
                 collapsedBubbleView
                     .glassEffect(.regular.interactive(), in: Circle())
@@ -31,7 +31,7 @@ public struct FloatingTopGlassBar: View {
         .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.38, dampingFraction: 0.74), value: isCollapsed)
     }
 
-    // MARK: - 1. Collapsed State: Liquid Glass Search Bubble
+    // MARK: - 1. Collapsed State: Liquid Glass Search & Action Bubble
     private var collapsedBubbleView: some View {
         Button(action: {
             withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.38, dampingFraction: 0.74)) {
@@ -56,11 +56,11 @@ public struct FloatingTopGlassBar: View {
         }
         .buttonStyle(.glass)
         .clipShape(Circle())
-        .help("Search games (⌘F)")
+        .help("Open top control bar (⌘F)")
         .keyboardShortcut("f", modifiers: .command)
     }
 
-    // MARK: - 2. Expanded State: Organic Liquid Glass Control Capsule
+    // MARK: - 2. Expanded State: Full Functional Top Bar
     private var expandedGlassBarView: some View {
         HStack(spacing: 12) {
             // 1. Search Field
@@ -69,11 +69,11 @@ public struct FloatingTopGlassBar: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
 
-                TextField("Search games…", text: $engine.searchText)
+                TextField("Search library…", text: $engine.searchText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
-                    .frame(minWidth: 140, idealWidth: 180)
+                    .frame(minWidth: 120, idealWidth: 160)
                     .onSubmit {
                         if engine.searchText.isEmpty {
                             withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.38, dampingFraction: 0.74)) {
@@ -102,53 +102,46 @@ public struct FloatingTopGlassBar: View {
                 .frame(height: 16)
                 .opacity(0.3)
 
-            // 2. View Mode (Grid / List)
-            HStack(spacing: 2) {
-                Button(action: { engine.libraryViewMode = .grid }) {
-                    Image(systemName: "square.grid.2x2")
-                        .font(.system(size: 12, weight: engine.libraryViewMode == .grid ? .bold : .regular))
-                        .padding(5)
-                        .foregroundColor(engine.libraryViewMode == .grid ? (config.accentTint ?? .accentColor) : .secondary)
-                }
-                .buttonStyle(.plain)
-
-                Button(action: { engine.libraryViewMode = .list }) {
-                    Image(systemName: "list.bullet")
-                        .font(.system(size: 12, weight: engine.libraryViewMode == .list ? .bold : .regular))
-                        .padding(5)
-                        .foregroundColor(engine.libraryViewMode == .list ? (config.accentTint ?? .accentColor) : .secondary)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 4)
-            .padding(.vertical, 2)
-            .background(
-                Capsule()
-                    .fill(Color.primary.opacity(0.04))
-            )
-
-            // 3. Storefront Filter Menu
+            // 2. Launchers & Storefronts Menu Tab
             Menu {
-                ForEach(StorefrontFilter.allCases, id: \.self) { filter in
-                    Button {
-                        engine.selectedStorefront = filter
-                    } label: {
-                        HStack {
-                            Text(filter.rawValue)
-                            if engine.selectedStorefront == filter {
-                                Image(systemName: "checkmark")
+                Section("Filter Storefront") {
+                    ForEach(StorefrontFilter.allCases, id: \.self) { filter in
+                        Button {
+                            engine.selectedStorefront = filter
+                        } label: {
+                            HStack {
+                                Text(filter.rawValue)
+                                if engine.selectedStorefront == filter {
+                                    Image(systemName: "checkmark")
+                                }
                             }
                         }
                     }
                 }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                        .font(.system(size: 12))
-                    Text(engine.selectedStorefront == .all ? "Filter" : engine.selectedStorefront.rawValue)
-                        .font(.system(size: 12, weight: .medium))
+
+                Section("Launch Storefronts") {
+                    Button {
+                        engine.launchSteam()
+                    } label: {
+                        Label("Open Steam (Wine)", systemImage: "play.circle")
+                    }
+
+                    Button {
+                        engine.openNativeFilePicker(isUniversalApp: false, chooseFolder: false)
+                    } label: {
+                        Label("Launch External Client...", systemImage: "arrow.up.forward.app")
+                    }
                 }
-                .foregroundColor(.secondary)
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "square.grid.3x3.fill")
+                        .font(.system(size: 12))
+                    Text(engine.selectedStorefront == .all ? "Launchers" : engine.selectedStorefront.rawValue)
+                        .font(.system(size: 12, weight: .medium))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9))
+                }
+                .foregroundColor(engine.selectedStorefront != .all ? (config.accentTint ?? .blue) : .primary)
             }
             .menuStyle(.borderlessButton)
 
@@ -156,7 +149,115 @@ public struct FloatingTopGlassBar: View {
                 .frame(height: 16)
                 .opacity(0.3)
 
-            // 4. Import Executable Menu
+            // 3. View Mode & Layout Tab
+            Menu {
+                Section("Layout") {
+                    Button {
+                        engine.libraryViewMode = .grid
+                    } label: {
+                        HStack {
+                            Label("Grid View", systemImage: "square.grid.2x2")
+                            if engine.libraryViewMode == .grid { Image(systemName: "checkmark") }
+                        }
+                    }
+
+                    Button {
+                        engine.libraryViewMode = .list
+                    } label: {
+                        HStack {
+                            Label("List View", systemImage: "list.bullet")
+                            if engine.libraryViewMode == .list { Image(systemName: "checkmark") }
+                        }
+                    }
+                }
+
+                Section("Compatibility Filter") {
+                    Button {
+                        engine.selectedFilter = nil
+                    } label: {
+                        HStack {
+                            Text("All Tiers")
+                            if engine.selectedFilter == nil { Image(systemName: "checkmark") }
+                        }
+                    }
+
+                    ForEach(CompatibilityBadge.allCases, id: \.self) { badge in
+                        Button {
+                            engine.selectedFilter = badge
+                        } label: {
+                            HStack {
+                                Text(badge.rawValue)
+                                if engine.selectedFilter == badge { Image(systemName: "checkmark") }
+                            }
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: engine.libraryViewMode == .grid ? "square.grid.2x2" : "list.bullet")
+                        .font(.system(size: 12))
+                    Text("View")
+                        .font(.system(size: 12, weight: .medium))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9))
+                }
+                .foregroundColor(.primary)
+            }
+            .menuStyle(.borderlessButton)
+
+            Divider()
+                .frame(height: 16)
+                .opacity(0.3)
+
+            // 4. Quick Settings & Graphics Tweaks Menu Tab
+            Menu {
+                Section("Graphics Translation Pipeline") {
+                    Button {
+                        engine.isDeveloperModeEnabled.toggle()
+                    } label: {
+                        HStack {
+                            Label("Developer Mode", systemImage: "wrench.and.screwdriver")
+                            if engine.isDeveloperModeEnabled { Image(systemName: "checkmark") }
+                        }
+                    }
+
+                    Button {
+                        engine.scanAllLaunchers()
+                    } label: {
+                        Label("Rescan Environments & Games", systemImage: "arrow.clockwise")
+                    }
+                }
+
+                Section("Navigation") {
+                    Button {
+                        engine.activeTab = .settings
+                    } label: {
+                        Label("Open Full Settings…", systemImage: "gearshape")
+                    }
+                    Button {
+                        engine.activeTab = .debugLab
+                    } label: {
+                        Label("Open Graphics Debug Lab…", systemImage: "cpu")
+                    }
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 12))
+                    Text("Settings")
+                        .font(.system(size: 12, weight: .medium))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9))
+                }
+                .foregroundColor(.primary)
+            }
+            .menuStyle(.borderlessButton)
+
+            Divider()
+                .frame(height: 16)
+                .opacity(0.3)
+
+            // 5. Add / Import Action Menu
             Menu {
                 Button {
                     engine.openNativeFilePicker(chooseFolder: true)
@@ -168,23 +269,21 @@ public struct FloatingTopGlassBar: View {
                 } label: {
                     Label("Import Executable (.exe / .app)…", systemImage: "gamecontroller")
                 }
+                Button {
+                    engine.openNativeFilePicker(isUniversalApp: true, chooseFolder: false)
+                } label: {
+                    Label("Import Universal Software…", systemImage: "cube.fill")
+                }
             } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(config.accentTint ?? .accentColor)
+                HStack(spacing: 4) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("Add")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundColor(config.accentTint ?? .blue)
             }
             .menuStyle(.borderlessButton)
-
-            // 5. Rescan Library
-            Button(action: { engine.scanAllLaunchers() }) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                    .rotationEffect(Angle(degrees: engine.isScanning ? 360 : 0))
-                    .animation(engine.isScanning ? Animation.linear(duration: 1).repeatForever(autoreverses: false) : .default, value: engine.isScanning)
-            }
-            .buttonStyle(.plain)
-            .disabled(engine.isScanning)
 
             // 6. Collapse Bar Button
             Button(action: {
@@ -194,14 +293,14 @@ public struct FloatingTopGlassBar: View {
                 }
             }) {
                 Image(systemName: "chevron.up")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundColor(.secondary)
                     .padding(5)
             }
             .buttonStyle(.plain)
             .help("Collapse to bubble (Esc)")
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .frame(height: 44)
     }

@@ -20,38 +20,56 @@ public struct GameDetailView: View {
                         Image(nsImage: nsImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(height: 240)
+                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: 180)
                             .clipped()
                             .overlay(
                                 LinearGradient(
-                                    colors: [
-                                        Color.black.opacity(0.1),
-                                        Color.black.opacity(0.85)
-                                    ],
+                                    colors: [Color.black.opacity(0.1), Color.black.opacity(0.85)],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 )
                             )
-                    } else {
-                        ZStack {
-                            LinearGradient(
-                                colors: [
-                                    Color.blue.opacity(0.8),
-                                    Color.indigo.opacity(0.6),
-                                    Color.black.opacity(0.9)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                    } else if let appId = game.steamAppId, !appId.isEmpty {
+                        let heroURL = URL(string: "https://cdn.cloudflare.steamstatic.com/steam/apps/\(appId)/library_hero.jpg")
+                        CachedArtworkImageView(
+                            url: heroURL,
+                            contentMode: .fill,
+                            placeholder: AnyView(
+                                CachedArtworkImageView(
+                                    url: URL(string: game.steamHeaderImageURL ?? ""),
+                                    contentMode: .fill,
+                                    placeholder: AnyView(defaultHeroGradient)
+                                )
                             )
-                            HStack {
-                                Spacer()
-                                Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
-                                    .font(.system(size: 96))
-                                    .foregroundColor(.white.opacity(0.1))
-                                    .padding(.trailing, 40)
-                            }
-                        }
-                        .frame(height: 220)
+                        )
+                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: 180)
+                        .clipped()
+                        .overlay(
+                            LinearGradient(
+                                colors: [Color.black.opacity(0.1), Color.black.opacity(0.85)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                    } else if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
+                        CachedArtworkImageView(
+                            url: url,
+                            contentMode: .fill,
+                            placeholder: AnyView(defaultHeroGradient)
+                        )
+                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: 180)
+                        .clipped()
+                        .overlay(
+                            LinearGradient(
+                                colors: [Color.black.opacity(0.1), Color.black.opacity(0.85)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                    } else {
+                        defaultHeroGradient
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 180)
                     }
 
                     // Hero Information & Compatibility Badge Group
@@ -276,6 +294,27 @@ public struct GameDetailView: View {
                 DiagnosticsSheetView(report: report, engine: engine) {
                     showingTroubleshootSheet = false
                 }
+            }
+        }
+    }
+
+    private var defaultHeroGradient: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color.blue.opacity(0.8),
+                    Color.indigo.opacity(0.6),
+                    Color.black.opacity(0.9)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            HStack {
+                Spacer()
+                Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
+                    .font(.system(size: 72))
+                    .foregroundColor(.white.opacity(0.12))
+                    .padding(.trailing, 24)
             }
         }
     }
