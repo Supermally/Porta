@@ -7,7 +7,7 @@ public struct LibraryView: View {
     var trailingInset: CGFloat = 20
 
     private let gridColumns = [
-        GridItem(.adaptive(minimum: 160, maximum: 220), spacing: 20)
+        GridItem(.adaptive(minimum: 145, maximum: 210), spacing: 18)
     ]
 
     public var body: some View {
@@ -250,7 +250,7 @@ struct RecentGamePosterCard: View {
     var body: some View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 8) {
-                GameArtworkView(game: game, cornerRadius: 12)
+                GameWideBannerView(game: game, cornerRadius: 12)
                     .frame(width: 190, height: 115)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay(
@@ -339,6 +339,72 @@ struct GameListRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Wide Game Banner Loader Component (For Recently Played & Hero Shelves)
+public struct GameWideBannerView: View {
+    let game: GameItem
+    let cornerRadius: CGFloat
+
+    public var body: some View {
+        Group {
+            if let heroPath = game.localHeroPath ?? game.localPosterPath,
+               let nsImage = NSImage(contentsOfFile: heroPath) {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else if let appId = game.steamAppId, !appId.isEmpty {
+                let heroURL = URL(string: "https://cdn.cloudflare.steamstatic.com/steam/apps/\(appId)/library_hero.jpg")
+                CachedArtworkImageView(
+                    url: heroURL,
+                    contentMode: .fill,
+                    placeholder: AnyView(
+                        CachedArtworkImageView(
+                            url: URL(string: "https://cdn.cloudflare.steamstatic.com/steam/apps/\(appId)/header.jpg"),
+                            contentMode: .fill,
+                            placeholder: AnyView(
+                                CachedArtworkImageView(
+                                    url: URL(string: game.steamHeaderImageURL ?? ""),
+                                    contentMode: .fill,
+                                    placeholder: AnyView(proceduralBanner)
+                                )
+                            )
+                        )
+                    )
+                )
+            } else if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
+                CachedArtworkImageView(
+                    url: url,
+                    contentMode: .fill,
+                    placeholder: AnyView(proceduralBanner)
+                )
+            } else {
+                proceduralBanner
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+
+    private var proceduralBanner: some View {
+        ZStack {
+            LinearGradient(
+                colors: [game.bannerColor.opacity(0.85), Color.black.opacity(0.75)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            VStack(spacing: 6) {
+                Image(systemName: game.isNative ? "apple.logo" : "gamecontroller.fill")
+                    .font(.system(size: 26))
+                    .foregroundColor(.white.opacity(0.85))
+                Text(game.title)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 10)
+                    .lineLimit(1)
+            }
+        }
     }
 }
 

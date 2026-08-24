@@ -130,11 +130,13 @@ public struct GameDetailView: View {
                                 .font(.system(size: 13, weight: .bold))
                             Text(engine.isLaunching ? "Running" : "Play")
                                 .font(.system(size: 13, weight: .semibold))
+                                .lineLimit(1)
                         }
-                        .frame(minWidth: 76)
+                        .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                     }
                     .buttonStyle(.portaGlass(cornerRadius: 10, isProminent: true))
+                    .fixedSize(horizontal: true, vertical: false)
 
                     Button(action: {
                         showingSettingsSheet = true
@@ -144,10 +146,13 @@ public struct GameDetailView: View {
                                 .font(.system(size: 13, weight: .medium))
                             Text("Settings")
                                 .font(.system(size: 13, weight: .medium))
+                                .lineLimit(1)
                         }
+                        .padding(.horizontal, 6)
                         .padding(.vertical, 4)
                     }
                     .buttonStyle(.portaGlass(cornerRadius: 10, isProminent: false))
+                    .fixedSize(horizontal: true, vertical: false)
 
                     Button(action: {
                         engine.runDiagnostics(for: game)
@@ -158,10 +163,13 @@ public struct GameDetailView: View {
                                 .font(.system(size: 13, weight: .medium))
                             Text("Diagnostics")
                                 .font(.system(size: 13, weight: .medium))
+                                .lineLimit(1)
                         }
+                        .padding(.horizontal, 6)
                         .padding(.vertical, 4)
                     }
                     .buttonStyle(.portaGlass(cornerRadius: 10, isProminent: false))
+                    .fixedSize(horizontal: true, vertical: false)
 
                     Spacer()
                 }
@@ -311,7 +319,7 @@ public struct GameDetailView: View {
                     }
                 )
             }
-            .padding(24)
+            .padding(14)
         }
         .sheet(isPresented: $showingSettingsSheet) {
             GameSettingsSheetView(game: game, engine: engine) {

@@ -73,7 +73,7 @@ public struct FloatingTopGlassBar: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
-                    .frame(minWidth: 120, idealWidth: 160)
+                    .frame(minWidth: 70, idealWidth: 110)
                     .onSubmit {
                         if engine.searchText.isEmpty {
                             withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.38, dampingFraction: 0.74)) {
@@ -133,7 +133,7 @@ public struct FloatingTopGlassBar: View {
                     }
                 }
             } label: {
-                HStack(spacing: 5) {
+                HStack(spacing: 4) {
                     Image(systemName: "square.grid.3x3.fill")
                         .font(.system(size: 12))
                     Text(engine.selectedStorefront == .all ? "Launchers" : engine.selectedStorefront.rawValue)
@@ -144,6 +144,7 @@ public struct FloatingTopGlassBar: View {
                 .foregroundColor(engine.selectedStorefront != .all ? (config.accentTint ?? .blue) : .primary)
             }
             .menuStyle(.borderlessButton)
+            .fixedSize(horizontal: true, vertical: false)
 
             Divider()
                 .frame(height: 16)

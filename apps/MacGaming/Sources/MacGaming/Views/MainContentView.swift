@@ -28,8 +28,10 @@ public struct MainContentView: View {
     private var mainInterfaceView: some View {
         GeometryReader { geometry in
             let windowWidth = geometry.size.width
-            let gameDetailWidth: CGFloat = min(420, max(300, windowWidth * 0.35))
-            let appDetailWidth: CGFloat = min(340, max(260, windowWidth * 0.30))
+            let isAutoCollapsed = isSidebarCollapsed || windowWidth < 1020
+            let effectiveLeadingPadding: CGFloat = isAutoCollapsed ? 80 : 248
+            let gameDetailWidth: CGFloat = min(380, max(300, windowWidth * 0.34))
+            let appDetailWidth: CGFloat = min(340, max(280, windowWidth * 0.30))
 
             ZStack(alignment: .topLeading) {
                 // 1. Native macOS Window Canvas Background
@@ -41,49 +43,49 @@ public struct MainContentView: View {
                     switch engine.activeTab {
                     case .home:
                         HomeView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
                     case .applications:
                         ApplicationsView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, (isDetailPanelOpen && engine.selectedApplication != nil) ? (appDetailWidth + 20) : 16)
                     case .games, .library:
                         LibraryView(
                             engine: engine,
-                            leadingInset: leadingPadding,
+                            leadingInset: effectiveLeadingPadding,
                             trailingInset: (isDetailPanelOpen && engine.selectedGame != nil) ? (gameDetailWidth + 24) : 20
                         )
                     case .runtimes:
                         RuntimesView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
                     case .downloads:
                         DownloadsView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
                     case .activity:
                         ActivityView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
                     case .discover:
                         MacNativeSpotlightView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
                     case .compatibility:
                         UniversalSearchView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
                     case .console:
                         DeveloperConsoleView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
                     case .debugLab:
                         DebugLabView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
                     case .settings:
                         SettingsView(engine: engine)
-                            .padding(.leading, leadingPadding)
+                            .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
                     }
                 }
@@ -97,116 +99,59 @@ public struct MainContentView: View {
                             .padding(.top, 14)
                         Spacer()
                     }
-                    .padding(.leading, isSidebarCollapsed ? 70 : 230)
+                    .padding(.leading, isAutoCollapsed ? 70 : 230)
                     .padding(.trailing, (isDetailPanelOpen && engine.selectedGame != nil) ? (gameDetailWidth + 20) : 30)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isSidebarCollapsed)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isAutoCollapsed)
                     .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isDetailPanelOpen)
                 }
 
                 // 4. Detached Floating Collapsible Sidebar (Left)
-                FloatingGlassSidebarView(engine: engine, isCollapsed: $isSidebarCollapsed)
+                FloatingGlassSidebarView(
+                    engine: engine,
+                    isCollapsed: Binding(
+                        get: { isAutoCollapsed },
+                        set: { isSidebarCollapsed = $0 }
+                    )
+                )
 
                 // 5. Universal Application Inspector Panel (Right)
-                if let app = engine.selectedApplication, engine.activeTab == .applications {
+                if let app = engine.selectedApplication, engine.activeTab == .applications, isDetailPanelOpen {
                     HStack {
                         Spacer()
-                        if isDetailPanelOpen {
-                            ApplicationDetailView(engine: engine, app: app) {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    isDetailPanelOpen = false
-                                }
+                        ApplicationDetailView(engine: engine, app: app) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                isDetailPanelOpen = false
                             }
-                            .frame(width: appDetailWidth)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
-                        } else {
-                            Button(action: {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    isDetailPanelOpen = true
-                                }
-                            }) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "sidebar.right")
-                                        .font(.system(size: 13, weight: .semibold))
-                                    Text("Details")
-                                        .font(.system(size: 12, weight: .semibold))
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(
-                                    Capsule()
-                                        .fill(Color.white.opacity(0.12))
-                                        .background(.ultraThinMaterial, in: Capsule())
-                                        .shadow(color: Color.black.opacity(0.14), radius: 10, y: 4)
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.primary.opacity(0.10), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.trailing, 16)
-                            .padding(.top, 16)
-                            .transition(.scale.combined(with: .opacity))
                         }
+                        .frame(width: appDetailWidth)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
                 }
 
                 // 6. Detached Floating Game Detail Inspector Panel (Right)
-                if let game = engine.selectedGame, (engine.activeTab == .library || engine.activeTab == .games) {
+                if let game = engine.selectedGame, (engine.activeTab == .library || engine.activeTab == .games), isDetailPanelOpen {
                     HStack {
                         Spacer()
-                        if isDetailPanelOpen {
-                            FloatingDetailGlassPanel(engine: engine, game: game, panelWidth: gameDetailWidth) {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    isDetailPanelOpen = false
-                                }
+                        FloatingDetailGlassPanel(engine: engine, game: game, panelWidth: gameDetailWidth) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                isDetailPanelOpen = false
                             }
-                        } else {
-                            Button(action: {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    isDetailPanelOpen = true
-                                }
-                            }) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "sidebar.right")
-                                        .font(.system(size: 13, weight: .semibold))
-                                    Text("Details")
-                                        .font(.system(size: 12, weight: .semibold))
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(
-                                    Capsule()
-                                        .fill(Color.white.opacity(0.06))
-                                        .background(.ultraThinMaterial, in: Capsule())
-                                        .shadow(color: Color.black.opacity(0.18), radius: 10, y: 3)
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .strokeBorder(
-                                            LinearGradient(
-                                                stops: [
-                                                    .init(color: Color.white.opacity(0.35), location: 0.0),
-                                                    .init(color: Color.white.opacity(0.08), location: 0.5),
-                                                    .init(color: Color.white.opacity(0.20), location: 1.0)
-                                                ],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1.0
-                                        )
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.trailing, 16)
-                            .padding(.top, 14)
-                            .transition(.scale.combined(with: .opacity))
                         }
                     }
                 }
             }
             .liquidGlassConfiguration(engine.glassConfig)
-            .frame(minWidth: 800, minHeight: 520)
+            .frame(minWidth: 720, minHeight: 480)
+            .onChange(of: engine.selectedGame) { _ in
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isDetailPanelOpen = true
+                }
+            }
+            .onChange(of: engine.selectedApplication) { _ in
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isDetailPanelOpen = true
+                }
+            }
         }
     }
 }
