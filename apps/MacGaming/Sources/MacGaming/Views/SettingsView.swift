@@ -45,39 +45,30 @@ public struct SettingsView: View {
                                 Text("Glass Appearance")
                                     .font(.system(size: 13))
                                 Spacer()
-                                Picker("", selection: $engine.glassConfig.variant) {
-                                    ForEach(GlassVariant.allCases) { variant in
-                                        Text(variant.rawValue).tag(variant)
-                                    }
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(width: 240)
+                                PortaGlassSegmentPicker(
+                                    selection: $engine.glassConfig.variant,
+                                    items: GlassVariant.allCases
+                                )
                             }
 
                             HStack {
                                 Text("Interactive Response")
                                     .font(.system(size: 13))
                                 Spacer()
-                                Picker("", selection: $engine.glassConfig.interactionResponse) {
-                                    ForEach(InteractionResponseLevel.allCases) { level in
-                                        Text(level.rawValue).tag(level)
-                                    }
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(width: 240)
+                                PortaGlassSegmentPicker(
+                                    selection: $engine.glassConfig.interactionResponse,
+                                    items: InteractionResponseLevel.allCases
+                                )
                             }
 
                             HStack {
                                 Text("Fluid Morphing Physics")
                                     .font(.system(size: 13))
                                 Spacer()
-                                Picker("", selection: $engine.glassConfig.morphingMode) {
-                                    ForEach(MorphingMode.allCases) { mode in
-                                        Text(mode.rawValue).tag(mode)
-                                    }
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(width: 240)
+                                PortaGlassSegmentPicker(
+                                    selection: $engine.glassConfig.morphingMode,
+                                    items: MorphingMode.allCases
+                                )
                             }
 
                             Divider().opacity(0.3)
