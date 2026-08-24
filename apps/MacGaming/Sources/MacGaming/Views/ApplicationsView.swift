@@ -323,18 +323,63 @@ public struct ApplicationsView: View {
         .padding(24)
     }
 
-    // MARK: - Empty State
+    // MARK: - Empty State (None Found / None Imported)
     private var emptyStateView: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             Spacer()
-            Image(systemName: "cube.transparent")
-                .font(.system(size: 44))
-                .foregroundColor(.secondary)
-            Text("No applications found")
-                .font(.system(size: 16, weight: .semibold))
-            Text("Install software using the button above or refresh discovered applications.")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.12))
+                    .frame(width: 72, height: 72)
+                Image(systemName: !searchQuery.isEmpty ? "magnifyingglass" : (selectedCategory != .all ? selectedCategory.icon : "cube.transparent"))
+                    .font(.system(size: 32))
+                    .foregroundColor(.blue)
+            }
+
+            VStack(spacing: 6) {
+                Text(!searchQuery.isEmpty ? "None Found" : (selectedCategory != .all ? "No \(selectedCategory.rawValue) Software Found" : "None Imported"))
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.primary)
+
+                Text(!searchQuery.isEmpty ? "No applications found matching \"\(searchQuery)\"." : (selectedCategory != .all ? "No applications have been imported in the \(selectedCategory.rawValue) category yet." : "No universal applications or Windows software have been imported yet."))
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 380)
+            }
+
+            HStack(spacing: 12) {
+                if !searchQuery.isEmpty {
+                    Button("Clear Search") {
+                        searchQuery = ""
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                if selectedCategory != .all {
+                    Button("Show All Categories") {
+                        selectedCategory = .all
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                Button(action: { showingInstallSheet = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                        Text("Install Software…")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+
+                Button(action: { engine.refreshDiscoveredApplications() }) {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+                .help("Rescan managed environments")
+            }
+            .padding(.top, 6)
+
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -4,6 +4,8 @@ import SwiftUI
 
 @MainActor
 public class EngineService: ObservableObject {
+    public static let shared = EngineService()
+
     @Published public var hardware: HostHardwareInfo
     @Published public var games: [GameItem] = []
     @Published public var selectedGame: GameItem?

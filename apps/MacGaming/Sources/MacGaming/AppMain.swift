@@ -41,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct MacGamingApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @ObservedObject private var engine = EngineService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -48,6 +49,140 @@ struct MacGamingApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
+        .commands {
+            // 1. File Menu Enhancements
+            CommandGroup(replacing: .newItem) {
+                Button("Import Game Folder…") {
+                    engine.openNativeFilePicker(chooseFolder: true)
+                }
+                .keyboardShortcut("o", modifiers: .command)
+
+                Button("Import Windows Executable (.exe)…") {
+                    engine.openNativeFilePicker(isUniversalApp: false, chooseFolder: false)
+                }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
+
+                Button("Import Universal Application…") {
+                    engine.openNativeFilePicker(isUniversalApp: true, chooseFolder: false)
+                }
+                .keyboardShortcut("i", modifiers: [.command, .shift])
+
+                Divider()
+
+                Button("Rescan All Environments & Storefronts") {
+                    engine.scanAllLaunchers()
+                }
+                .keyboardShortcut("r", modifiers: .command)
+            }
+
+            // 2. Launchers Menu
+            CommandMenu("Launchers") {
+                Section("Storefront Integration") {
+                    Button("Open Steam (Wine 10)") {
+                        engine.launchSteam()
+                    }
+                    .keyboardShortcut("1", modifiers: [.command, .option])
+
+                    Button("Sync Steam Cloud & Library") {
+                        engine.syncSteamLibrary()
+                    }
+                }
+
+                Divider()
+
+                Section("Filter Storefront View") {
+                    ForEach(StorefrontFilter.allCases, id: \.self) { filter in
+                        Button(filter.rawValue) {
+                            engine.selectedStorefront = filter
+                            engine.activeTab = .library
+                        }
+                    }
+                }
+            }
+
+            // 3. View Menu
+            CommandMenu("View") {
+                Section("Layout Style") {
+                    Button("Grid View") {
+                        engine.libraryViewMode = .grid
+                    }
+                    .keyboardShortcut("1", modifiers: .command)
+
+                    Button("List View") {
+                        engine.libraryViewMode = .list
+                    }
+                    .keyboardShortcut("2", modifiers: .command)
+                }
+
+                Divider()
+
+                Section("Navigation") {
+                    Button("Library / Games") {
+                        engine.activeTab = .library
+                    }
+                    .keyboardShortcut("g", modifiers: [.command, .shift])
+
+                    Button("Universal Applications") {
+                        engine.activeTab = .applications
+                    }
+                    .keyboardShortcut("a", modifiers: [.command, .shift])
+
+                    Button("Activity & Audit Logs") {
+                        engine.activeTab = .activity
+                    }
+
+                    Button("Downloads & Updates") {
+                        engine.activeTab = .downloads
+                    }
+
+                    Button("Mac Native Discover") {
+                        engine.activeTab = .discover
+                    }
+                }
+
+                Divider()
+
+                Section("Compatibility Tiers") {
+                    Button("Show All Games") {
+                        engine.selectedFilter = nil
+                    }
+
+                    ForEach(CompatibilityBadge.allCases, id: \.self) { tier in
+                        Button(tier.rawValue) {
+                            engine.selectedFilter = tier
+                        }
+                    }
+                }
+            }
+
+            // 4. Settings & Tools Menu
+            CommandMenu("Settings") {
+                Section("Configuration") {
+                    Button("Preferences / Settings…") {
+                        engine.activeTab = .settings
+                    }
+                    .keyboardShortcut(",", modifiers: .command)
+
+                    Button("Graphics & D3DMetal Debug Lab…") {
+                        engine.activeTab = .debugLab
+                    }
+                    .keyboardShortcut("d", modifiers: [.command, .shift])
+
+                    Button("Developer Console & Logs…") {
+                        engine.activeTab = .console
+                    }
+                    .keyboardShortcut("c", modifiers: [.command, .shift])
+                }
+
+                Divider()
+
+                Section("Developer Options") {
+                    Button(engine.isDeveloperModeEnabled ? "Disable Developer Mode" : "Enable Developer Mode") {
+                        engine.isDeveloperModeEnabled.toggle()
+                    }
+                }
+            }
+        }
     }
 }
 
