@@ -147,7 +147,13 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
         }
 
         let gameDir = steamAppsPath + "/common/" + installDir
+        guard FileManager.default.fileExists(atPath: gameDir) else {
+            return nil
+        }
         let (execPath, architecture) = findPrimaryExecutable(in: gameDir)
+        guard !execPath.isEmpty, FileManager.default.fileExists(atPath: execPath) else {
+            return nil
+        }
 
         let sizeBytes = Int64(dict["sizeondisk"] ?? "0") ?? 0
 
