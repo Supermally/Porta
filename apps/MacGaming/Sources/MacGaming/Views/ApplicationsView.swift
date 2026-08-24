@@ -247,15 +247,17 @@ public struct ApplicationsView: View {
                     HStack(spacing: 14) {
                         // Thumbnail
                         if let urlStr = app.headerImageUrl ?? app.iconUrl, let url = URL(string: urlStr) {
-                            AsyncImage(url: url) { image in
-                                image.resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            } placeholder: {
-                                Image(systemName: app.category.icon)
-                                    .foregroundColor(.blue)
-                            }
+                            CachedArtworkImageView(
+                                url: url,
+                                contentMode: .fill,
+                                placeholder: AnyView(
+                                    Image(systemName: app.category.icon)
+                                        .foregroundColor(.blue)
+                                        .frame(width: 44, height: 44)
+                                        .background(Color.blue.opacity(0.1))
+                                )
+                            )
                             .frame(width: 44, height: 44)
-                            .background(Color.blue.opacity(0.1))
                             .cornerRadius(8)
                             .clipped()
                         } else {
@@ -355,20 +357,14 @@ private struct LiquidGlassAppCard: View {
                 // Header Artwork or Stylized Banner
                 ZStack(alignment: .topTrailing) {
                     if let urlStr = app.headerImageUrl ?? app.iconUrl, let url = URL(string: urlStr) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image.resizable()
-                                    .aspectRatio(16/9, contentMode: .fill)
-                                    .frame(height: 110)
-                                    .clipped()
-                            case .empty, .failure:
-                                fallbackBanner
-                            @unknown default:
-                                fallbackBanner
-                            }
-                        }
+                        CachedArtworkImageView(
+                            url: url,
+                            contentMode: .fill,
+                            placeholder: AnyView(fallbackBanner)
+                        )
+                        .frame(height: 110)
                         .cornerRadius(10)
+                        .clipped()
                     } else {
                         fallbackBanner
                     }
