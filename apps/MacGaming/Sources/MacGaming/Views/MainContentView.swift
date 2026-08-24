@@ -142,12 +142,12 @@ public struct MainContentView: View {
             }
             .liquidGlassConfiguration(engine.glassConfig)
             .frame(minWidth: 720, minHeight: 480)
-            .onChange(of: engine.selectedGame) { _ in
+            .onChange(of: engine.selectedGame) { _, _ in
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                     isDetailPanelOpen = true
                 }
             }
-            .onChange(of: engine.selectedApplication) { _ in
+            .onChange(of: engine.selectedApplication) { _, _ in
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                     isDetailPanelOpen = true
                 }
