@@ -7,8 +7,9 @@ public struct LaunchLoadingView: View {
     // MARK: - Interactive & Sequence States
     @State private var isSettled: Bool = false
     @State private var showCrispIcon: Bool = false
-    @State private var showWordmark: Bool = false
-    @State private var showEnterButton: Bool = false
+    @State private var showWordmark: Bool = true
+    @State private var showEnterButton: Bool = true
+    @State private var isEntering: Bool = false
     @State private var isFadingOut: Bool = false
     @State private var auroraPulse: Bool = false
     @State private var isButtonPressed: Bool = false
@@ -30,7 +31,7 @@ public struct LaunchLoadingView: View {
             // 3. Central Liquid Glass Brand Composition
             VStack(spacing: 24) {
                 ZStack {
-                    // Stage A: High-Precision Liquid Glass Goo Metaball
+                    // Stage A: Continuous Fluid Liquid Glass Metaball Goo
                     if !showCrispIcon {
                         TimelineView(.animation) { timeline in
                             let time = timeline.date.timeIntervalSinceReferenceDate
@@ -39,7 +40,7 @@ public struct LaunchLoadingView: View {
                         .transition(.opacity)
                     }
 
-                    // Stage B: Settled Crisp Liquid Glass Icon Asset
+                    // Stage B: Crisp Settled Liquid Glass Icon Asset
                     if showCrispIcon {
                         crispGlassIcon
                             .transition(.scale(scale: 0.96).combined(with: .opacity))
@@ -62,19 +63,23 @@ public struct LaunchLoadingView: View {
                 }
                 .opacity(showWordmark ? 1.0 : 0.0)
                 .offset(y: showWordmark ? 0 : 6)
-                .animation(.easeOut(duration: 0.45), value: showWordmark)
 
-                // Stage D: Interactive Controls
+                // Stage D: Interactive Launch Controls
                 if showEnterButton {
                     HStack(spacing: 14) {
-                        // Replay Animation Button
+                        // Settle / Wobble Toggle
                         Button(action: {
-                            replaySequence()
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
+                                isSettled.toggle()
+                                if !isSettled {
+                                    showCrispIcon = false
+                                }
+                            }
                         }) {
                             HStack(spacing: 6) {
-                                Image(systemName: "arrow.counterclockwise")
+                                Image(systemName: isSettled ? "water.waves" : "square.dashed")
                                     .font(.system(size: 11, weight: .bold))
-                                Text("Replay Goo")
+                                Text(isSettled ? "Wobble Goo" : "Settle Shape")
                                     .font(.system(size: 12, weight: .semibold))
                             }
                             .padding(.horizontal, 16)
@@ -104,10 +109,16 @@ public struct LaunchLoadingView: View {
                             enterForge()
                         }) {
                             HStack(spacing: 8) {
-                                Text("Enter Forge")
-                                    .font(.system(size: 13, weight: .bold))
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 12, weight: .bold))
+                                if isEntering {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                        .frame(width: 14, height: 14)
+                                } else {
+                                    Text("Enter Forge")
+                                        .font(.system(size: 13, weight: .bold))
+                                    Image(systemName: "arrow.right")
+                                        .font(.system(size: 12, weight: .bold))
+                                }
                             }
                             .padding(.horizontal, 24)
                             .padding(.vertical, 10)
@@ -137,6 +148,7 @@ public struct LaunchLoadingView: View {
                             .scaleEffect(isButtonPressed ? 0.96 : 1.0)
                         }
                         .buttonStyle(.plain)
+                        .disabled(isEntering)
                         .simultaneousGesture(
                             DragGesture(minimumDistance: 0)
                                 .onChanged { _ in withAnimation(.interactiveSpring(response: 0.15)) { isButtonPressed = true } }
@@ -144,13 +156,14 @@ public struct LaunchLoadingView: View {
                         )
                     }
                     .padding(.top, 12)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
             }
         }
         .opacity(isFadingOut ? 0.0 : 1.0)
         .onAppear {
-            startSequence()
+            withAnimation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
+                auroraPulse = true
+            }
         }
     }
 
@@ -254,67 +267,30 @@ public struct LaunchLoadingView: View {
         }
     }
 
-    // MARK: - Sequence Orchestrator
-    private func startSequence() {
-        withAnimation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
-            auroraPulse = true
-        }
-
-        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
-            showCrispIcon = true
-            showWordmark = true
-            showEnterButton = true
-            return
-        }
-
-        // 1. Let the liquid goo wobble with organic fluid motion (~2.0s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
-                self.isSettled = true
-            }
-
-            // 2. Crossfade to crisp glass icon tile (~2.35s)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    self.showCrispIcon = true
-                }
-
-                // 3. Reveal wordmark (~2.60s)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                    withAnimation(.easeOut(duration: 0.32)) {
-                        self.showWordmark = true
-                    }
-
-                    // 4. Reveal "Enter Forge" button (~2.80s)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            self.showEnterButton = true
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func replaySequence() {
-        withAnimation(.easeInOut(duration: 0.20)) {
-            showEnterButton = false
-            showWordmark = false
-            showCrispIcon = false
-            isSettled = false
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) {
-            startSequence()
-        }
-    }
-
+    // MARK: - Enter Forge Action (Settle -> Crossfade -> Fade to App)
     private func enterForge() {
-        withAnimation(.easeInOut(duration: 0.35)) {
-            isFadingOut = true
+        isEntering = true
+
+        // 1. Settle fluid goo into icon shape
+        withAnimation(.spring(response: 0.40, dampingFraction: 0.75)) {
+            self.isSettled = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            onFinish()
+
+        // 2. Crossfade to crisp glass icon
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+            withAnimation(.easeInOut(duration: 0.22)) {
+                self.showCrispIcon = true
+            }
+
+            // 3. Cinematic handoff fade
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) {
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    self.isFadingOut = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    self.onFinish()
+                }
+            }
         }
     }
 }
