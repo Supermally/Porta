@@ -500,9 +500,32 @@ public struct GameSettingsSheetView: View {
                         }
                     }
 
+                    // 2. Display Resolution & Window Sizing
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Display Resolution & Window Bounds")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Constrain game rendering to fit comfortably on native macOS Retina screens.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: 8) {
+                            ForEach(["Native", "1280x720", "1440x900", "1600x900", "1920x1080"], id: \.self) { res in
+                                Button(action: {
+                                    engine.setResolution(for: game.id, resolution: res)
+                                }) {
+                                    Text(res == "Native" ? "Native" : res)
+                                        .font(.system(size: 11, weight: game.displayResolution == res ? .semibold : .regular))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 5)
+                                }
+                                .buttonStyle(.portaGlass(cornerRadius: 7, isProminent: game.displayResolution == res))
+                            }
+                        }
+                    }
+
                     Divider()
 
-                    // 2. Metal Performance HUD & Synchronization
+                    // 3. Metal Performance HUD & Synchronization
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Runtime Overlays & Synchronization")
                             .font(.system(size: 13, weight: .semibold))
@@ -524,11 +547,50 @@ public struct GameSettingsSheetView: View {
                             set: { _ in engine.toggleFsync(for: game.id) }
                         ))
                         .toggleStyle(.switch)
+
+                        Text("Tip: If a simulation game hangs during save loading or level load, disable Esync/Fsync or switch to DXVK.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
 
                     Divider()
 
-                    // 3. Prefix & Directory Shortcuts
+                    // 4. Custom Launch Arguments
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Custom Launch Arguments")
+                            .font(.system(size: 13, weight: .semibold))
+                        
+                        TextField("e.g. -screen-width 1280 -screen-height 720 -screen-fullscreen 0", text: Binding(
+                            get: { game.customLaunchArgs },
+                            set: { engine.setLaunchArgs(for: game.id, args: $0) }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 12, design: .monospaced))
+
+                        HStack(spacing: 6) {
+                            Button("Preset: 720p Windowed") {
+                                engine.setLaunchArgs(for: game.id, args: "-screen-width 1280 -screen-height 720 -screen-fullscreen 0")
+                            }
+                            .buttonStyle(.portaGlass(cornerRadius: 6))
+                            .font(.caption2)
+
+                            Button("Preset: 900p Windowed") {
+                                engine.setLaunchArgs(for: game.id, args: "-screen-width 1440 -screen-height 900 -screen-fullscreen 0")
+                            }
+                            .buttonStyle(.portaGlass(cornerRadius: 6))
+                            .font(.caption2)
+
+                            Button("Clear") {
+                                engine.setLaunchArgs(for: game.id, args: "")
+                            }
+                            .buttonStyle(.portaGlass(cornerRadius: 6))
+                            .font(.caption2)
+                        }
+                    }
+
+                    Divider()
+
+                    // 5. Prefix & Directory Shortcuts
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Container & Filesystem")
                             .font(.system(size: 13, weight: .semibold))
