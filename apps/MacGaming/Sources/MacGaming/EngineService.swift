@@ -796,8 +796,28 @@ public class EngineService: ObservableObject {
             return
         }
 
+        // Check for Steam wrapper redirection
+        let sikarugirSteam = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app"
+        if (game.executablePath.lowercased().contains("steam.exe") || game.id.lowercased() == "steam") && FileManager.default.fileExists(atPath: sikarugirSteam) {
+            let targetURL = URL(fileURLWithPath: sikarugirSteam)
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = true
+            NSWorkspace.shared.openApplication(at: targetURL, configuration: config) { [weak self] app, error in
+                DispatchQueue.main.async {
+                    if let err = error {
+                        self?.launchOutputMessage = "❌ Error launching Steam wrapper: \(err.localizedDescription)"
+                    } else {
+                        self?.launchOutputMessage = "🟢 Windows Steam (Wine 10 + D3DMetal + Retina) is active and running!"
+                    }
+                    self?.isLaunching = false
+                }
+            }
+            return
+        }
+
         // Locate Wine / GPTK runner on host machine
         let runnerPaths = [
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/wine/bin/wine"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/Runtimes/Wine/Contents/Resources/wine/bin/wine"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/Runner/Wine Staging.app/Contents/Resources/wine/bin/wine"),
             (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/bin/wine64"),
@@ -848,9 +868,14 @@ public class EngineService: ObservableObject {
             // Automatically sanitize OpenGL shaders to avoid texture unit bleeding (e.g. ViewCube texture leaking onto untextured BFRES models)
             Self.sanitizeShadersIfNeeded(at: resolvedExecPath)
 
-            // Special flags for Steam.exe to run without black screens or CEF sandbox crashes
+            // Special flags for Steam.exe to run without black screens or CEF sandbox crashes, with high-res Retina scaling
             if game.executablePath.lowercased().contains("steam.exe") {
                 runArgs.append("-no-cef-sandbox")
+                runArgs.append("-cef-disable-gpu")
+                runArgs.append("-cef-disable-d3d11")
+                runArgs.append("-cef-force-software-rendering")
+                runArgs.append("-forcedesktopscaling")
+                runArgs.append("2.0")
                 runArgs.append("-allosarches")
             }
 
@@ -1405,25 +1430,26 @@ public class EngineService: ObservableObject {
         }
         activeProcesses.removeAll()
 
-        // 1. Terminate wineserver to cleanly shut down the Windows session and prevent Steam auto-respawn
-        let wineserverPaths = ["/opt/homebrew/bin/wineserver", "/usr/local/bin/wineserver"]
-        if let ws = wineserverPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) {
-            let prefixPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/launchers/steam"
+        // 1. Terminate wineservers across all known runner locations
+        let wineserverPaths = [
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/wine/bin/wineserver"),
+            (FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/Runtimes/Wine/Contents/Resources/wine/bin/wineserver"),
+            "/opt/homebrew/bin/wineserver",
+            "/usr/local/bin/wineserver"
+        ]
+        for ws in wineserverPaths where FileManager.default.fileExists(atPath: ws) {
             let wsKill = Process()
             wsKill.executableURL = URL(fileURLWithPath: ws)
             wsKill.arguments = ["-k"]
-            var env = ProcessInfo.processInfo.environment
-            env["WINEPREFIX"] = prefixPath
-            wsKill.environment = env
             try? wsKill.run()
             wsKill.waitUntilExit()
         }
 
-        // 2. Kill all residual Wine and Steam processes
-        for targetProc in ["steam.exe", "steamwebhelper.exe", "explorer.exe", "winedevice.exe", "services.exe", "wineserver", "wine64-preloader", "wine-preloader"] {
+        // 2. Kill all residual Wine and Steam processes via pkill and killall
+        for targetProc in ["steam.exe", "steamwebhelper.exe", "explorer.exe", "winedevice.exe", "services.exe", "wineserver", "wine64-preloader", "wine-preloader", "Sikarugir"] {
             let pKill = Process()
-            pKill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
-            pKill.arguments = ["-9", targetProc]
+            pKill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            pKill.arguments = ["-9", "-f", targetProc]
             try? pKill.run()
         }
 
