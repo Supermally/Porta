@@ -91,8 +91,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Build complete AppKit main menu hierarchy
         buildNativeAppMenu()
 
-        // Request notification permission for macOS Game Mode banners and status alerts
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+        // Request notification permission for macOS Game Mode banners if running inside a bundle
+        if Bundle.main.bundleIdentifier != nil {
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+        }
 
         // Automatically restore and activate security-scoped bookmarks asynchronously
         Task.detached(priority: .utility) {

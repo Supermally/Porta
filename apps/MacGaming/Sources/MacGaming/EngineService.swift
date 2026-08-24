@@ -1262,6 +1262,10 @@ public class EngineService: ObservableObject {
     }
 
     public func triggerGameModeNotification(title: String) {
+        guard Bundle.main.bundleIdentifier != nil else {
+            log("🎮 Game Mode On: Prioritizing CPU/GPU resources & low-latency Bluetooth for '\(title)'.", level: .info, source: "GameMode")
+            return
+        }
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
             guard granted else { return }
