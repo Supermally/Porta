@@ -79,6 +79,9 @@ final class MenuActionsHandler: NSObject {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Ignore SIGPIPE so broken socket/pipe writes never crash the application with exit code 13
+        signal(SIGPIPE, SIG_IGN)
+
         // Set regular activation policy and bring to front so the macOS system menu bar is fully clickable
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.activate(ignoringOtherApps: true)

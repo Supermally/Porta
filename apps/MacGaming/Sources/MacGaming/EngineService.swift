@@ -348,6 +348,14 @@ public class EngineService: ObservableObject {
         )
         DiscordRichPresenceService.shared.updatePresence(for: app)
 
+        if app.id == "steam_launcher" || (app.category == .launchers && app.name.lowercased().contains("steam")) {
+            self.launchSteam()
+            if let idx = self.universalApplications.firstIndex(where: { $0.id == app.id }) {
+                self.universalApplications[idx].lastUsed = Date()
+            }
+            return
+        }
+
         let env = EnvironmentManager.shared.getEnvironment(by: app.environmentId)
         let runtime = RuntimeManager.shared.getRuntime(by: app.runtimeId)
 

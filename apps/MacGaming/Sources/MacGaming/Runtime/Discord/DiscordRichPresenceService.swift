@@ -61,29 +61,36 @@ public final class DiscordRichPresenceService: ObservableObject, @unchecked Send
             var branch = "main"
             var commit = "27d1560"
 
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-            task.arguments = ["rev-parse", "--abbrev-ref", "HEAD"]
-            let pipe = Pipe()
-            task.standardOutput = pipe
-            if let _ = try? task.run() {
-                task.waitUntilExit()
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                if let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !str.isEmpty {
-                    branch = str
+            let gitRepoExists = FileManager.default.fileExists(atPath: ".git") || FileManager.default.fileExists(atPath: "../.git")
+            if gitRepoExists {
+                let task = Process()
+                task.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+                task.arguments = ["rev-parse", "--abbrev-ref", "HEAD"]
+                let pipe = Pipe()
+                let errPipe = Pipe()
+                task.standardOutput = pipe
+                task.standardError = errPipe
+                if let _ = try? task.run() {
+                    task.waitUntilExit()
+                    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                    if let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !str.isEmpty {
+                        branch = str
+                    }
                 }
-            }
 
-            let commitTask = Process()
-            commitTask.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-            commitTask.arguments = ["rev-parse", "--short", "HEAD"]
-            let commitPipe = Pipe()
-            commitTask.standardOutput = commitPipe
-            if let _ = try? commitTask.run() {
-                commitTask.waitUntilExit()
-                let data = commitPipe.fileHandleForReading.readDataToEndOfFile()
-                if let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !str.isEmpty {
-                    commit = str
+                let commitTask = Process()
+                commitTask.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+                commitTask.arguments = ["rev-parse", "--short", "HEAD"]
+                let commitPipe = Pipe()
+                let commitErrPipe = Pipe()
+                commitTask.standardOutput = commitPipe
+                commitTask.standardError = commitErrPipe
+                if let _ = try? commitTask.run() {
+                    commitTask.waitUntilExit()
+                    let data = commitPipe.fileHandleForReading.readDataToEndOfFile()
+                    if let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !str.isEmpty {
+                        commit = str
+                    }
                 }
             }
 
@@ -161,6 +168,9 @@ public final class DiscordRichPresenceService: ObservableObject, @unchecked Send
                 if FileManager.default.fileExists(atPath: socketPath) {
                     let fd = socket(AF_UNIX, SOCK_STREAM, 0)
                     guard fd >= 0 else { continue }
+
+                    var nosigpipe: Int32 = 1
+                    setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &nosigpipe, socklen_t(MemoryLayout<Int32>.size))
 
                     var addr = sockaddr_un()
                     addr.sun_family = sa_family_t(AF_UNIX)
@@ -253,8 +263,11 @@ public final class DiscordRichPresenceService: ObservableObject, @unchecked Send
         header.append(Data(bytes: &len, count: MemoryLayout<UInt32>.size))
 
         let fullPacket = header + payloadData
-        _ = fullPacket.withUnsafeBytes { ptr in
+        let written = fullPacket.withUnsafeBytes { ptr in
             write(self.socketFD, ptr.baseAddress, fullPacket.count)
+        }
+        if written < 0 {
+            disconnectSocket()
         }
     }
 
