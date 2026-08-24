@@ -15,14 +15,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         DispatchQueue.main.async {
             for window in NSApplication.shared.windows {
-                window.isOpaque = false
-                window.backgroundColor = .clear
-                window.titlebarAppearsTransparent = true
-                window.styleMask.insert(.fullSizeContentView)
-                window.hasShadow = true
-                window.isMovableByWindowBackground = false
+                Self.configureWindow(window)
             }
         }
+    }
+
+    static func configureWindow(_ window: NSWindow) {
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.titlebarAppearsTransparent = true
+        window.styleMask.insert([.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView])
+        window.hasShadow = true
+        window.isMovableByWindowBackground = false
+        window.minSize = CGSize(width: 800, height: 520)
+        window.collectionBehavior.insert([.fullScreenPrimary, .managed])
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -90,12 +96,7 @@ private struct WindowAccessor: NSViewRepresentable {
         let view = NSView()
         DispatchQueue.main.async {
             if let window = view.window {
-                window.isOpaque = false
-                window.backgroundColor = .clear
-                window.titlebarAppearsTransparent = true
-                window.styleMask.insert(.fullSizeContentView)
-                window.hasShadow = true
-                window.isMovableByWindowBackground = false
+                AppDelegate.configureWindow(window)
             }
         }
         return view
