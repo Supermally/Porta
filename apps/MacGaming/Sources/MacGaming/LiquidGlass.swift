@@ -523,3 +523,116 @@ public struct PortaGlassSlider: View {
         .frame(height: 20)
     }
 }
+
+// MARK: - 10. Liquid Glass Capsule Segment Lens Selector
+public struct PortaGlassSegmentPicker<T: Hashable & Identifiable & RawRepresentable>: View where T.RawValue == String {
+    @Binding public var selection: T
+    public let items: [T]
+    @Namespace private var segmentNamespace
+    @State private var pressedItem: T? = nil
+
+    public init(selection: Binding<T>, items: [T]) {
+        self._selection = selection
+        self.items = items
+    }
+
+    public var body: some View {
+        HStack(spacing: 4) {
+            ForEach(items) { item in
+                let isSelected = selection == item
+                let isPressed = pressedItem == item
+
+                Button(action: {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.76)) {
+                        selection = item
+                    }
+                }) {
+                    Text(item.rawValue)
+                        .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                        .foregroundColor(isSelected ? .primary : .secondary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .frame(minWidth: 72)
+                        .background {
+                            if isSelected {
+                                ZStack {
+                                    // 1. Clear Optical Glass Lens Substrate
+                                    Capsule()
+                                        .fill(Color.white.opacity(isPressed ? 0.24 : 0.14))
+                                        .background(.ultraThinMaterial, in: Capsule())
+
+                                    // 2. Prismatic / Chromatic Specular Highlight Rim (Activates on press & hold like Apple's native design)
+                                    if isPressed {
+                                        Capsule()
+                                            .strokeBorder(
+                                                LinearGradient(
+                                                    colors: [
+                                                        Color.cyan.opacity(0.85),
+                                                        Color.white.opacity(0.95),
+                                                        Color.purple.opacity(0.80),
+                                                        Color.pink.opacity(0.75),
+                                                        Color.orange.opacity(0.80)
+                                                    ],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.2
+                                            )
+                                    } else {
+                                        Capsule()
+                                            .strokeBorder(
+                                                LinearGradient(
+                                                    colors: [
+                                                        Color.white.opacity(0.65),
+                                                        Color.white.opacity(0.15)
+                                                    ],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 0.8
+                                            )
+                                    }
+                                }
+                                .scaleEffect(isPressed ? 1.05 : 1.0)
+                                .shadow(color: Color.black.opacity(isPressed ? 0.22 : 0.08), radius: isPressed ? 5 : 2, y: isPressed ? 2.5 : 1)
+                                .matchedGeometryEffect(id: "selected_glass_lens", in: segmentNamespace)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            if pressedItem != item {
+                                withAnimation(.spring(response: 0.20, dampingFraction: 0.75)) {
+                                    pressedItem = item
+                                }
+                            }
+                        }
+                        .onEnded { _ in
+                            withAnimation(.spring(response: 0.20, dampingFraction: 0.75)) {
+                                pressedItem = nil
+                            }
+                        }
+                )
+            }
+        }
+        .padding(3)
+        .background(
+            Capsule()
+                .fill(Color.primary.opacity(0.04))
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.30), Color.white.opacity(0.06)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.8
+                        )
+                )
+        )
+    }
+}
