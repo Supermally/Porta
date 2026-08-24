@@ -12,24 +12,32 @@ public struct FloatingGlassSidebarView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // App Header Branding & Collapse Toggle
+            // App Header Branding & Collapse / Expand Toggle
             HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.blue.opacity(0.9), Color.indigo.opacity(1.0)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                Button(action: {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isCollapsed.toggle()
+                    }
+                }) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.blue.opacity(0.9), Color.indigo.opacity(1.0)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
-                        .frame(width: 28, height: 28)
+                            .frame(width: 28, height: 28)
 
-                    Image(systemName: "cube.fill")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
+                        Image(systemName: isCollapsed ? "sidebar.right" : "cube.fill")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .shadow(color: Color.blue.opacity(0.35), radius: 6, y: 2)
                 }
-                .shadow(color: Color.blue.opacity(0.35), radius: 6, y: 2)
+                .buttonStyle(.plain)
+                .help(isCollapsed ? "Expand sidebar" : "Forge Platform")
 
                 if !isCollapsed {
                     VStack(alignment: .leading, spacing: 1) {

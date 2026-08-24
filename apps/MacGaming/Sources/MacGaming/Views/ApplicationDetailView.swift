@@ -98,42 +98,73 @@ public struct ApplicationDetailView: View {
 
     // MARK: - App Hero
     private var appHeroSection: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.blue.opacity(0.15))
-                    .frame(width: 52, height: 52)
-                Image(systemName: app.category.icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(.blue)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(app.name)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-
-                Text(app.publisher)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-
-                HStack(spacing: 6) {
-                    Text(app.category.rawValue)
-                        .font(.system(size: 10, weight: .semibold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.12))
-                        .foregroundColor(.blue)
-                        .cornerRadius(4)
-
-                    Text(app.architecture)
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 14) {
+            if let urlStr = app.headerImageUrl ?? app.iconUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { image in
+                    image.resizable()
+                        .aspectRatio(16/9, contentMode: .fill)
+                        .frame(height: 140)
+                        .clipped()
+                } placeholder: {
+                    heroPlaceholder
                 }
-                .padding(.top, 2)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.35), Color.clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+            } else {
+                heroPlaceholder
             }
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(app.name)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.primary)
+                        .lineLimit(2)
+
+                    Text(app.publisher)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Text(app.category.rawValue)
+                    .font(.system(size: 11, weight: .semibold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.blue.opacity(0.15))
+                    .foregroundColor(.blue)
+                    .cornerRadius(6)
+            }
+        }
+    }
+
+    private var heroPlaceholder: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.blue.opacity(0.25), Color.indigo.opacity(0.35)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(height: 120)
+
+            Image(systemName: app.category.icon)
+                .font(.system(size: 38))
+                .foregroundColor(.blue)
         }
     }
 

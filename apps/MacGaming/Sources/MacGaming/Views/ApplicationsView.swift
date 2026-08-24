@@ -36,12 +36,13 @@ public struct ApplicationsView: View {
             toolbarHeader
 
             Divider()
+                .opacity(0.12)
 
             // Main Content Area
             if filteredApplications.isEmpty {
                 emptyStateView
             } else {
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: false) {
                     if viewMode == .grid {
                         gridContent
                     } else {
@@ -75,33 +76,90 @@ public struct ApplicationsView: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
-                .background(Color.secondary.opacity(0.08))
-                .cornerRadius(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.secondary.opacity(0.08))
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                )
                 .frame(maxWidth: 360)
 
                 Spacer()
 
-                // View Mode Switcher
-                Picker("View", selection: $viewMode) {
-                    Image(systemName: "square.grid.2x2").tag(ViewMode.grid)
-                    Image(systemName: "list.bullet").tag(ViewMode.list)
+                // View Mode Switcher (Clean macOS Segmented Icons)
+                HStack(spacing: 2) {
+                    Button(action: { viewMode = .grid }) {
+                        Image(systemName: "square.grid.2x2")
+                            .font(.system(size: 13, weight: viewMode == .grid ? .semibold : .regular))
+                            .foregroundColor(viewMode == .grid ? .primary : .secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(viewMode == .grid ? Color.primary.opacity(0.12) : Color.clear)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .help("Grid View")
+
+                    Button(action: { viewMode = .list }) {
+                        Image(systemName: "list.bullet")
+                            .font(.system(size: 13, weight: viewMode == .list ? .semibold : .regular))
+                            .foregroundColor(viewMode == .list ? .primary : .secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(viewMode == .list ? Color.primary.opacity(0.12) : Color.clear)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .help("List View")
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 80)
+                .padding(3)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.secondary.opacity(0.08))
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                )
 
                 // Refresh discovery button
-                Button(action: { engine.refreshDiscoveredApplications() }) {
+                Button(action: {
+                    withAnimation(.spring(response: 0.35)) {
+                        engine.refreshDiscoveredApplications()
+                    }
+                }) {
                     Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 13))
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.secondary.opacity(0.08))
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        )
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
                 .help("Refresh discovered applications from managed environments")
 
                 // Install Button
                 Button(action: { showingInstallSheet = true }) {
                     HStack(spacing: 6) {
                         Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
                         Text("Install Software")
+                            .font(.system(size: 12, weight: .semibold))
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
@@ -111,7 +169,11 @@ public struct ApplicationsView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(ApplicationCategory.allCases) { cat in
-                        Button(action: { selectedCategory = cat }) {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.25)) {
+                                selectedCategory = cat
+                            }
+                        }) {
                             HStack(spacing: 6) {
                                 Image(systemName: cat.icon)
                                     .font(.system(size: 11))
@@ -120,12 +182,20 @@ public struct ApplicationsView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(selectedCategory == cat ? Color.blue.opacity(0.18) : Color.secondary.opacity(0.08))
+                            .background(
+                                Capsule()
+                                    .fill(selectedCategory == cat ? Color.blue.opacity(0.20) : Color.secondary.opacity(0.08))
+                                    .background(selectedCategory == cat ? .ultraThinMaterial : .ultraThinMaterial, in: Capsule())
+                            )
                             .foregroundColor(selectedCategory == cat ? .blue : .primary)
-                            .cornerRadius(16)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(selectedCategory == cat ? Color.blue.opacity(0.35) : Color.clear, lineWidth: 1)
+                                Capsule()
+                                    .stroke(
+                                        selectedCategory == cat
+                                            ? LinearGradient(colors: [Color.blue.opacity(0.6), Color.indigo.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                            : LinearGradient(colors: [Color.white.opacity(0.15), Color.clear], startPoint: .topLeading, endPoint: .bottomTrailing),
+                                        lineWidth: 1
+                                    )
                             )
                         }
                         .buttonStyle(.plain)
@@ -139,65 +209,20 @@ public struct ApplicationsView: View {
 
     // MARK: - Grid View
     private var gridContent: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160, maximum: 200), spacing: 18)], spacing: 18) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 180, maximum: 240), spacing: 18)], spacing: 18) {
             ForEach(filteredApplications) { app in
-                Button(action: {
-                    engine.selectedApplication = app
-                }) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ZStack(alignment: .topTrailing) {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(engine.selectedApplication?.id == app.id ? Color.blue.opacity(0.25) : Color.secondary.opacity(0.08))
-                                .frame(height: 110)
-
-                            Image(systemName: app.category.icon)
-                                .font(.system(size: 36))
-                                .foregroundColor(.blue)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                            if app.isFavorite {
-                                Image(systemName: "star.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.yellow)
-                                    .padding(8)
-                            }
+                LiquidGlassAppCard(
+                    app: app,
+                    isSelected: engine.selectedApplication?.id == app.id,
+                    onSelect: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            engine.selectedApplication = app
                         }
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(app.name)
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.primary)
-                                .lineLimit(1)
-
-                            Text(app.publisher)
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-
-                            HStack {
-                                Text(app.category.rawValue)
-                                    .font(.system(size: 10, weight: .medium))
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.secondary.opacity(0.12))
-                                    .cornerRadius(4)
-                                Spacer()
-                                Text(app.graphicsApi)
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.top, 4)
-                        }
+                    },
+                    onLaunch: {
+                        engine.launchApplication(app)
                     }
-                    .padding(10)
-                    .background(engine.selectedApplication?.id == app.id ? Color.blue.opacity(0.08) : Color.clear)
-                    .cornerRadius(14)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(engine.selectedApplication?.id == app.id ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1.5)
-                    )
-                }
-                .buttonStyle(.plain)
+                )
                 .contextMenu {
                     Button("Open") { engine.launchApplication(app) }
                     Button("Toggle Favorite") { engine.toggleFavorite(for: app) }
@@ -215,15 +240,32 @@ public struct ApplicationsView: View {
         LazyVStack(spacing: 8) {
             ForEach(filteredApplications) { app in
                 Button(action: {
-                    engine.selectedApplication = app
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        engine.selectedApplication = app
+                    }
                 }) {
                     HStack(spacing: 14) {
-                        Image(systemName: app.category.icon)
-                            .font(.system(size: 20))
-                            .foregroundColor(.blue)
-                            .frame(width: 36, height: 36)
+                        // Thumbnail
+                        if let urlStr = app.headerImageUrl ?? app.iconUrl, let url = URL(string: urlStr) {
+                            AsyncImage(url: url) { image in
+                                image.resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                Image(systemName: app.category.icon)
+                                    .foregroundColor(.blue)
+                            }
+                            .frame(width: 44, height: 44)
                             .background(Color.blue.opacity(0.1))
                             .cornerRadius(8)
+                            .clipped()
+                        } else {
+                            Image(systemName: app.category.icon)
+                                .font(.system(size: 20))
+                                .foregroundColor(.blue)
+                                .frame(width: 44, height: 44)
+                                .background(Color.blue.opacity(0.1))
+                                .cornerRadius(8)
+                        }
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(app.name)
@@ -246,20 +288,32 @@ public struct ApplicationsView: View {
                         Text(app.graphicsApi)
                             .font(.system(size: 11))
                             .foregroundColor(.secondary)
-                            .frame(width: 120, alignment: .trailing)
+                            .frame(width: 130, alignment: .trailing)
 
                         Button(action: { engine.launchApplication(app) }) {
                             Image(systemName: "play.fill")
                                 .font(.system(size: 11))
-                                .padding(6)
+                                .padding(7)
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(engine.selectedApplication?.id == app.id ? Color.blue.opacity(0.1) : Color.clear)
-                    .cornerRadius(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(engine.selectedApplication?.id == app.id ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.04))
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(
+                                engine.selectedApplication?.id == app.id
+                                    ? Color.blue.opacity(0.4)
+                                    : Color.primary.opacity(0.04),
+                                lineWidth: 1
+                            )
+                    )
                 }
                 .buttonStyle(.plain)
             }
@@ -271,7 +325,7 @@ public struct ApplicationsView: View {
     private var emptyStateView: some View {
         VStack(spacing: 14) {
             Spacer()
-            Image(systemName: "shippingbox")
+            Image(systemName: "cube.transparent")
                 .font(.system(size: 44))
                 .foregroundColor(.secondary)
             Text("No applications found")
@@ -282,5 +336,150 @@ public struct ApplicationsView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Rich Liquid Glass Application Card
+private struct LiquidGlassAppCard: View {
+    let app: AppItem
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onLaunch: () -> Void
+
+    @State private var isHovered: Bool = false
+    @State private var isPressed: Bool = false
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: 10) {
+                // Header Artwork or Stylized Banner
+                ZStack(alignment: .topTrailing) {
+                    if let urlStr = app.headerImageUrl ?? app.iconUrl, let url = URL(string: urlStr) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image.resizable()
+                                    .aspectRatio(16/9, contentMode: .fill)
+                                    .frame(height: 110)
+                                    .clipped()
+                            case .empty, .failure:
+                                fallbackBanner
+                            @unknown default:
+                                fallbackBanner
+                            }
+                        }
+                        .cornerRadius(10)
+                    } else {
+                        fallbackBanner
+                    }
+
+                    // Favorite Indicator
+                    if app.isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.yellow)
+                            .padding(6)
+                            .background(Circle().fill(Color.black.opacity(0.45)))
+                            .padding(6)
+                    }
+
+                    // Hover Play Button Overlay
+                    if isHovered {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Button(action: onLaunch) {
+                                    Image(systemName: "play.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.white)
+                                        .padding(8)
+                                        .background(Circle().fill(Color.blue))
+                                        .shadow(color: Color.blue.opacity(0.5), radius: 6, y: 2)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(8)
+                            }
+                        }
+                        .transition(.opacity)
+                    }
+                }
+                .frame(height: 110)
+
+                // Info Footer
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(app.name)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+
+                    Text(app.publisher)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+
+                    HStack {
+                        Text(app.category.rawValue)
+                            .font(.system(size: 10, weight: .semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.12))
+                            .foregroundColor(.secondary)
+                            .cornerRadius(4)
+
+                        Spacer()
+
+                        Text(app.graphicsApi.contains("D3DMetal") ? "D3DMetal" : (app.graphicsApi.contains("12") ? "DirectX 12" : "DirectX 11"))
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary.opacity(0.8))
+                    }
+                    .padding(.top, 2)
+                }
+            }
+            .padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isSelected ? Color.blue.opacity(0.14) : (isHovered ? Color.secondary.opacity(0.08) : Color.secondary.opacity(0.03)))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(
+                        isSelected
+                            ? LinearGradient(colors: [Color.blue.opacity(0.8), Color.indigo.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            : (isHovered
+                                ? LinearGradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                : LinearGradient(colors: [Color.white.opacity(0.10), Color.clear], startPoint: .topLeading, endPoint: .bottomTrailing)),
+                        lineWidth: isSelected ? 1.5 : 1.0
+                    )
+            )
+            .shadow(color: isSelected ? Color.blue.opacity(0.2) : (isHovered ? Color.black.opacity(0.1) : Color.clear), radius: 10, y: 4)
+            .scaleEffect(isPressed ? 0.97 : (isHovered ? 1.02 : 1.0))
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in withAnimation(.interactiveSpring(response: 0.2)) { isPressed = true } }
+                .onEnded { _ in withAnimation(.interactiveSpring(response: 0.2)) { isPressed = false } }
+        )
+    }
+
+    private var fallbackBanner: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.blue.opacity(0.25), Color.indigo.opacity(0.35)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(height: 110)
+
+            Image(systemName: app.category.icon)
+                .font(.system(size: 32))
+                .foregroundColor(.blue)
+        }
     }
 }

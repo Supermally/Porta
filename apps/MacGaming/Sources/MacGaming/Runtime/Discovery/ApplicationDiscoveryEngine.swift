@@ -34,7 +34,8 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
                 publisher: "Valve Corporation",
                 version: "1.0.0",
                 architecture: "x86_64",
-                iconUrl: nil,
+                iconUrl: "https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg",
+                headerImageUrl: "https://cdn.cloudflare.steamstatic.com/store/home/store_home_share.jpg",
                 executablePath: sikarugirSteam + "/Contents/drive_c/Program Files (x86)/Steam/steam.exe",
                 arguments: "-no-cef-sandbox -cef-disable-gpu -cef-disable-d3d11 -cef-force-software-rendering -forcedesktopscaling 2.0",
                 workingDirectory: sikarugirSteam + "/Contents/drive_c/Program Files (x86)/Steam",
@@ -194,8 +195,24 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
                     let fileName = (relativePath as NSString).lastPathComponent
                     let lowerName = fileName.lowercased()
 
-                    // Skip uninstaller and helper utilities
-                    if lowerName.contains("unins") || lowerName.contains("helper") || lowerName.contains("crash") || lowerName.contains("update") || lowerName == "steam.exe" {
+                    // Filter out Windows internal services, helpers, redistributables, and Wine daemons
+                    let excludedPatterns = [
+                        "unins", "uninst", "helper", "crash", "update", "steam.exe", "steamwebhelper",
+                        "steamservice", "steamerrorreporter", "winedevice", "wineserver", "explorer.exe",
+                        "services.exe", "svchost", "winlogon", "msiexec", "dxdiag", "rundll32",
+                        "regedit", "reg.exe", "cmd.exe", "conhost", "taskkill", "tasklist",
+                        "winemenubuilder", "winhlp32", "wordpad", "write.exe", "control.exe",
+                        "hh.exe", "attrib", "cacls", "fc.exe", "find.exe", "findstr", "help.exe",
+                        "hostname", "ipconfig", "net.exe", "netstat", "ping.exe", "route.exe",
+                        "sc.exe", "shutdown", "sort.exe", "subst.exe", "systeminfo", "tracert",
+                        "xcopy", "cabarc", "expand.exe", "extrac32", "chkdsk", "diskmgmt",
+                        "dxsetup", "vcredist", "vc_redist", "dotnet", "directx", "redist",
+                        "gldriverquery", "vulkaninfo", "cef", "subprocess", "driver", "vulkan",
+                        "d3d11", "d3d12", "unitycrash", "install", "setup.exe", "autorun"
+                    ]
+
+                    let shouldExclude = excludedPatterns.contains { lowerName.contains($0) }
+                    if shouldExclude {
                         continue
                     }
 
@@ -204,11 +221,12 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
 
                     let app = AppItem(
                         id: "env_\(environment.id)_\(cleanName.lowercased())",
-                        name: cleanName.replacingOccurrences(of: "_", with: " "),
+                        name: cleanName.replacingOccurrences(of: "_", with: " ").replacingOccurrences(of: "-", with: " ").capitalized,
                         category: category,
                         publisher: "Windows Software",
                         version: "1.0",
                         architecture: "x64",
+                        headerImageUrl: nil,
                         executablePath: fullPath,
                         workingDirectory: (fullPath as NSString).deletingLastPathComponent,
                         environmentId: environment.id,

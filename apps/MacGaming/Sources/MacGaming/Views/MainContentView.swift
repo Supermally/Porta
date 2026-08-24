@@ -99,10 +99,40 @@ public struct MainContentView: View {
                     if isDetailPanelOpen {
                         ApplicationDetailView(engine: engine, app: app) {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                engine.selectedApplication = nil
+                                isDetailPanelOpen = false
                             }
                         }
                         .transition(.move(edge: .trailing).combined(with: .opacity))
+                    } else {
+                        // Collapsed Application Inspector Re-open Pill
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                isDetailPanelOpen = true
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "sidebar.right")
+                                    .font(.system(size: 13, weight: .semibold))
+                                Text("Details")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white.opacity(0.12))
+                                    .background(.ultraThinMaterial, in: Capsule())
+                                    .shadow(color: Color.black.opacity(0.14), radius: 10, y: 4)
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.primary.opacity(0.10), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 16)
+                        .padding(.top, 16)
+                        .transition(.scale.combined(with: .opacity))
                     }
                 }
             }
