@@ -165,7 +165,7 @@ public final class DiscordRichPresenceService: ObservableObject, @unchecked Send
                     var addr = sockaddr_un()
                     addr.sun_family = sa_family_t(AF_UNIX)
                     let maxPathLen = MemoryLayout.size(ofValue: addr.sun_path)
-                    _ = withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
+                    withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
                         socketPath.withCString { cStr in
                             _ = strncpy(UnsafeMutableRawPointer(ptr).assumingMemoryBound(to: CChar.self), cStr, maxPathLen)
                         }
