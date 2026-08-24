@@ -83,7 +83,22 @@ public struct DebugLabView: View {
                             .padding(.vertical, 7)
                             .background(
                                 Capsule()
-                                    .fill(selectedLabSection == section ? Color.blue : Color.white.opacity(0.06))
+                                    .fill(selectedLabSection == section ? Color.blue : Color.white.opacity(0.08))
+                                    .background(.ultraThinMaterial, in: Capsule())
+                                    .overlay(
+                                        Capsule()
+                                            .strokeBorder(
+                                                LinearGradient(
+                                                    colors: [
+                                                        selectedLabSection == section ? Color.white.opacity(0.6) : Color.white.opacity(0.35),
+                                                        Color.white.opacity(0.08)
+                                                    ],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 0.8
+                                            )
+                                    )
                             )
                             .foregroundColor(selectedLabSection == section ? .white : .primary)
                         }

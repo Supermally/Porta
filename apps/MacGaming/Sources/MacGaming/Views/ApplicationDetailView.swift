@@ -200,7 +200,7 @@ public struct ApplicationDetailView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .toggleStyle(.switch)
+            .toggleStyle(.portaGlass)
 
             Toggle(isOn: $enableHud) {
                 VStack(alignment: .leading, spacing: 1) {
@@ -211,7 +211,7 @@ public struct ApplicationDetailView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .toggleStyle(.switch)
+            .toggleStyle(.portaGlass)
         }
     }
 

@@ -23,8 +23,9 @@ public struct DiagnosticsView: View {
 
                     Button(action: refreshControllers) {
                         Label("Refresh Gamepads", systemImage: "gamecontroller")
-                            .font(.system(size: 11))
+                            .font(.system(size: 11, weight: .medium))
                     }
+                    .buttonStyle(.portaGlass(cornerRadius: 8))
                 }
 
                 // System & Silicon Health
