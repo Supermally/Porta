@@ -5,8 +5,7 @@ public struct LaunchLoadingView: View {
     let onFinish: () -> Void
 
     // MARK: - Interactive & Sequence States
-    @State private var isSettled: Bool = false
-    @State private var showCrispIcon: Bool = false
+    @State private var settleProgress: Double = 0.0 // 0.0 = full fluid wobble, 1.0 = fully settled icon squircle
     @State private var showWordmark: Bool = true
     @State private var showEnterButton: Bool = true
     @State private var isEntering: Bool = false
@@ -30,24 +29,14 @@ public struct LaunchLoadingView: View {
 
             // 3. Central Liquid Glass Brand Composition
             VStack(spacing: 26) {
-                ZStack {
-                    // Stage A: Calm, Continuous Fluid Liquid Glass Metaball Goo
-                    TimelineView(.animation) { timeline in
-                        let time = timeline.date.timeIntervalSinceReferenceDate
-                        HighFidelityLiquidGlassBlob(time: time, isSettled: isSettled)
-                    }
-                    .opacity(showCrispIcon ? 0.0 : 1.0)
-                    .animation(.easeInOut(duration: 0.42), value: showCrispIcon)
-
-                    // Stage B: Crisp Settled Liquid Glass Icon Asset
-                    crispGlassIcon
-                        .opacity(showCrispIcon ? 1.0 : 0.0)
-                        .scaleEffect(showCrispIcon ? 1.0 : 0.94)
-                        .animation(.easeInOut(duration: 0.42), value: showCrispIcon)
+                // Morphing Liquid Glass Tile
+                TimelineView(.animation) { timeline in
+                    let time = timeline.date.timeIntervalSinceReferenceDate
+                    MorphingLiquidGlassTile(time: time, settleProgress: settleProgress)
                 }
                 .frame(width: 80, height: 80)
 
-                // Stage C: Brand Wordmark
+                // Brand Wordmark
                 VStack(spacing: 4) {
                     Text("Forge")
                         .font(.system(size: 26, weight: .bold, design: .rounded))
@@ -63,17 +52,17 @@ public struct LaunchLoadingView: View {
                 .opacity(showWordmark ? 1.0 : 0.0)
                 .offset(y: showWordmark ? 0 : 6)
 
-                // Stage D: Interactive Launch & Settle Controls
+                // Interactive Launch & Settle Controls
                 if showEnterButton {
                     HStack(spacing: 14) {
-                        // Settle / Wobble Action Button
+                        // Settle / Wobble Toggle
                         Button(action: {
-                            toggleSettleState()
+                            toggleMorph()
                         }) {
                             HStack(spacing: 6) {
-                                Image(systemName: isSettled ? "water.waves" : "square.dashed")
+                                Image(systemName: settleProgress > 0.5 ? "water.waves" : "square.dashed")
                                     .font(.system(size: 11, weight: .bold))
-                                Text(isSettled ? "Wobble Goo" : "Settle Icon")
+                                Text(settleProgress > 0.5 ? "Wobble Goo" : "Morph to Icon")
                                     .font(.system(size: 12, weight: .semibold))
                             }
                             .padding(.horizontal, 16)
@@ -161,32 +150,41 @@ public struct LaunchLoadingView: View {
         }
     }
 
-    // MARK: - Settle & Wobble Orchestration
-    private func toggleSettleState() {
-        if isSettled {
-            // Bloom back into fluid wobble
-            withAnimation(.easeInOut(duration: 0.30)) {
-                showCrispIcon = false
-            }
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
-                isSettled = false
+    // MARK: - Morphing Orchestration
+    private func toggleMorph() {
+        if settleProgress > 0.5 {
+            // Morph back from icon to fluid goo
+            withAnimation(.spring(response: 0.65, dampingFraction: 0.78)) {
+                settleProgress = 0.0
             }
         } else {
-            // Settle smoothly into icon
-            withAnimation(.spring(response: 0.52, dampingFraction: 0.82)) {
-                isSettled = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                if self.isSettled {
-                    withAnimation(.easeInOut(duration: 0.38)) {
-                        self.showCrispIcon = true
-                    }
-                }
+            // Morph smoothly from fluid goo into rounded-rect icon
+            withAnimation(.spring(response: 0.60, dampingFraction: 0.80)) {
+                settleProgress = 1.0
             }
         }
     }
 
-    // MARK: - High-Fidelity Ambient Aurora
+    private func enterForge() {
+        isEntering = true
+
+        // 1. Morph smoothly into the icon shape
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
+            settleProgress = 1.0
+        }
+
+        // 2. Cinematic transition into main app
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.60) {
+            withAnimation(.easeInOut(duration: 0.35)) {
+                self.isFadingOut = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                self.onFinish()
+            }
+        }
+    }
+
+    // MARK: - Ambient Aurora Background
     private var auroraBackground: some View {
         ZStack {
             // Cool Blue Radial Core
@@ -230,123 +228,65 @@ public struct LaunchLoadingView: View {
         }
         .blur(radius: 60)
     }
-
-    // MARK: - Crisp Settled Liquid Glass Icon Asset
-    private var crispGlassIcon: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(red: 0.16, green: 0.46, blue: 0.98), Color(red: 0.38, green: 0.18, blue: 0.94)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 64, height: 64)
-                .shadow(color: Color.blue.opacity(0.65), radius: 18, y: 6)
-
-            // Specular Rim Light Bevel Stroke
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.85), Color.white.opacity(0.20), Color.clear],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.5
-                )
-                .frame(width: 64, height: 64)
-
-            // Inner Specular Glass Reflection
-            VStack {
-                HStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.40), Color.clear],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 38, height: 16)
-                        .padding(.top, 4)
-                        .padding(.leading, 6)
-                    Spacer()
-                }
-                Spacer()
-            }
-            .frame(width: 64, height: 64)
-            .clipped()
-
-            // Brand Icon Glyph
-            Image(systemName: "cube.fill")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
-                .shadow(color: Color.black.opacity(0.4), radius: 5, y: 2)
-        }
-    }
-
-    // MARK: - Enter Forge Action (Settle -> Crossfade -> Fade to App)
-    private func enterForge() {
-        isEntering = true
-
-        // 1. Settle fluid goo into icon shape
-        withAnimation(.spring(response: 0.48, dampingFraction: 0.80)) {
-            self.isSettled = true
-        }
-
-        // 2. Seamless crossfade to crisp glass icon
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            withAnimation(.easeInOut(duration: 0.35)) {
-                self.showCrispIcon = true
-            }
-
-            // 3. Cinematic handoff fade
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                withAnimation(.easeInOut(duration: 0.35)) {
-                    self.isFadingOut = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                    self.onFinish()
-                }
-            }
-        }
-    }
 }
 
-// MARK: - High-Fidelity Liquid Glass Metaball Blob Component (Calm & Organic Harmonic Waves)
-private struct HighFidelityLiquidGlassBlob: View {
+// MARK: - Morphing Liquid Glass Tile (Goo -> True Squircle Icon Morph)
+private struct MorphingLiquidGlassTile: View {
     let time: Double
-    let isSettled: Bool
+    let settleProgress: Double // 0.0 = fluid goo, 1.0 = settled rounded-rectangle squircle
 
     var body: some View {
-        let settleFactor: CGFloat = isSettled ? 0.0 : 1.0
+        let p = CGFloat(settleProgress)
+        let invP = 1.0 - p
 
-        // Gentle, calm harmonic fluid physics (Low frequencies & soft amplitudes)
-        let orb1X = CGFloat(sin(time * 1.25)) * 6.5 * settleFactor
-        let orb1Y = CGFloat(cos(time * 0.95)) * 5.0 * settleFactor
-        let orb1R: CGFloat = (isSettled ? 26 : (24 + CGFloat(sin(time * 1.40)) * 1.5 * settleFactor))
+        // Organic Harmonic Wobble Offsets (calm fluid physics)
+        let w1X = CGFloat(sin(time * 1.25)) * 7.0
+        let w1Y = CGFloat(cos(time * 0.95)) * 6.0
 
-        let orb2X = CGFloat(cos(time * 1.45)) * 6.0 * settleFactor
-        let orb2Y = CGFloat(sin(time * 1.15)) * 5.5 * settleFactor
-        let orb2R: CGFloat = (isSettled ? 24 : (22 + CGFloat(cos(time * 1.30)) * 1.6 * settleFactor))
+        let w2X = CGFloat(cos(time * 1.40)) * 6.5
+        let w2Y = CGFloat(sin(time * 1.15)) * 6.0
 
-        let orb3X = CGFloat(sin(time * 1.65)) * 5.0 * settleFactor
-        let orb3Y = CGFloat(-cos(time * 1.05)) * 6.0 * settleFactor
-        let orb3R: CGFloat = (isSettled ? 22 : (20 + CGFloat(sin(time * 1.55)) * 1.4 * settleFactor))
+        let w3X = CGFloat(sin(time * 1.60)) * 6.0
+        let w3Y = CGFloat(-cos(time * 1.05)) * 6.5
 
-        let orb4X = CGFloat(-cos(time * 1.35)) * 5.5 * settleFactor
-        let orb4Y = CGFloat(-sin(time * 1.55)) * 4.5 * settleFactor
-        let orb4R: CGFloat = (isSettled ? 20 : (18 + CGFloat(cos(time * 1.45)) * 1.2 * settleFactor))
+        let w4X = CGFloat(-cos(time * 1.30)) * 6.0
+        let w4Y = CGFloat(-sin(time * 1.50)) * 5.5
+
+        // Morphing Corner Coordinates:
+        // Top-Left Corner:
+        let c1X = (-16.0 * p) + (w1X * invP)
+        let c1Y = (-16.0 * p) + (w1Y * invP)
+        let c1R = (17.5 * p) + (24.0 * invP)
+
+        // Top-Right Corner:
+        let c2X = (16.0 * p) + (w2X * invP)
+        let c2Y = (-16.0 * p) + (w2Y * invP)
+        let c2R = (17.5 * p) + (22.0 * invP)
+
+        // Bottom-Right Corner:
+        let c3X = (16.0 * p) + (w3X * invP)
+        let c3Y = (16.0 * p) + (w3Y * invP)
+        let c3R = (17.5 * p) + (20.0 * invP)
+
+        // Bottom-Left Corner:
+        let c4X = (-16.0 * p) + (w4X * invP)
+        let c4Y = (16.0 * p) + (w4Y * invP)
+        let c4R = (17.5 * p) + (18.0 * invP)
+
+        // Center Core Bead (Maintains solid squircle body):
+        let centerR = (22.0 * p) + (24.0 * invP)
+
+        // Edge Fillers that blend corners into flat squircle sides as p -> 1.0:
+        let edgeR = 15.0 * p
 
         ZStack {
-            // Layer 1: Ambient Drop Shadow & Caustic Glow
+            // Layer 1: Ambient Drop Shadow & Blue Caustic Glow
             Canvas { context, size in
-                context.addFilter(.alphaThreshold(min: 0.5, color: Color.blue.opacity(0.6)))
+                context.addFilter(.alphaThreshold(min: 0.5, color: Color.blue.opacity(0.65)))
                 context.addFilter(.blur(radius: 12))
                 context.drawLayer { ctx in
-                    let center = CGPoint(x: size.width / 2, y: size.height / 2 + 4)
-                    drawOrbs(in: ctx, center: center, o1: (orb1X, orb1Y, orb1R), o2: (orb2X, orb2Y, orb2R), o3: (orb3X, orb3Y, orb3R), o4: (orb4X, orb4Y, orb4R))
+                    let center = CGPoint(x: size.width / 2, y: size.height / 2 + (4 * p) + (2 * invP))
+                    drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                 }
             }
             .blur(radius: 10)
@@ -357,7 +297,7 @@ private struct HighFidelityLiquidGlassBlob: View {
                 context.addFilter(.blur(radius: 11))
                 context.drawLayer { ctx in
                     let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                    drawOrbs(in: ctx, center: center, o1: (orb1X, orb1Y, orb1R), o2: (orb2X, orb2Y, orb2R), o3: (orb3X, orb3Y, orb3R), o4: (orb4X, orb4Y, orb4R))
+                    drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                 }
             }
             .mask(
@@ -366,7 +306,7 @@ private struct HighFidelityLiquidGlassBlob: View {
                     context.addFilter(.blur(radius: 11))
                     context.drawLayer { ctx in
                         let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                        drawOrbs(in: ctx, center: center, o1: (orb1X, orb1Y, orb1R), o2: (orb2X, orb2Y, orb2R), o3: (orb3X, orb3Y, orb3R), o4: (orb4X, orb4Y, orb4R))
+                        drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                     }
                 }
             )
@@ -375,8 +315,8 @@ private struct HighFidelityLiquidGlassBlob: View {
                 LinearGradient(
                     colors: [
                         Color(red: 0.35, green: 0.70, blue: 1.0),
-                        Color(red: 0.18, green: 0.45, blue: 0.98),
-                        Color(red: 0.45, green: 0.18, blue: 0.92),
+                        Color(red: 0.16, green: 0.46, blue: 0.98),
+                        Color(red: 0.40, green: 0.16, blue: 0.94),
                         Color(red: 0.10, green: 0.85, blue: 0.80)
                     ],
                     startPoint: .topLeading,
@@ -388,27 +328,27 @@ private struct HighFidelityLiquidGlassBlob: View {
                         context.addFilter(.blur(radius: 11))
                         context.drawLayer { ctx in
                             let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                            drawOrbs(in: ctx, center: center, o1: (orb1X, orb1Y, orb1R), o2: (orb2X, orb2Y, orb2R), o3: (orb3X, orb3Y, orb3R), o4: (orb4X, orb4Y, orb4R))
+                            drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                         }
                     }
                 )
             )
 
-            // Layer 3: Inner Glass Refraction & Specular Caustic Bead
+            // Layer 3: Inner Glass Refraction & Top-Left Specular Reflection
             Canvas { context, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                let hlPath = Path(ellipseIn: CGRect(
-                    x: center.x + orb1X * 0.4 - 10,
-                    y: center.y + orb1Y * 0.4 - 14,
-                    width: 22 + orb1R * 0.35,
-                    height: 12 + orb1R * 0.25
-                ))
+                let hlX = (center.x - 14 * p) + (c1X * 0.4 * invP)
+                let hlY = (center.y - 14 * p) + (c1Y * 0.4 * invP)
+                let hlW = (28.0 * p) + (22.0 * invP)
+                let hlH = (14.0 * p) + (12.0 * invP)
+
+                let hlPath = Path(roundedRect: CGRect(x: hlX, y: hlY, width: hlW, height: hlH), cornerRadius: 6)
                 context.fill(
                     hlPath,
                     with: .linearGradient(
-                        Gradient(colors: [Color.white.opacity(0.75), Color.white.opacity(0.1), Color.clear]),
-                        startPoint: CGPoint(x: center.x - 8, y: center.y - 16),
-                        endPoint: CGPoint(x: center.x + 8, y: center.y)
+                        Gradient(colors: [Color.white.opacity(0.65), Color.white.opacity(0.12), Color.clear]),
+                        startPoint: CGPoint(x: hlX, y: hlY),
+                        endPoint: CGPoint(x: hlX + hlW * 0.8, y: hlY + hlH)
                     )
                 )
             }
@@ -418,18 +358,18 @@ private struct HighFidelityLiquidGlassBlob: View {
                     context.addFilter(.blur(radius: 11))
                     context.drawLayer { ctx in
                         let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                        drawOrbs(in: ctx, center: center, o1: (orb1X, orb1Y, orb1R), o2: (orb2X, orb2Y, orb2R), o3: (orb3X, orb3Y, orb3R), o4: (orb4X, orb4Y, orb4R))
+                        drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                     }
                 }
             )
 
-            // Layer 4: Anti-Aliased Specular Glass Rim Light Stroke
+            // Layer 4: Specular Rim Light Bevel Stroke
             Canvas { context, size in
                 context.addFilter(.alphaThreshold(min: 0.5, color: .white))
                 context.addFilter(.blur(radius: 11))
                 context.drawLayer { ctx in
                     let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                    drawOrbs(in: ctx, center: center, o1: (orb1X, orb1Y, orb1R), o2: (orb2X, orb2Y, orb2R), o3: (orb3X, orb3Y, orb3R), o4: (orb4X, orb4Y, orb4R))
+                    drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                 }
             }
             .mask(
@@ -438,13 +378,13 @@ private struct HighFidelityLiquidGlassBlob: View {
                     context.addFilter(.blur(radius: 11))
                     context.drawLayer { ctx in
                         let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                        drawOrbs(in: ctx, center: center, o1: (orb1X, orb1Y, orb1R), o2: (orb2X, orb2Y, orb2R), o3: (orb3X, orb3Y, orb3R), o4: (orb4X, orb4Y, orb4R))
+                        drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                     }
                 }
             )
             .overlay(
                 LinearGradient(
-                    colors: [Color.white.opacity(0.65), Color.white.opacity(0.15), Color.clear],
+                    colors: [Color.white.opacity(0.75), Color.white.opacity(0.18), Color.clear],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -454,32 +394,61 @@ private struct HighFidelityLiquidGlassBlob: View {
                         context.addFilter(.blur(radius: 11))
                         context.drawLayer { ctx in
                             let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                            drawOrbs(in: ctx, center: center, o1: (orb1X, orb1Y, orb1R), o2: (orb2X, orb2Y, orb2R), o3: (orb3X, orb3Y, orb3R), o4: (orb4X, orb4Y, orb4R))
+                            drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                         }
                     }
                 )
             )
-            .opacity(0.35)
+            .opacity((0.35 * invP) + (0.80 * p))
+
+            // Layer 5: Embedded Icon Glyph (Emerges from inside the liquid glass as p -> 1.0)
+            Image(systemName: "cube.fill")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
+                .shadow(color: Color.black.opacity(0.40), radius: 5, y: 2)
+                .opacity(Double(p))
+                .scaleEffect((0.80 * invP) + (1.0 * p))
         }
         .frame(width: 140, height: 140)
     }
 
-    private func drawOrbs(
+    private func drawMetaballGeometry(
         in context: GraphicsContext,
         center: CGPoint,
-        o1: (CGFloat, CGFloat, CGFloat),
-        o2: (CGFloat, CGFloat, CGFloat),
-        o3: (CGFloat, CGFloat, CGFloat),
-        o4: (CGFloat, CGFloat, CGFloat)
+        c1: (CGFloat, CGFloat, CGFloat),
+        c2: (CGFloat, CGFloat, CGFloat),
+        c3: (CGFloat, CGFloat, CGFloat),
+        c4: (CGFloat, CGFloat, CGFloat),
+        centerR: CGFloat,
+        edgeR: CGFloat,
+        p: CGFloat
     ) {
-        let p1 = Path(ellipseIn: CGRect(x: center.x + o1.0 - o1.2, y: center.y + o1.1 - o1.2, width: o1.2 * 2, height: o1.2 * 2))
-        let p2 = Path(ellipseIn: CGRect(x: center.x + o2.0 - o2.2, y: center.y + o2.1 - o2.2, width: o2.2 * 2, height: o2.2 * 2))
-        let p3 = Path(ellipseIn: CGRect(x: center.x + o3.0 - o3.2, y: center.y + o3.1 - o3.2, width: o3.2 * 2, height: o3.2 * 2))
-        let p4 = Path(ellipseIn: CGRect(x: center.x + o4.0 - o4.2, y: center.y + o4.1 - o4.2, width: o4.2 * 2, height: o4.2 * 2))
+        // 1. Center Core
+        let pCenter = Path(ellipseIn: CGRect(x: center.x - centerR, y: center.y - centerR, width: centerR * 2, height: centerR * 2))
+        context.fill(pCenter, with: .color(.black))
+
+        // 2. The 4 Quadrant Corner Orbs
+        let p1 = Path(ellipseIn: CGRect(x: center.x + c1.0 - c1.2, y: center.y + c1.1 - c1.2, width: c1.2 * 2, height: c1.2 * 2))
+        let p2 = Path(ellipseIn: CGRect(x: center.x + c2.0 - c2.2, y: center.y + c2.1 - c2.2, width: c2.2 * 2, height: c2.2 * 2))
+        let p3 = Path(ellipseIn: CGRect(x: center.x + c3.0 - c3.2, y: center.y + c3.1 - c3.2, width: c3.2 * 2, height: c3.2 * 2))
+        let p4 = Path(ellipseIn: CGRect(x: center.x + c4.0 - c4.2, y: center.y + c4.1 - c4.2, width: c4.2 * 2, height: c4.2 * 2))
 
         context.fill(p1, with: .color(.black))
         context.fill(p2, with: .color(.black))
         context.fill(p3, with: .color(.black))
         context.fill(p4, with: .color(.black))
+
+        // 3. Four Edge Straighteners (morph into flat squircle sides when p > 0.0)
+        if edgeR > 0.1 {
+            let topEdge = Path(ellipseIn: CGRect(x: center.x - edgeR, y: center.y - 16.0 * p - edgeR, width: edgeR * 2, height: edgeR * 2))
+            let bottomEdge = Path(ellipseIn: CGRect(x: center.x - edgeR, y: center.y + 16.0 * p - edgeR, width: edgeR * 2, height: edgeR * 2))
+            let leftEdge = Path(ellipseIn: CGRect(x: center.x - 16.0 * p - edgeR, y: center.y - edgeR, width: edgeR * 2, height: edgeR * 2))
+            let rightEdge = Path(ellipseIn: CGRect(x: center.x + 16.0 * p - edgeR, y: center.y - edgeR, width: edgeR * 2, height: edgeR * 2))
+
+            context.fill(topEdge, with: .color(.black))
+            context.fill(bottomEdge, with: .color(.black))
+            context.fill(leftEdge, with: .color(.black))
+            context.fill(rightEdge, with: .color(.black))
+        }
     }
 }
