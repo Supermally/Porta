@@ -1863,6 +1863,38 @@ public class EngineService: ObservableObject {
     private func loadInitialData() {
         self.games = []
 
+        let sikarugirSteam = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app"
+        if FileManager.default.fileExists(atPath: sikarugirSteam) {
+            let steamItem = GameItem(
+                id: "steam_windows_client",
+                title: "Steam (Windows Client)",
+                storefront: "Steam",
+                badge: .native,
+                isNative: true,
+                isUniversalApp: false,
+                bannerColorName: "blue",
+                runtime: "Wine 10 + D3DMetal (Apple Silicon)",
+                rating: 10,
+                performanceStars: 5,
+                hardwarePreset: "Native Retina High-DPI",
+                targetFps: 60,
+                knownIssues: [],
+                antiCheatStatus: "Steam Safe (Isolated Prefix)",
+                executablePath: sikarugirSteam + "/Contents/drive_c/Program Files (x86)/Steam/steam.exe",
+                installPath: sikarugirSteam,
+                displayResolution: "Native",
+                acquisitionType: .storefrontIntegration,
+                developerName: "Valve Corporation",
+                lastPlayedText: "Ready to Play",
+                supportsController: true,
+                useD3DMetal: true,
+                enableHud: false,
+                enableEsync: true,
+                enableFsync: true
+            )
+            self.games.append(steamItem)
+        }
+
         loadImportedGames()
 
         if selectedGame == nil {

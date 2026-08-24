@@ -468,10 +468,30 @@ public struct DebugLabView: View {
     }
 
     private func testLaunchSteam() {
-        let runner = self.engine.detectedWineRunnerPath
+        let sikarugirSteam = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app"
         isLaunchingSteamTest = true
-        liveSteamStatusMessage = "🚀 Launching Steam.exe (32-bit PE) with New WoW64 & Chromium CEF sandbox overrides..."
+        liveSteamStatusMessage = "🚀 Launching Steam.exe (Wine 10 + D3DMetal + Retina High-DPI)..."
 
+        if FileManager.default.fileExists(atPath: sikarugirSteam) {
+            let targetURL = URL(fileURLWithPath: sikarugirSteam)
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = true
+            NSWorkspace.shared.openApplication(at: targetURL, configuration: config) { app, error in
+                DispatchQueue.main.async {
+                    self.isLaunchingSteamTest = false
+                    if let err = error {
+                        self.liveSteamStatusMessage = "❌ Error launching Steam wrapper: \(err.localizedDescription)"
+                        self.testRunnerOutput += "\n[Steam Launch Error] \(err.localizedDescription)\n"
+                    } else {
+                        self.liveSteamStatusMessage = "🟢 Steam is active and running with Wine 10 + D3DMetal + Retina High-DPI!"
+                        self.testRunnerOutput += "\n[Steam Launch] Launched Sikarugir Steam.app wrapper (Wine 10 + D3DMetal + Retina High-DPI).\n"
+                    }
+                }
+            }
+            return
+        }
+
+        let runner = self.engine.detectedWineRunnerPath
         DispatchQueue.global(qos: .userInitiated).async {
             let prefixURL = FileManager.default.homeDirectoryForCurrentUser
                 .appendingPathComponent("Library/Application Support/MacGaming/prefixes/steam_test", isDirectory: true)
@@ -493,8 +513,12 @@ public struct DebugLabView: View {
                 runner,
                 steamExeURL.path,
                 "-no-cef-sandbox",
-                "-allosarches",
-                "-cef-disable-gpu-compositing"
+                "-cef-disable-gpu",
+                "-cef-disable-d3d11",
+                "-cef-force-software-rendering",
+                "-forcedesktopscaling",
+                "2.0",
+                "-allosarches"
             ]
 
             var env = ProcessInfo.processInfo.environment
@@ -503,6 +527,7 @@ public struct DebugLabView: View {
             env["WINE_NEW_WOW64"] = "1"
             env["WINELOADER64"] = "1"
             env["WINE_LARGE_ADDRESS_AWARE"] = "1"
+            env["WINE_RETINA"] = "1"
             env["WINEDLLOVERRIDES"] = "d3d12=n,b;d3d11=n,b;dxgi=n,b;d3d10core=n,b;d3d9=n,b;d3dcompiler_47=n,b;d3dcompiler_43=n,b;steamclient=n,b;steamclient64=n,b;gameoverlayrenderer=n,b;gameoverlayrenderer64=n,b"
             proc.environment = env
 
@@ -523,6 +548,12 @@ public struct DebugLabView: View {
     }
 
     private func openSteamPrefixFolder() {
+        let sikarugirPrefix = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Applications/Sikarugir/Steam.app/Contents/SharedSupport/prefix", isDirectory: true)
+        if FileManager.default.fileExists(atPath: sikarugirPrefix.path) {
+            NSWorkspace.shared.open(sikarugirPrefix)
+            return
+        }
         let prefixURL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/MacGaming/prefixes", isDirectory: true)
         NSWorkspace.shared.open(prefixURL)
