@@ -299,13 +299,55 @@ public struct GameArtworkView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 44, height: 44)
                 }
-            } else if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
-                AsyncImage(url: url) { phase in
+            } else if let appId = game.steamAppId, !appId.isEmpty {
+                let posterURL = URL(string: "https://cdn.cloudflare.steamstatic.com/steam/apps/\(appId)/library_600x900.jpg")
+                AsyncImage(url: posterURL) { phase in
                     switch phase {
                     case .success(let image):
                         image
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .aspectRatio(2/3, contentMode: .fill)
+                    case .failure, .empty:
+                        if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
+                            AsyncImage(url: url) { hPhase in
+                                switch hPhase {
+                                case .success(let hImg):
+                                    ZStack {
+                                        LinearGradient(
+                                            colors: [Color.blue.opacity(0.3), Color.black.opacity(0.8)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                        hImg.resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .padding(6)
+                                    }
+                                default:
+                                    proceduralArtwork
+                                }
+                            }
+                        } else {
+                            proceduralArtwork
+                        }
+                    @unknown default:
+                        proceduralArtwork
+                    }
+                }
+            } else if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        ZStack {
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.3), Color.black.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .padding(4)
+                        }
                     case .failure, .empty:
                         proceduralArtwork
                     @unknown default:
