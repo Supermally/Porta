@@ -301,59 +301,46 @@ public struct GameArtworkView: View {
                 }
             } else if let appId = game.steamAppId, !appId.isEmpty {
                 let posterURL = URL(string: "https://cdn.cloudflare.steamstatic.com/steam/apps/\(appId)/library_600x900.jpg")
-                AsyncImage(url: posterURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(2/3, contentMode: .fill)
-                    case .failure, .empty:
-                        if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
-                            AsyncImage(url: url) { hPhase in
-                                switch hPhase {
-                                case .success(let hImg):
-                                    ZStack {
-                                        LinearGradient(
-                                            colors: [Color.blue.opacity(0.3), Color.black.opacity(0.8)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                        hImg.resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .padding(6)
-                                    }
-                                default:
-                                    proceduralArtwork
-                                }
+                CachedArtworkImageView(
+                    url: posterURL,
+                    contentMode: .fill,
+                    placeholder: AnyView(
+                        Group {
+                            if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
+                                CachedArtworkImageView(
+                                    url: url,
+                                    contentMode: .fit,
+                                    placeholder: AnyView(proceduralArtwork)
+                                )
+                                .padding(6)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.blue.opacity(0.3), Color.black.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                            } else {
+                                proceduralArtwork
                             }
-                        } else {
-                            proceduralArtwork
                         }
-                    @unknown default:
-                        proceduralArtwork
-                    }
-                }
+                    )
+                )
+                .aspectRatio(2/3, contentMode: .fill)
             } else if let headerURL = game.steamHeaderImageURL, let url = URL(string: headerURL) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        ZStack {
-                            LinearGradient(
-                                colors: [Color.blue.opacity(0.3), Color.black.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .padding(4)
-                        }
-                    case .failure, .empty:
-                        proceduralArtwork
-                    @unknown default:
-                        proceduralArtwork
-                    }
-                }
+                CachedArtworkImageView(
+                    url: url,
+                    contentMode: .fit,
+                    placeholder: AnyView(proceduralArtwork)
+                )
+                .padding(4)
+                .background(
+                    LinearGradient(
+                        colors: [Color.blue.opacity(0.3), Color.black.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
             } else {
                 proceduralArtwork
             }
