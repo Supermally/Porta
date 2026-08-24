@@ -3,13 +3,13 @@ import AppKit
 import SwiftUI
 import CryptoKit
 
-// MARK: - Forge High-Performance Persistent Data & Artwork Cache Service
+// MARK: - Porta High-Performance Persistent Data & Artwork Cache Service
 public final class DataCacheService: @unchecked Sendable {
     public static let shared = DataCacheService()
 
     // MARK: - Memory Caches
     private let imageMemoryCache = NSCache<NSString, NSImage>()
-    private let cacheQueue = DispatchQueue(label: "com.forge.cache.queue", qos: .utility)
+    private let cacheQueue = DispatchQueue(label: "com.porta.cache.queue", qos: .utility)
 
     // MARK: - File System Paths
     private let appSupportCacheDir: URL
@@ -20,18 +20,19 @@ public final class DataCacheService: @unchecked Sendable {
         // 1. Setup App Support Cache Folder
         let fileManager = FileManager.default
         let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        self.appSupportCacheDir = appSupport.appendingPathComponent("MacGaming/Cache", isDirectory: true)
+        self.appSupportCacheDir = appSupport.appendingPathComponent("Porta/Cache", isDirectory: true)
         self.discoveryCacheURL = appSupportCacheDir.appendingPathComponent("discovery_cache.json")
 
         // 2. Setup Caches Directory for Artwork
         let cachesDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        self.artworkDiskCacheDir = cachesDir.appendingPathComponent("com.forge.artwork", isDirectory: true)
+        self.artworkDiskCacheDir = cachesDir.appendingPathComponent("com.porta.artwork", isDirectory: true)
 
         try? fileManager.createDirectory(at: appSupportCacheDir, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: artworkDiskCacheDir, withIntermediateDirectories: true)
 
-        // Memory cache limits (approx 120 images in memory max)
+        // Memory cache limits (approx 120 images in memory max with 120MB total cost limit)
         imageMemoryCache.countLimit = 120
+        imageMemoryCache.totalCostLimit = 120 * 1024 * 1024
     }
 
     // MARK: - 1. Application & Game Discovery Snapshot Cache
