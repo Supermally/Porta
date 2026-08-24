@@ -294,22 +294,39 @@ public extension View {
 public struct PortaGlassButtonStyle: ButtonStyle {
     public let cornerRadius: CGFloat
     public let isProminent: Bool
+    public let tint: Color?
 
-    public init(cornerRadius: CGFloat = 10, isProminent: Bool = false) {
+    public init(cornerRadius: CGFloat = 10, isProminent: Bool = false, tint: Color? = nil) {
         self.cornerRadius = cornerRadius
         self.isProminent = isProminent
+        self.tint = tint
     }
 
     public func makeBody(configuration: Configuration) -> some View {
+        let activeTint = tint ?? Color.blue
         configuration.label
             .padding(.horizontal, 14)
             .padding(.vertical, 7)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(isProminent ? Color.blue : Color.primary.opacity(configuration.isPressed ? 0.12 : 0.06))
+                    .fill(isProminent ? activeTint : Color.primary.opacity(configuration.isPressed ? 0.12 : 0.06))
+                    .background(
+                        isProminent ? AnyShapeStyle(activeTint.opacity(0.85)) : AnyShapeStyle(.ultraThinMaterial),
+                        in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    )
                     .overlay(
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .strokeBorder(isProminent ? Color.white.opacity(0.3) : Color.primary.opacity(0.08), lineWidth: 0.8)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [
+                                        isProminent ? Color.white.opacity(0.60) : Color.white.opacity(0.35),
+                                        Color.white.opacity(0.08)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 0.8
+                            )
                     )
             )
             .foregroundColor(isProminent ? .white : .primary)
@@ -319,7 +336,190 @@ public struct PortaGlassButtonStyle: ButtonStyle {
 }
 
 public extension ButtonStyle where Self == PortaGlassButtonStyle {
-    static func portaGlass(cornerRadius: CGFloat = 10, isProminent: Bool = false) -> PortaGlassButtonStyle {
-        PortaGlassButtonStyle(cornerRadius: cornerRadius, isProminent: isProminent)
+    static func portaGlass(cornerRadius: CGFloat = 10, isProminent: Bool = false, tint: Color? = nil) -> PortaGlassButtonStyle {
+        PortaGlassButtonStyle(cornerRadius: cornerRadius, isProminent: isProminent, tint: tint)
+    }
+}
+
+// MARK: - 8. Clear Liquid Glass Capsule Toggle Style
+public struct PortaGlassToggleStyle: ToggleStyle {
+    public let tint: Color
+
+    public init(tint: Color = .blue) {
+        self.tint = tint
+    }
+
+    public func makeBody(configuration: Configuration) -> some View {
+        HStack(alignment: .center) {
+            configuration.label
+            Spacer()
+            Button(action: {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.76)) {
+                    configuration.isOn.toggle()
+                }
+            }) {
+                ZStack(alignment: configuration.isOn ? .trailing : .leading) {
+                    // Subordinate Clear Glass Capsule Track
+                    Capsule()
+                        .fill(
+                            configuration.isOn
+                                ? LinearGradient(colors: [tint, tint.opacity(0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                : LinearGradient(colors: [Color.primary.opacity(0.12), Color.primary.opacity(0.06)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(configuration.isOn ? 0.65 : 0.40),
+                                            Color.white.opacity(0.12)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.9
+                                )
+                        )
+                        .frame(width: 46, height: 26)
+                        .shadow(color: configuration.isOn ? tint.opacity(0.25) : Color.clear, radius: 4, y: 1.5)
+
+                    // Optical Liquid Glass Lens Thumb
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.95))
+                            .frame(width: 20, height: 20)
+
+                        // Specular Highlight
+                        VStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        stops: [
+                                            .init(color: Color.white.opacity(0.80), location: 0.0),
+                                            .init(color: Color.white.opacity(0.10), location: 0.5),
+                                            .init(color: Color.clear, location: 1.0)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .frame(width: 17, height: 9)
+                                .padding(.top, 1)
+                            Spacer()
+                        }
+                        .clipShape(Circle())
+
+                        // 3D Rim
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: Color.white.opacity(0.90), location: 0.0),
+                                        .init(color: Color.white.opacity(0.30), location: 0.5),
+                                        .init(color: Color.white.opacity(0.60), location: 1.0)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 0.8
+                            )
+                            .frame(width: 20, height: 20)
+                    }
+                    .shadow(color: Color.black.opacity(0.22), radius: 3, x: 0, y: 1.5)
+                    .padding(3)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+public extension ToggleStyle where Self == PortaGlassToggleStyle {
+    static var portaGlass: PortaGlassToggleStyle {
+        PortaGlassToggleStyle()
+    }
+    static func portaGlass(tint: Color = .blue) -> PortaGlassToggleStyle {
+        PortaGlassToggleStyle(tint: tint)
+    }
+}
+
+// MARK: - 9. Clear Liquid Glass Slider
+public struct PortaGlassSlider: View {
+    @Binding public var value: Double
+    public let range: ClosedRange<Double>
+    public let step: Double?
+    public let tint: Color
+
+    public init(
+        value: Binding<Double>,
+        in range: ClosedRange<Double> = 0.0...1.0,
+        step: Double? = nil,
+        tint: Color = .blue
+    ) {
+        self._value = value
+        self.range = range
+        self.step = step
+        self.tint = tint
+    }
+
+    public var body: some View {
+        GeometryReader { geo in
+            let totalWidth = geo.size.width
+            let percentage = max(0, min(1, (value - range.lowerBound) / (range.upperBound - range.lowerBound)))
+            let fillWidth = max(0, totalWidth * CGFloat(percentage))
+
+            ZStack(alignment: .leading) {
+                // Background Glass Track
+                Capsule()
+                    .fill(Color.white.opacity(0.08))
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.35), Color.white.opacity(0.08)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 0.8
+                            )
+                    )
+                    .frame(height: 8)
+
+                // Active Gradient Fill
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [tint.opacity(0.7), tint],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: fillWidth, height: 8)
+
+                // Interactive Glass Knob
+                Circle()
+                    .fill(Color.white)
+                    .overlay(Circle().strokeBorder(Color.white.opacity(0.8), lineWidth: 0.5))
+                    .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 1.5)
+                    .frame(width: 18, height: 18)
+                    .offset(x: max(0, min(totalWidth - 18, fillWidth - 9)))
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { gesture in
+                        let locationX = max(0, min(totalWidth, gesture.location.x))
+                        let newPercent = Double(locationX / totalWidth)
+                        var calculated = range.lowerBound + (newPercent * (range.upperBound - range.lowerBound))
+                        if let step = step {
+                            calculated = (calculated / step).rounded() * step
+                        }
+                        self.value = max(range.lowerBound, min(range.upperBound, calculated))
+                    }
+            )
+        }
+        .frame(height: 20)
     }
 }
