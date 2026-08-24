@@ -5,20 +5,12 @@ public struct LaunchLoadingView: View {
     let onFinish: () -> Void
 
     // MARK: - Animation States
-    @State private var auroraDrift: Bool = false
-    @State private var blobPhase: Int = 0
-    @State private var isGooVisible: Bool = true
-    @State private var isIconVisible: Bool = false
-    @State private var isWordmarkVisible: Bool = false
+    @State private var isWobbling: Bool = false
+    @State private var isSettled: Bool = false
+    @State private var showCrispIcon: Bool = false
+    @State private var showWordmark: Bool = false
     @State private var isFadingOut: Bool = false
-
-    // Blob Metaball Components
-    @State private var circle1Offset: CGSize = CGSize(width: -14, height: -10)
-    @State private var circle1Scale: CGFloat = 0.95
-    @State private var circle2Offset: CGSize = CGSize(width: 16, height: -8)
-    @State private var circle2Scale: CGFloat = 1.10
-    @State private var circle3Offset: CGSize = CGSize(width: -8, height: 16)
-    @State private var circle3Scale: CGFloat = 0.85
+    @State private var auroraPulse: Bool = false
 
     public init(onFinish: @escaping () -> Void) {
         self.onFinish = onFinish
@@ -26,26 +18,26 @@ public struct LaunchLoadingView: View {
 
     public var body: some View {
         ZStack {
-            // 1. Base Dark Canvas
+            // 1. Dark Space Canvas
             Color(red: 0.05, green: 0.05, blue: 0.08)
                 .ignoresSafeArea()
 
-            // 2. Slow-Drifting Aurora Background
+            // 2. Slow-Drifting Aurora Background (GPU Rendered)
             auroraBackground
                 .ignoresSafeArea()
 
-            // 3. Central Brand Composition (Metaball Blob -> Settled Glass Icon -> Wordmark)
-            VStack(spacing: 16) {
+            // 3. Center Brand Composition
+            VStack(spacing: 18) {
                 ZStack {
-                    // Stage A: Metaball / Goo Composited Liquid Blob
-                    if isGooVisible {
-                        gooMetaballBlob
+                    // Stage A: Fluid Liquid Glass Metaball Blob (Goo Composited)
+                    if !showCrispIcon {
+                        liquidMetaballBlob
                             .transition(.opacity)
                     }
 
-                    // Stage B: Crisp Settled Liquid Glass App Icon Tile
-                    if isIconVisible {
-                        settledGlassIcon
+                    // Stage B: Crisp Settled Liquid Glass Icon Asset
+                    if showCrispIcon {
+                        crispGlassIcon
                             .transition(.opacity)
                     }
                 }
@@ -63,126 +55,127 @@ public struct LaunchLoadingView: View {
                         .foregroundColor(.white.opacity(0.65))
                         .tracking(0.3)
                 }
-                .opacity(isWordmarkVisible ? 1.0 : 0.0)
-                .offset(y: isWordmarkVisible ? 0 : 6)
+                .opacity(showWordmark ? 1.0 : 0.0)
+                .offset(y: showWordmark ? 0 : 5)
             }
         }
         .opacity(isFadingOut ? 0.0 : 1.0)
         .onAppear {
-            runLaunchSequence()
+            startSequence()
         }
     }
 
-    // MARK: - Aurora Background Layer
+    // MARK: - Aurora Background
     private var auroraBackground: some View {
         ZStack {
-            // Cool Blue Radial Glow
+            // Cool Blue Glow
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color(red: 0.15, green: 0.35, blue: 0.95).opacity(0.35), Color.clear],
+                        colors: [Color(red: 0.15, green: 0.35, blue: 0.95).opacity(0.30), Color.clear],
                         center: .center,
                         startRadius: 10,
-                        endRadius: 280
+                        endRadius: 260
                     )
                 )
-                .frame(width: 500, height: 500)
-                .offset(x: auroraDrift ? -90 : 70, y: auroraDrift ? -60 : 80)
+                .frame(width: 460, height: 460)
+                .offset(x: auroraPulse ? -70 : 60, y: auroraPulse ? -50 : 70)
 
-            // Soft Pink / Magenta Ambient Glow
+            // Soft Magenta Ambient Glow
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color(red: 0.90, green: 0.25, blue: 0.60).opacity(0.25), Color.clear],
-                        center: .center,
-                        startRadius: 10,
-                        endRadius: 240
-                    )
-                )
-                .frame(width: 440, height: 440)
-                .offset(x: auroraDrift ? 80 : -70, y: auroraDrift ? 70 : -50)
-
-            // Pale Teal / Cyan Glow
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color(red: 0.10, green: 0.80, blue: 0.75).opacity(0.28), Color.clear],
+                        colors: [Color(red: 0.85, green: 0.20, blue: 0.55).opacity(0.22), Color.clear],
                         center: .center,
                         startRadius: 10,
                         endRadius: 220
                     )
                 )
                 .frame(width: 400, height: 400)
-                .offset(x: auroraDrift ? 40 : -50, y: auroraDrift ? -80 : 60)
+                .offset(x: auroraPulse ? 70 : -60, y: auroraPulse ? 60 : -40)
 
-            // Subtle Violet Core
+            // Pale Teal Glow
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color(red: 0.45, green: 0.15, blue: 0.85).opacity(0.30), Color.clear],
+                        colors: [Color(red: 0.10, green: 0.75, blue: 0.70).opacity(0.24), Color.clear],
                         center: .center,
-                        startRadius: 5,
+                        startRadius: 10,
                         endRadius: 200
                     )
                 )
                 .frame(width: 360, height: 360)
-                .offset(x: auroraDrift ? -40 : 30, y: auroraDrift ? 30 : -40)
+                .offset(x: auroraPulse ? 30 : -40, y: auroraPulse ? -70 : 50)
         }
-        .blur(radius: 65)
+        .blur(radius: 50)
     }
 
-    // MARK: - Goo Metaball Compositing Layer
-    private var gooMetaballBlob: some View {
+    // MARK: - Liquid Metaball / Goo Composited Blob
+    private var liquidMetaballBlob: some View {
         ZStack {
-            // Independent Soft-Edged Circles Flattened onto GPU Layer
-            ZStack {
-                // Circle 1
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.white, Color(red: 0.25, green: 0.55, blue: 1.0)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+            // Circle 1: Dominant Glass Blue Core
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white, Color(red: 0.22, green: 0.52, blue: 1.0)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-                    .frame(width: 44 * circle1Scale, height: 44 * circle1Scale)
-                    .offset(circle1Offset)
+                )
+                .frame(
+                    width: isSettled ? 46 : (isWobbling ? 48 : 38),
+                    height: isSettled ? 46 : (isWobbling ? 48 : 38)
+                )
+                .offset(
+                    x: isSettled ? 0 : (isWobbling ? 12 : -12),
+                    y: isSettled ? 0 : (isWobbling ? 8 : -8)
+                )
 
-                // Circle 2
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(red: 0.35, green: 0.75, blue: 1.0), Color(red: 0.55, green: 0.25, blue: 0.95)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+            // Circle 2: Violet / Magenta Refraction Orb
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color(red: 0.35, green: 0.75, blue: 1.0), Color(red: 0.55, green: 0.25, blue: 0.95)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-                    .frame(width: 40 * circle2Scale, height: 40 * circle2Scale)
-                    .offset(circle2Offset)
+                )
+                .frame(
+                    width: isSettled ? 42 : (isWobbling ? 36 : 46),
+                    height: isSettled ? 42 : (isWobbling ? 36 : 46)
+                )
+                .offset(
+                    x: isSettled ? 0 : (isWobbling ? -10 : 14),
+                    y: isSettled ? 0 : (isWobbling ? 10 : -10)
+                )
 
-                // Circle 3
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(red: 0.20, green: 0.90, blue: 0.85), Color(red: 0.15, green: 0.45, blue: 0.95)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+            // Circle 3: Pale Cyan Edge Bead
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color(red: 0.20, green: 0.90, blue: 0.85), Color(red: 0.15, green: 0.45, blue: 0.95)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-                    .frame(width: 36 * circle3Scale, height: 36 * circle3Scale)
-                    .offset(circle3Offset)
-            }
-            .frame(width: 140, height: 140)
-            .drawingGroup() // Metal-backed layer flattening
-            .blur(radius: 20) // Gaussian blur softens edges
-            .contrast(32) // Sharp contrast boost snaps overlapping blurred edges into one seamless liquid silhouette
-            .brightness(0.04)
+                )
+                .frame(
+                    width: isSettled ? 38 : (isWobbling ? 42 : 32),
+                    height: isSettled ? 38 : (isWobbling ? 42 : 32)
+                )
+                .offset(
+                    x: isSettled ? 0 : (isWobbling ? 8 : -8),
+                    y: isSettled ? 0 : (isWobbling ? -12 : 12)
+                )
         }
-        .frame(width: 60, height: 60)
+        .frame(width: 120, height: 120)
+        .blur(radius: 16)
+        .contrast(28)
+        .brightness(0.04)
+        .drawingGroup() // Metal-backed GPU compositing after blur and contrast
     }
 
     // MARK: - Crisp Settled Liquid Glass Icon Asset
-    private var settledGlassIcon: some View {
+    private var crispGlassIcon: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 15, style: .continuous)
                 .fill(
@@ -195,11 +188,11 @@ public struct LaunchLoadingView: View {
                 .frame(width: 58, height: 58)
                 .shadow(color: Color.blue.opacity(0.55), radius: 14, y: 4)
 
-            // Specular Glass Rim Light Stroke
+            // Specular Rim Light Bevel Stroke
             RoundedRectangle(cornerRadius: 15, style: .continuous)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.70), Color.white.opacity(0.15), Color.clear],
+                        colors: [Color.white.opacity(0.75), Color.white.opacity(0.15), Color.clear],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -211,96 +204,66 @@ public struct LaunchLoadingView: View {
             Image(systemName: "cube.fill")
                 .font(.system(size: 26, weight: .bold))
                 .foregroundColor(.white)
-                .shadow(color: Color.black.opacity(0.3), radius: 4, y: 2)
+                .shadow(color: Color.black.opacity(0.35), radius: 4, y: 2)
         }
     }
 
-    // MARK: - Launch Timeline Orchestrator
-    private func runLaunchSequence() {
-        // Continuous ambient aurora drift
-        withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
-            auroraDrift = true
+    // MARK: - Sequence Timeline
+    private func startSequence() {
+        // 1. Slow continuous aurora drift
+        withAnimation(.easeInOut(duration: 3.5).repeatForever(autoreverses: true)) {
+            auroraPulse = true
         }
 
-        // Accessibility Check: Reduced Motion
+        // 2. Reduced Motion Accessibility Check
         if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
-            isGooVisible = false
-            withAnimation(.easeOut(duration: 0.2)) {
-                isIconVisible = true
-                isWordmarkVisible = true
+            showCrispIcon = true
+            withAnimation(.easeOut(duration: 0.25)) {
+                showWordmark = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                finishLaunch()
+                finish()
             }
             return
         }
 
-        // 0.0s – ~0.7s: Blob Wave 1 (Organic Wobble & Asymmetrical Drift)
-        withAnimation(.easeInOut(duration: 0.75)) {
-            circle1Offset = CGSize(width: 14, height: 8)
-            circle1Scale = 1.15
-
-            circle2Offset = CGSize(width: -12, height: 12)
-            circle2Scale = 0.88
-
-            circle3Offset = CGSize(width: 10, height: -14)
-            circle3Scale = 1.10
+        // 3. Fluid Blob Wobble Phase (0.0s -> 1.4s)
+        withAnimation(.easeInOut(duration: 0.70).repeatCount(2, autoreverses: true)) {
+            isWobbling = true
         }
 
-        // ~0.75s – ~1.45s: Blob Wave 2 (Counter-Oscillation)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
-            withAnimation(.easeInOut(duration: 0.70)) {
-                self.circle1Offset = CGSize(width: -8, height: 10)
-                self.circle1Scale = 0.90
-
-                self.circle2Offset = CGSize(width: 10, height: -10)
-                self.circle2Scale = 1.12
-
-                self.circle3Offset = CGSize(width: -10, height: -8)
-                self.circle3Scale = 0.92
-            }
-        }
-
-        // ~1.45s – ~1.70s: Convergence towards Settled Icon Center
+        // 4. Convergence & Settle Phase (~1.45s)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.45) {
-            withAnimation(.easeOut(duration: 0.25)) {
-                self.circle1Offset = .zero
-                self.circle1Scale = 1.0
-
-                self.circle2Offset = .zero
-                self.circle2Scale = 1.0
-
-                self.circle3Offset = .zero
-                self.circle3Scale = 1.0
+            withAnimation(.easeOut(duration: 0.28)) {
+                self.isSettled = true
             }
         }
 
-        // ~1.70s: Crossfade from Goo Blob to Crisp Liquid Glass Icon Asset (~220ms)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.70) {
+        // 5. Crossfade from Goo Blob to Crisp Icon Asset (~1.75s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.75) {
             withAnimation(.easeInOut(duration: 0.22)) {
-                self.isGooVisible = false
-                self.isIconVisible = true
+                self.showCrispIcon = true
             }
         }
 
-        // ~1.90s: Wordmark Fades In with Upward Motion (~240ms)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.90) {
-            withAnimation(.easeOut(duration: 0.24)) {
-                self.isWordmarkVisible = true
+        // 6. Wordmark Reveal (~1.95s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.95) {
+            withAnimation(.easeOut(duration: 0.25)) {
+                self.showWordmark = true
             }
         }
 
-        // ~2.25s: Clean Handoff to Main App Interface
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.25) {
-            self.finishLaunch()
+        // 7. Clean Handoff (~2.30s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.30) {
+            self.finish()
         }
     }
 
-    private func finishLaunch() {
-        withAnimation(.easeInOut(duration: 0.30)) {
+    private func finish() {
+        withAnimation(.easeInOut(duration: 0.35)) {
             isFadingOut = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             onFinish()
         }
     }
