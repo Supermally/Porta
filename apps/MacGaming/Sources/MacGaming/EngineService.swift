@@ -752,10 +752,31 @@ public class EngineService: ObservableObject {
             return
         }
 
+        // Check for Steam wrapper redirection (Wine 10 + D3DMetal + Retina)
+        let sikarugirSteam = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app"
+        if (game.id == "steam_windows_client" || game.id.lowercased().contains("steam") || game.executablePath.lowercased().contains("steam.exe")) && FileManager.default.fileExists(atPath: sikarugirSteam) {
+            let targetURL = URL(fileURLWithPath: sikarugirSteam)
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = true
+            NSWorkspace.shared.openApplication(at: targetURL, configuration: config) { [weak self] app, error in
+                DispatchQueue.main.async {
+                    if let err = error {
+                        self?.launchOutputMessage = "❌ Error launching Steam wrapper: \(err.localizedDescription)"
+                    } else {
+                        self?.launchOutputMessage = "🟢 Windows Steam (Wine 10 + D3DMetal + Retina) is active and running!"
+                    }
+                    self?.isLaunching = false
+                }
+            }
+            return
+        }
+
         // Case 1: Native macOS Application / Game Bundle (.app)
         if game.isNative {
             let targetURL: URL
-            if !game.executablePath.isEmpty && FileManager.default.fileExists(atPath: game.executablePath) {
+            if !game.installPath.isEmpty && game.installPath.hasSuffix(".app") && FileManager.default.fileExists(atPath: game.installPath) {
+                targetURL = URL(fileURLWithPath: game.installPath)
+            } else if !game.executablePath.isEmpty && FileManager.default.fileExists(atPath: game.executablePath) {
                 targetURL = URL(fileURLWithPath: game.executablePath)
             } else if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: game.id) {
                 targetURL = appURL
@@ -796,24 +817,6 @@ public class EngineService: ObservableObject {
             return
         }
 
-        // Check for Steam wrapper redirection
-        let sikarugirSteam = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app"
-        if (game.executablePath.lowercased().contains("steam.exe") || game.id.lowercased() == "steam") && FileManager.default.fileExists(atPath: sikarugirSteam) {
-            let targetURL = URL(fileURLWithPath: sikarugirSteam)
-            let config = NSWorkspace.OpenConfiguration()
-            config.activates = true
-            NSWorkspace.shared.openApplication(at: targetURL, configuration: config) { [weak self] app, error in
-                DispatchQueue.main.async {
-                    if let err = error {
-                        self?.launchOutputMessage = "❌ Error launching Steam wrapper: \(err.localizedDescription)"
-                    } else {
-                        self?.launchOutputMessage = "🟢 Windows Steam (Wine 10 + D3DMetal + Retina) is active and running!"
-                    }
-                    self?.isLaunching = false
-                }
-            }
-            return
-        }
 
         // Locate Wine / GPTK runner on host machine
         let runnerPaths = [
