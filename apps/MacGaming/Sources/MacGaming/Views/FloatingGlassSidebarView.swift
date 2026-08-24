@@ -20,7 +20,7 @@ public struct FloatingGlassSidebarView: View {
                     }
                 }) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [Color.blue.opacity(0.9), Color.indigo.opacity(1.0)],
@@ -30,14 +30,14 @@ public struct FloatingGlassSidebarView: View {
                             )
                             .frame(width: 28, height: 28)
 
-                        Image(systemName: isCollapsed ? "sidebar.right" : "cube.fill")
+                        Image(systemName: "cube.fill")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
                     }
                     .shadow(color: Color.blue.opacity(0.35), radius: 6, y: 2)
                 }
                 .buttonStyle(.plain)
-                .help(isCollapsed ? "Expand sidebar" : "Porta • Powered by Forge Engine")
+                .help("Porta • Powered by Forge Engine")
 
                 if !isCollapsed {
                     VStack(alignment: .leading, spacing: 1) {
@@ -192,22 +192,33 @@ public struct FloatingGlassSidebarView: View {
         .frame(width: isCollapsed ? 58 : 220)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(0.04))
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .shadow(color: Color.black.opacity(0.22), radius: 16, x: 2, y: 6)
+                .fill(
+                    engine.glassConfig.enabled
+                        ? (engine.glassConfig.variant == .clear ? Color.white.opacity(0.02) : Color.white.opacity(0.06))
+                        : Color(NSColor.controlBackgroundColor)
+                )
+                .background(
+                    engine.glassConfig.enabled
+                        ? (engine.glassConfig.variant == .clear ? Material.ultraThinMaterial : Material.thinMaterial)
+                        : Material.regularMaterial,
+                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                )
+                .shadow(color: Color.black.opacity(engine.glassConfig.enabled ? 0.22 : 0.12), radius: 16, x: 2, y: 6)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .strokeBorder(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color.white.opacity(0.40), location: 0.0),
-                            .init(color: Color.white.opacity(0.06), location: 0.45),
-                            .init(color: Color.white.opacity(0.22), location: 1.0)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
+                    engine.glassConfig.enabled
+                        ? LinearGradient(
+                            stops: [
+                                .init(color: Color.white.opacity(engine.glassConfig.variant == .clear ? 0.50 : 0.35), location: 0.0),
+                                .init(color: Color.white.opacity(0.06), location: 0.45),
+                                .init(color: Color.white.opacity(0.22), location: 1.0)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        : LinearGradient(colors: [Color.primary.opacity(0.1)], startPoint: .topLeading, endPoint: .bottomTrailing),
                     lineWidth: 1.0
                 )
         )

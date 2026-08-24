@@ -1808,6 +1808,22 @@ public class EngineService: ObservableObject {
         }
     }
 
+    public func stopSteam() {
+        terminateSteamInstances()
+        log("Closed all running Steam and Wine runtime instances.", level: .info, source: "Steam")
+    }
+
+    public func terminateSteamInstances() {
+        let script = """
+        killall -9 steam.exe steamwebhelper.exe "Wine Staging" wineserver wine64-preloader wine-preloader 2>/dev/null || true
+        """
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/bin/sh")
+        proc.arguments = ["-c", script]
+        try? proc.run()
+        proc.waitUntilExit()
+    }
+
     public func openSteamStore(for appId: String) {
         if let url = URL(string: "https://store.steampowered.com/app/\(appId)") {
             NSWorkspace.shared.open(url)

@@ -319,7 +319,8 @@ public struct GameDetailView: View {
                     }
                 )
             }
-            .padding(14)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
         }
         .sheet(isPresented: $showingSettingsSheet) {
             GameSettingsSheetView(game: game, engine: engine) {

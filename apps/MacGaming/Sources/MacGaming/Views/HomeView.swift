@@ -129,16 +129,26 @@ public struct HomeView: View {
 
                 if let app = topApp {
                     Button(action: { engine.launchApplication(app) }) {
-                        HStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.blue, Color.indigo],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 44, height: 44)
+                                .shadow(color: Color.blue.opacity(0.4), radius: 8, y: 3)
+
                             Image(systemName: "play.fill")
-                            Text("Open")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .offset(x: 1)
                         }
-                        .padding(.horizontal, 22)
-                        .padding(.vertical, 10)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+                    .buttonStyle(.plain)
+                    .help("Launch \(app.name)")
                 }
             }
             .padding(20)
