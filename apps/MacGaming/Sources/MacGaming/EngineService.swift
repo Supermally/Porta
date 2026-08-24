@@ -1845,45 +1845,33 @@ public class EngineService: ObservableObject {
         let plistPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Info.plist"
         let userRegPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/prefix/user.reg"
 
-        // 1. Calibrate Info.plist for Retina High-DPI support
+        // 1. Calibrate Info.plist
         if FileManager.default.fileExists(atPath: plistPath),
            let plistDict = NSMutableDictionary(contentsOfFile: plistPath) {
-            plistDict["Retina"] = 1
-            plistDict["RetinaMode"] = 1
+            plistDict["Retina"] = 0
+            plistDict["RetinaMode"] = 0
             plistDict["NSHighResolutionCapable"] = true
-            
-            if let flags = plistDict["Program Flags"] as? String {
-                var cleanedFlags = flags
-                    .replacingOccurrences(of: "-forcedesktopscaling 2.0", with: "")
-                    .replacingOccurrences(of: "--force-device-scale-factor=2", with: "")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                if !cleanedFlags.contains("-forcedesktopscaling") {
-                    cleanedFlags += " -forcedesktopscaling 1.5"
-                }
-                plistDict["Program Flags"] = cleanedFlags
-            }
+            plistDict["Program Flags"] = "-no-cef-sandbox -cef-disable-gpu -cef-disable-d3d11 -cef-force-software-rendering"
             plistDict.write(toFile: plistPath, atomically: true)
-            log("Calibrated Steam.app Info.plist: Retina=1, scale-factor=1.5.", level: .info, source: "Display")
+            log("Calibrated Steam.app Info.plist: Retina=0, scale-factor=1.0.", level: .info, source: "Display")
         }
 
-        // 2. Calibrate prefix user.reg for crisp fonts and 2560x1664 display modes
+        // 2. Calibrate prefix user.reg and reset Unity launcher saved resolution
         if FileManager.default.fileExists(atPath: userRegPath),
            var regContent = try? String(contentsOfFile: userRegPath, encoding: .utf8) {
             regContent = regContent
-                .replacingOccurrences(of: "\"Retina\"=\"N\"", with: "\"Retina\"=\"Y\"")
-                .replacingOccurrences(of: "\"RetinaMode\"=\"N\"", with: "\"RetinaMode\"=\"Y\"")
+                .replacingOccurrences(of: "\"Retina\"=\"Y\"", with: "\"Retina\"=\"N\"")
+                .replacingOccurrences(of: "\"RetinaMode\"=\"Y\"", with: "\"RetinaMode\"=\"N\"")
 
-            if regContent.contains("\"LogPixels\"=") {
-                regContent = regContent.replacingOccurrences(
-                    of: "\"LogPixels\"=dword:00000060",
-                    with: "\"LogPixels\"=dword:00000090"
-                )
-            } else {
-                regContent = regContent.replacingOccurrences(
-                    of: "[Control Panel\\\\Desktop]",
-                    with: "[Control Panel\\\\Desktop]\n\"LogPixels\"=dword:00000090"
-                )
+            // Reset Unity saved Screenmanager resolutions from 5880x3824 (0xb7c x 0x778) to 1280x720 (0x500 x 0x2d0)
+            if let regexW = try? NSRegularExpression(pattern: "\"Screenmanager Resolution Width[^\"]*\"=dword:[0-9a-fA-F]+"),
+               let regexH = try? NSRegularExpression(pattern: "\"Screenmanager Resolution Height[^\"]*\"=dword:[0-9a-fA-F]+") {
+                let range = NSRange(location: 0, length: regContent.utf16.count)
+                regContent = regexW.stringByReplacingMatches(in: regContent, range: range, withTemplate: "\"Screenmanager Resolution Width_h182942802\"=dword:00000500")
+                let rangeH = NSRange(location: 0, length: regContent.utf16.count)
+                regContent = regexH.stringByReplacingMatches(in: regContent, range: rangeH, withTemplate: "\"Screenmanager Resolution Height_h2627697771\"=dword:000002d0")
             }
+
             if !regContent.contains("\"ForceDisplayModes\"=") {
                 regContent = regContent.replacingOccurrences(
                     of: "[Software\\\\Wine\\\\Mac Driver]",
@@ -1891,7 +1879,7 @@ public class EngineService: ObservableObject {
                 )
             }
             try? regContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
-            log("Calibrated Steam prefix registry: Retina=Y, 144 DPI (150%), ForceDisplayModes=2560x1664.", level: .info, source: "Display")
+            log("Calibrated Steam prefix registry: Reset Unity Screenmanager resolution to 1280x720.", level: .info, source: "Display")
         }
     }
 
@@ -1918,7 +1906,7 @@ public class EngineService: ObservableObject {
                 }
             }
         }
-        launchOutputMessage = "🖥️ Display Scaling Calibrated: Wine prefixes reset to native 1x resolution (fixed 2x/4x scaling multiplier)."
+        launchOutputMessage = "🖥️ Display Scaling Calibrated: Wine prefixes and Unity screen selectors reset (fixed 5880x3824 resolution)."
         log("Calibrated all active Wine prefixes to standard 1x display scaling.", level: .info, source: "Display")
     }
 
