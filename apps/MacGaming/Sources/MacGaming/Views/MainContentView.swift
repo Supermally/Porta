@@ -21,6 +21,10 @@ public struct MainContentView: View {
         .animation(.easeInOut(duration: 0.3), value: setupManager.isSetupCompleted)
     }
 
+    private var leadingPadding: CGFloat {
+        isSidebarCollapsed ? 80 : 248
+    }
+
     private var mainInterfaceView: some View {
         ZStack(alignment: .topLeading) {
             // 1. Native macOS Window Canvas Background
@@ -30,36 +34,49 @@ public struct MainContentView: View {
             // 2. Full-Bleed Content Canvas
             Group {
                 switch engine.activeTab {
-                case .library:
+                case .home:
+                    HomeView(engine: engine)
+                        .padding(.leading, leadingPadding)
+                case .applications:
+                    ApplicationsView(engine: engine)
+                        .padding(.leading, leadingPadding)
+                        .padding(.trailing, (isDetailPanelOpen && engine.selectedApplication != nil) ? 340 : 10)
+                case .games, .library:
                     LibraryView(
                         engine: engine,
-                        leadingInset: isSidebarCollapsed ? 80 : 248,
+                        leadingInset: leadingPadding,
                         trailingInset: (isDetailPanelOpen && engine.selectedGame != nil) ? 470 : 20
                     )
-                case .discover:
-                    MacNativeSpotlightView(engine: engine)
-                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
-                case .compatibility:
-                    UniversalSearchView(engine: engine)
-                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
+                case .runtimes:
+                    RuntimesView(engine: engine)
+                        .padding(.leading, leadingPadding)
                 case .downloads:
                     DownloadsView(engine: engine)
-                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
+                        .padding(.leading, leadingPadding)
+                case .activity:
+                    ActivityView(engine: engine)
+                        .padding(.leading, leadingPadding)
+                case .discover:
+                    MacNativeSpotlightView(engine: engine)
+                        .padding(.leading, leadingPadding)
+                case .compatibility:
+                    UniversalSearchView(engine: engine)
+                        .padding(.leading, leadingPadding)
                 case .console:
                     DeveloperConsoleView(engine: engine)
-                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
+                        .padding(.leading, leadingPadding)
                 case .debugLab:
                     DebugLabView(engine: engine)
-                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
+                        .padding(.leading, leadingPadding)
                 case .settings:
                     SettingsView(engine: engine)
-                        .padding(.leading, isSidebarCollapsed ? 80 : 248)
+                        .padding(.leading, leadingPadding)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // 3. Detached Floating Liquid Glass Top Control Bar
-            if engine.activeTab == .library {
+            // 3. Detached Floating Liquid Glass Top Control Bar (Only for legacy Games library)
+            if engine.activeTab == .library || engine.activeTab == .games {
                 HStack {
                     Spacer()
                     FloatingTopGlassBar(engine: engine, isCollapsed: $isTopBarCollapsed)
@@ -75,8 +92,23 @@ public struct MainContentView: View {
             // 4. Detached Floating Collapsible Sidebar (Left)
             FloatingGlassSidebarView(engine: engine, isCollapsed: $isSidebarCollapsed)
 
-            // 5. Detached Floating Game Detail Inspector Panel (Right)
-            if let game = engine.selectedGame, engine.activeTab == .library {
+            // 5. Universal Application Inspector Panel (Right)
+            if let app = engine.selectedApplication, engine.activeTab == .applications {
+                HStack {
+                    Spacer()
+                    if isDetailPanelOpen {
+                        ApplicationDetailView(engine: engine, app: app) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                engine.selectedApplication = nil
+                            }
+                        }
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
+                }
+            }
+
+            // 6. Detached Floating Game Detail Inspector Panel (Right)
+            if let game = engine.selectedGame, (engine.activeTab == .library || engine.activeTab == .games) {
                 HStack {
                     Spacer()
                     if isDetailPanelOpen {
@@ -86,7 +118,6 @@ public struct MainContentView: View {
                             }
                         }
                     } else {
-                        // Collapsed Inspector Re-open Pill (Docked cleanly below the top control bar)
                         Button(action: {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 isDetailPanelOpen = true
@@ -113,7 +144,7 @@ public struct MainContentView: View {
                         }
                         .buttonStyle(.plain)
                         .padding(.trailing, 16)
-                        .padding(.top, 68) // Positioned with full clearance below top bar
+                        .padding(.top, 68)
                         .transition(.scale.combined(with: .opacity))
                     }
                 }

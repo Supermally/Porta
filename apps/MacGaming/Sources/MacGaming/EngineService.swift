@@ -32,6 +32,122 @@ public class EngineService: ObservableObject {
     @Published public var preparingGameItem: GameItem? = nil
     @Published public var preparationStep: Int = 0
     @Published public var consoleLogs: [ConsoleLogEntry] = []
+    
+    // MARK: - Forge Universal Architecture Properties
+    @Published public var universalApplications: [AppItem] = []
+    @Published public var selectedApplication: AppItem? = nil
+    @Published public var activityEvents: [ActivityEvent] = []
+
+    public func recordActivity(
+        title: String,
+        details: String,
+        category: String = "Platform",
+        severity: ActivitySeverity = .info,
+        technicalLog: String? = nil
+    ) {
+        DispatchQueue.main.async {
+            let event = ActivityEvent(
+                title: title,
+                details: details,
+                category: category,
+                severity: severity,
+                technicalLog: technicalLog
+            )
+            self.activityEvents.insert(event, at: 0)
+            if self.activityEvents.count > 300 {
+                self.activityEvents.removeLast()
+            }
+        }
+        log("[\(category)] \(title): \(details)", level: severity == .error ? .error : .info, source: category)
+    }
+
+    public func refreshDiscoveredApplications() {
+        let envs = EnvironmentManager.shared.environments
+        let discovered = ApplicationDiscoveryEngine.shared.scanAllManagedEnvironments(environments: envs)
+        DispatchQueue.main.async {
+            self.universalApplications = discovered
+            self.recordActivity(
+                title: "Applications Synchronized",
+                details: "Discovered \(discovered.count) software items across \(envs.count) managed environments.",
+                category: "Discovery"
+            )
+        }
+    }
+
+    public func registerApplication(_ app: AppItem) {
+        if let idx = universalApplications.firstIndex(where: { $0.id == app.id }) {
+            universalApplications[idx] = app
+        } else {
+            universalApplications.insert(app, at: 0)
+        }
+        recordActivity(
+            title: "Application Registered",
+            details: "\(app.name) (\(app.category.rawValue)) added to Forge.",
+            category: "Installation",
+            severity: .success
+        )
+    }
+
+    public func removeApplication(_ app: AppItem) {
+        universalApplications.removeAll(where: { $0.id == app.id })
+        if selectedApplication?.id == app.id {
+            selectedApplication = nil
+        }
+        recordActivity(
+            title: "Application Removed",
+            details: "\(app.name) removed from managed applications.",
+            category: "Platform",
+            severity: .warning
+        )
+    }
+
+    public func toggleFavorite(for app: AppItem) {
+        if let idx = universalApplications.firstIndex(where: { $0.id == app.id }) {
+            universalApplications[idx].isFavorite.toggle()
+        }
+    }
+
+    public func revealApplicationInFinder(_ app: AppItem) {
+        let url = URL(fileURLWithPath: app.executablePath)
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    public func launchApplication(_ app: AppItem) {
+        recordActivity(
+            title: "\(app.name) Launch Requested",
+            details: "Preparing \(app.graphicsApi) on \(app.architecture) using Forge Runtime.",
+            category: "Process"
+        )
+        DiscordRichPresenceService.shared.updatePresence(for: app)
+
+        let env = EnvironmentManager.shared.getEnvironment(by: app.environmentId)
+        let runtime = RuntimeManager.shared.getRuntime(by: app.runtimeId)
+
+        LauncherProviderManager.shared.launchApplication(app, environment: env, runtime: runtime) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.recordActivity(
+                        title: "\(app.name) Active",
+                        details: "Process successfully created and executing via \(app.launcherProvider.displayName).",
+                        category: "Process",
+                        severity: .success
+                    )
+                    if let idx = self?.universalApplications.firstIndex(where: { $0.id == app.id }) {
+                        self?.universalApplications[idx].lastUsed = Date()
+                    }
+                case .failure(let err):
+                    self?.recordActivity(
+                        title: "Failed to Launch \(app.name)",
+                        details: err.localizedDescription,
+                        category: "Process",
+                        severity: .error,
+                        technicalLog: err.localizedDescription
+                    )
+                }
+            }
+        }
+    }
 
     public func log(_ message: String, level: LogLevel = .info, source: String = "Engine") {
         DispatchQueue.main.async {
@@ -74,7 +190,7 @@ public class EngineService: ObservableObject {
 
     public init() {
         self.hardware = Self.probeHostHardware()
-        log("MacGaming Engine initialized on \(hardware.chipName) (\(hardware.osVersion)).", level: .info, source: "System")
+        log("Forge Platform initialized on \(hardware.chipName) (\(hardware.osVersion)).", level: .info, source: "System")
         loadInitialData()
         loadCommunityReviews()
         loadCatalogEntries()
@@ -82,6 +198,13 @@ public class EngineService: ObservableObject {
         loadDemandCampaigns()
         probeActiveSteamSession()
         scanAllLaunchers()
+        refreshDiscoveredApplications()
+        recordActivity(
+            title: "Forge Platform Initialized",
+            details: "Running on \(hardware.chipName) with Apple D3DMetal translation pipeline.",
+            category: "Platform",
+            severity: .info
+        )
     }
 
     public var filteredGames: [GameItem] {

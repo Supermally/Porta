@@ -10,7 +10,6 @@ public struct SetupView: View {
 
     public var body: some View {
         ZStack {
-            // Subtle clean dark/light ambient background
             Color(NSColor.windowBackgroundColor)
                 .ignoresSafeArea()
 
@@ -30,42 +29,55 @@ public struct SetupView: View {
 
                 Spacer()
             }
-            .frame(width: 480, height: 420)
+            .frame(width: 480, height: 440)
             .padding(32)
         }
-        .frame(minWidth: 540, minHeight: 480)
+        .frame(minWidth: 540, minHeight: 500)
     }
 
     // MARK: - Screen 1: Welcome
     private var welcomeScreen: some View {
         VStack(spacing: 24) {
-            Image(systemName: "gamecontroller.fill")
-                .font(.system(size: 56))
-                .foregroundColor(.accentColor)
+            ZStack {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.blue, Color.indigo],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 72, height: 72)
 
-            VStack(spacing: 8) {
-                Text("Mac Gaming")
-                    .font(.system(size: 26, weight: .bold))
+                Image(systemName: "cube.fill")
+                    .font(.system(size: 36))
+                    .foregroundColor(.white)
+            }
+            .shadow(color: Color.blue.opacity(0.3), radius: 10, y: 4)
 
-                Text("Let's get things ready.")
-                    .font(.system(size: 16, weight: .medium))
+            VStack(spacing: 6) {
+                Text("Welcome to Forge")
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+
+                Text("Run Windows software seamlessly on macOS.")
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.secondary)
             }
 
-            Text("Mac Gaming needs a few components to run Windows games seamlessly on macOS.")
-                .font(.system(size: 13))
+            Text("Forge configures an optimized Windows compatibility runtime powered by Apple Silicon unified memory and Apple D3DMetal.")
+                .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
 
-            Spacer().frame(height: 12)
+            Spacer().frame(height: 8)
 
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.25)) {
                     setupManager.startInstallation()
                 }
             }) {
-                Text("Continue")
+                Text("Get Started")
                     .font(.system(size: 14, weight: .semibold))
                     .frame(width: 140, height: 32)
             }
@@ -78,62 +90,149 @@ public struct SetupView: View {
     // MARK: - Screen 2: Installing
     private var installingScreen: some View {
         VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Mac Gaming")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.secondary)
-
-                Text("Preparing your gaming environment")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Preparing Forge")
                     .font(.system(size: 20, weight: .bold))
+                Text("Configuring compatibility components and runtime environments")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
             }
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 14) {
-                // Application status (Host is running)
+            VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.green)
                         .font(.system(size: 15))
-                    Text("Application")
+                    Text("Apple Silicon Hardware & Metal 3")
                         .font(.system(size: 13, weight: .medium))
                     Spacer()
-                    Text("Ready")
+                    Text("Verified")
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
 
-                // Dynamic dependencies checklist
                 ForEach(setupManager.dependencyManager.dependencies) { dep in
                     dependencyRow(dep)
                 }
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, 4)
 
             Divider()
 
-            // Progress bar and active status
             VStack(spacing: 8) {
                 ProgressView(value: setupManager.overallProgress, total: 1.0)
                     .progressViewStyle(.linear)
 
                 HStack {
-                    Text(currentStatusText)
-                        .font(.system(size: 12))
+                    Text(setupManager.dependencyManager.activeTaskDescription.isEmpty ? "Configuring translation runtimes..." : setupManager.dependencyManager.activeTaskDescription)
+                        .font(.system(size: 11))
                         .foregroundColor(.secondary)
                     Spacer()
-                    if let activeDownload = activeDownloadDetails {
-                        Text(activeDownload)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(.secondary)
-                    }
+                    Text("\(Int(setupManager.overallProgress * 100))%")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.secondary)
                 }
             }
-            .padding(.top, 4)
+
+            HStack {
+                Spacer()
+                Button(action: {
+                    withAnimation {
+                        showingTechnicalDetails.toggle()
+                    }
+                }) {
+                    Text(showingTechnicalDetails ? "Hide Technical Details" : "Show Details")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                Spacer()
+            }
         }
     }
 
-    @ViewBuilder
+    // MARK: - Screen 3: Complete
+    private var completeScreen: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 56))
+                .foregroundColor(.green)
+
+            VStack(spacing: 6) {
+                Text("Forge is Ready")
+                    .font(.system(size: 24, weight: .bold))
+
+                Text("Your Windows compatibility environment is configured.")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+            }
+
+            Text("You can now install and run Windows applications, suites, and games.")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+
+            Spacer().frame(height: 12)
+
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    setupManager.finalizeSetup()
+                }
+            }) {
+                Text("Enter Forge")
+                    .font(.system(size: 14, weight: .semibold))
+                    .frame(width: 140, height: 32)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .keyboardShortcut(.defaultAction)
+        }
+    }
+
+    // MARK: - Screen 4: Error
+    private func errorScreen(message: String, details: String?) -> some View {
+        VStack(spacing: 20) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 48))
+                .foregroundColor(.orange)
+
+            VStack(spacing: 6) {
+                Text("Setup Incomplete")
+                    .font(.system(size: 20, weight: .bold))
+
+                Text(message)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            if let details = details {
+                Text(details)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .padding(10)
+                    .background(Color.secondary.opacity(0.08))
+                    .cornerRadius(8)
+                    .frame(maxWidth: .infinity)
+            }
+
+            HStack(spacing: 12) {
+                Button("Retry") {
+                    setupManager.startInstallation()
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("Skip Setup (Manual)") {
+                    setupManager.finalizeSetup()
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
     private func dependencyRow(_ dep: DependencyItem) -> some View {
         HStack(spacing: 12) {
             switch dep.status {
@@ -144,18 +243,13 @@ public struct SetupView: View {
             case .downloading, .installing, .verifying:
                 ProgressView()
                     .controlSize(.small)
-                    .frame(width: 15, height: 15)
-            case .notInstalled:
+            case .notInstalled, .outdated:
                 Image(systemName: "circle")
-                    .foregroundColor(.secondary.opacity(0.6))
+                    .foregroundColor(.secondary.opacity(0.4))
                     .font(.system(size: 15))
             case .failed:
                 Image(systemName: "exclamationmark.circle.fill")
                     .foregroundColor(.red)
-                    .font(.system(size: 15))
-            case .outdated:
-                Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
-                    .foregroundColor(.orange)
                     .font(.system(size: 15))
             }
 
@@ -164,144 +258,9 @@ public struct SetupView: View {
 
             Spacer()
 
-            Text(statusLabel(for: dep.status))
+            Text(dep.version)
                 .font(.system(size: 11))
-                .foregroundColor(statusColor(for: dep.status))
-        }
-    }
-
-    private func statusLabel(for status: DependencyStatus) -> String {
-        switch status {
-        case .installed(let ver):
-            return "Installed (\(ver))"
-        case .downloading(let progress, _, _):
-            return "Downloading (\(Int(progress * 100))%)"
-        case .installing:
-            return "Installing…"
-        case .verifying:
-            return "Verifying…"
-        case .notInstalled:
-            return "Waiting…"
-        case .failed:
-            return "Failed"
-        case .outdated:
-            return "Update Available"
-        }
-    }
-
-    private func statusColor(for status: DependencyStatus) -> Color {
-        switch status {
-        case .installed: return .secondary
-        case .downloading, .installing, .verifying: return .accentColor
-        case .notInstalled: return .secondary.opacity(0.6)
-        case .failed: return .red
-        case .outdated: return .orange
-        }
-    }
-
-    private var currentStatusText: String {
-        if !setupManager.dependencyManager.activeTaskDescription.isEmpty {
-            return setupManager.dependencyManager.activeTaskDescription
-        }
-        return "Installing…"
-    }
-
-    private var activeDownloadDetails: String? {
-        for dep in setupManager.dependencyManager.dependencies {
-            if case .downloading(_, let written, let total) = dep.status {
-                let writtenMB = Double(written) / (1024 * 1024)
-                let totalMB = Double(total) / (1024 * 1024)
-                if total > 0 {
-                    return String(format: "%.0f MB / %.0f MB", writtenMB, totalMB)
-                } else {
-                    return String(format: "%.0f MB", writtenMB)
-                }
-            }
-        }
-        return nil
-    }
-
-    // MARK: - Screen 3: Ready to Play
-    private var completeScreen: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 56))
-                .foregroundColor(.green)
-
-            VStack(spacing: 8) {
-                Text("You're ready to play.")
-                    .font(.system(size: 24, weight: .bold))
-
-                Text("Your Mac Gaming environment has been successfully configured.")
-                    .font(.system(size: 14))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-            }
-
-            Spacer().frame(height: 12)
-
-            Button(action: {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    setupManager.finalizeSetup()
-                }
-            }) {
-                Text("Continue to Library")
-                    .font(.system(size: 14, weight: .semibold))
-                    .frame(width: 170, height: 32)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .keyboardShortcut(.defaultAction)
-        }
-    }
-
-    // MARK: - Error Screen
-    private func errorScreen(message: String, details: String?) -> some View {
-        VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 48))
-                .foregroundColor(.orange)
-
-            VStack(spacing: 6) {
-                Text(message)
-                    .font(.system(size: 20, weight: .bold))
-
-                Text("Mac Gaming couldn't download or install one of its required components. Check your internet connection and try again.")
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
-            }
-
-            if let details = details, !details.isEmpty {
-                DisclosureGroup("View Details", isExpanded: $showingTechnicalDetails) {
-                    ScrollView {
-                        Text(details)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(.secondary)
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(height: 80)
-                    .background(Color.primary.opacity(0.04))
-                    .cornerRadius(8)
-                }
-                .font(.system(size: 12))
-                .padding(.horizontal, 20)
-            }
-
-            HStack(spacing: 14) {
-                Button("Try Again") {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        setupManager.startInstallation()
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .keyboardShortcut(.defaultAction)
-            }
-            .padding(.top, 8)
+                .foregroundColor(.secondary)
         }
     }
 }
