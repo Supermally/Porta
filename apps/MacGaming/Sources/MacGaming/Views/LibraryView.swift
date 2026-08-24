@@ -53,7 +53,9 @@ public struct LibraryView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    if engine.libraryViewMode == .grid {
+                    if engine.filteredGames.isEmpty {
+                        emptyLibraryView
+                    } else if engine.libraryViewMode == .grid {
                         LazyVGrid(columns: gridColumns, spacing: 22) {
                             ForEach(engine.filteredGames) { game in
                                 GamePosterCard(game: game, isSelected: engine.selectedGame?.id == game.id) {
@@ -62,7 +64,7 @@ public struct LibraryView: View {
                             }
                         }
                     } else {
-                        VStack(spacing: 6) {
+                        LazyVStack(spacing: 6) {
                             ForEach(engine.filteredGames) { game in
                                 GameListRow(game: game, isSelected: engine.selectedGame?.id == game.id) {
                                     engine.selectedGame = game
@@ -74,7 +76,6 @@ public struct LibraryView: View {
                     }
                 }
                 .padding(.leading, leadingInset)
-                .padding(.trailing, trailingInset)
             }
             .padding(.vertical, 20)
         }
@@ -114,6 +115,109 @@ public struct LibraryView: View {
                 .disabled(engine.isScanning)
                 .help("Rescan installed games across Steam, GOG, Epic, and Mac apps")
             }
+        }
+    }
+
+    // MARK: - Empty State View (None Found / None Imported)
+    private var emptyLibraryView: some View {
+        VStack(spacing: 16) {
+            Spacer().frame(height: 24)
+
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.12))
+                    .frame(width: 68, height: 68)
+                Image(systemName: emptyStateIcon)
+                    .font(.system(size: 30))
+                    .foregroundColor(.blue)
+            }
+
+            VStack(spacing: 6) {
+                Text(emptyStateTitle)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.primary)
+
+                Text(emptyStateSubtitle)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 380)
+            }
+
+            HStack(spacing: 12) {
+                if !engine.searchText.isEmpty {
+                    Button("Clear Search") {
+                        engine.searchText = ""
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                if engine.selectedStorefront != .all {
+                    Button("Show All Storefronts") {
+                        engine.selectedStorefront = .all
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                if engine.selectedFilter != nil {
+                    Button("Show All Tiers") {
+                        engine.selectedFilter = nil
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                Button {
+                    engine.openNativeFilePicker(chooseFolder: true)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                        Text("Import Game…")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+            }
+            .padding(.top, 6)
+
+            Spacer().frame(height: 24)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+    }
+
+    private var emptyStateIcon: String {
+        if !engine.searchText.isEmpty {
+            return "magnifyingglass"
+        } else if engine.selectedStorefront != .all {
+            return "tray"
+        } else if engine.selectedFilter != nil {
+            return "line.3.horizontal.decrease.circle"
+        } else {
+            return "gamecontroller"
+        }
+    }
+
+    private var emptyStateTitle: String {
+        if !engine.searchText.isEmpty {
+            return "None Found"
+        } else if engine.selectedStorefront != .all {
+            return "No \(engine.selectedStorefront.rawValue) Titles Found"
+        } else if let filter = engine.selectedFilter {
+            return "No \(filter.rawValue) Games Found"
+        } else {
+            return "None Imported"
+        }
+    }
+
+    private var emptyStateSubtitle: String {
+        if !engine.searchText.isEmpty {
+            return "No titles matched \"\(engine.searchText)\". Try adjusting your search query or clear filters."
+        } else if engine.selectedStorefront != .all {
+            return "No games have been imported or discovered for \(engine.selectedStorefront.rawValue) yet."
+        } else if let filter = engine.selectedFilter {
+            return "No games currently match the \(filter.rawValue) compatibility rating tier."
+        } else {
+            return "No games have been imported into Forge yet. Import a game folder or Windows executable to begin."
         }
     }
 }

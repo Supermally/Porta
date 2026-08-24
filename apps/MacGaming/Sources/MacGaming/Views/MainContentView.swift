@@ -1,7 +1,7 @@
 import SwiftUI
 
 public struct MainContentView: View {
-    @StateObject var engine = EngineService()
+    @ObservedObject var engine = EngineService.shared
     @StateObject var setupManager = SetupManager.shared
 
     @State private var isSidebarCollapsed: Bool = false
