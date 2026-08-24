@@ -37,7 +37,7 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
                 iconUrl: "https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg",
                 headerImageUrl: "https://cdn.cloudflare.steamstatic.com/store/home/store_home_share.jpg",
                 executablePath: sikarugirSteam + "/Contents/drive_c/Program Files (x86)/Steam/steam.exe",
-                arguments: "-no-cef-sandbox -cef-disable-gpu -cef-disable-d3d11 -cef-force-software-rendering -forcedesktopscaling 2.0",
+                arguments: "-no-cef-sandbox -allosarches",
                 workingDirectory: sikarugirSteam + "/Contents/drive_c/Program Files (x86)/Steam",
                 environmentId: "steam_env",
                 runtimeId: "forge_wine10",
