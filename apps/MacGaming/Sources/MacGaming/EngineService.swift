@@ -1381,9 +1381,11 @@ public class EngineService: ObservableObject {
             }
 
             var runArgs = ["-x86_64", runner]
+            let isSapling = lowerExec.contains("sapling") || game.title.lowercased().contains("sapling")
+
             if game.displayResolution != "Native" {
                 runArgs.append("explorer.exe")
-                runArgs.append("/desktop=Game," + game.displayResolution)
+                runArgs.append("/desktop=\(game.title.replacingOccurrences(of: " ", with: "")),\(game.displayResolution)")
             }
             runArgs.append(resolvedExecPath)
 
@@ -1396,10 +1398,22 @@ public class EngineService: ObservableObject {
                 runArgs.append("-allosarches")
             }
 
-            // Custom Engine, Unreal & Unity Renderer Flags
+            // Custom Engine, Unreal, Unity & Simulation Renderer Flags
             if !game.customLaunchArgs.isEmpty {
                 let extra = game.customLaunchArgs.components(separatedBy: " ").filter { !$0.isEmpty }
                 runArgs.append(contentsOf: extra)
+            } else if isSapling {
+                // The Sapling: Constrain window size to native Mac screen and enforce stable windowed rendering
+                if game.displayResolution == "1440x900" {
+                    runArgs.append(contentsOf: ["-screen-width", "1440", "-screen-height", "900", "-screen-fullscreen", "0"])
+                } else if game.displayResolution == "1920x1080" {
+                    runArgs.append(contentsOf: ["-screen-width", "1920", "-screen-height", "1080", "-screen-fullscreen", "0"])
+                } else {
+                    runArgs.append(contentsOf: ["-screen-width", "1280", "-screen-height", "720", "-screen-fullscreen", "0"])
+                }
+                if !game.useD3DMetal {
+                    runArgs.append("-force-vulkan")
+                }
             } else if isUnreal {
                 if game.useD3DMetal {
                     runArgs.append("-dx12")
@@ -1440,6 +1454,8 @@ public class EngineService: ObservableObject {
             env["MESA_GLSL_VERSION_OVERRIDE"] = "410"
             env["WINE_RETINA"] = "1"
             env["WINE_ENABLE_HIDPI"] = "1"
+            env["WINE_LARGE_ADDRESS_AWARE"] = "1"
+            env["STAGING_SHARED_MEMORY"] = "1"
 
             // Robust DirectX 9/10/11/12 & Vulkan Metal pipeline overrides
             if game.useD3DMetal {
@@ -1449,6 +1465,7 @@ public class EngineService: ObservableObject {
             }
             env["MVK_CONFIG_RESUME_ON_ACTIVATE"] = "1"
             env["MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS"] = "1"
+            env["MVK_CONFIG_SYNCHRONOUS_QUEUE_SUBMITS"] = "1"
             env["MVK_ALLOW_METAL_EVENTS"] = "1"
             proc.environment = env
 
