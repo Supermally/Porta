@@ -20,7 +20,7 @@ public struct LaunchLoadingView: View {
     }
 }
 
-// MARK: - 1. Dark Mode Launch Loading View (Deep Space Soap Bubble)
+// MARK: - 1. Dark Mode Launch Loading View (Deep Space Clear Soap Bubble)
 private struct LaunchLoadingDarkView: View {
     let onFinish: () -> Void
 
@@ -34,7 +34,7 @@ private struct LaunchLoadingDarkView: View {
 
     var body: some View {
         ZStack {
-            // 1. Ultra-Deep Dark Canvas
+            // 1. Ultra-Deep Dark Space Canvas
             Color(red: 0.03, green: 0.03, blue: 0.06)
                 .ignoresSafeArea()
 
@@ -42,9 +42,9 @@ private struct LaunchLoadingDarkView: View {
             darkAuroraBackground
                 .ignoresSafeArea()
 
-            // 3. Central Liquid Soap Bubble Brand Composition
+            // 3. Central Soap Bubble Brand Composition
             VStack(spacing: 26) {
-                // Clear Morphing Soap Bubble Tile
+                // Clear Iridescent Soap Bubble
                 TimelineView(.animation) { timeline in
                     let time = timeline.date.timeIntervalSinceReferenceDate
                     ClearSoapBubbleTile(time: time, settleProgress: settleProgress, isDarkMode: true)
@@ -258,7 +258,7 @@ private struct LaunchLoadingLightView: View {
 
             // 3. Central Soap Bubble Brand Composition
             VStack(spacing: 26) {
-                // Clear Morphing Soap Bubble Tile
+                // Clear Iridescent Soap Bubble
                 TimelineView(.animation) { timeline in
                     let time = timeline.date.timeIntervalSinceReferenceDate
                     ClearSoapBubbleTile(time: time, settleProgress: settleProgress, isDarkMode: false)
@@ -441,7 +441,7 @@ private struct LaunchLoadingLightView: View {
     }
 }
 
-// MARK: - Clear Iridescent Soap Bubble Tile (Clear Glass/Soap Refraction & Thin-Film Spectrum)
+// MARK: - 100% Clear Iridescent Soap Bubble (Hollow Center, Thin-Film Sheen, Crisp Glints)
 private struct ClearSoapBubbleTile: View {
     let time: Double
     let settleProgress: Double
@@ -451,7 +451,7 @@ private struct ClearSoapBubbleTile: View {
         let p = CGFloat(settleProgress)
         let invP = 1.0 - p
 
-        // Gentle, calming harmonic bubble wobbles
+        // Gentle harmonic bubble wobble physics
         let w1X = CGFloat(sin(time * 1.25)) * 7.0
         let w1Y = CGFloat(cos(time * 0.95)) * 6.0
 
@@ -485,27 +485,28 @@ private struct ClearSoapBubbleTile: View {
         let edgeR = 15.0 * p
 
         ZStack {
-            // Layer 1: Soft Ambient Caustic Bubble Shadow
+            // Layer 1: Soft Ambient Caustic Shadow Behind Bubble
             Canvas { context, size in
-                let shadowColor = isDarkMode ? Color.blue.opacity(0.35) : Color(red: 0.10, green: 0.35, blue: 0.85).opacity(0.18)
+                let shadowColor = isDarkMode ? Color.blue.opacity(0.20) : Color.black.opacity(0.08)
                 context.addFilter(.alphaThreshold(min: 0.5, color: shadowColor))
-                context.addFilter(.blur(radius: 14))
+                context.addFilter(.blur(radius: 16))
                 context.drawLayer { ctx in
-                    let center = CGPoint(x: size.width / 2, y: size.height / 2 + 5)
+                    let center = CGPoint(x: size.width / 2, y: size.height / 2 + 6)
                     drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                 }
             }
-            .blur(radius: 8)
+            .blur(radius: 10)
 
-            // Layer 2: Crystal-Clear Translucent Soap Glass Volume
-            Canvas { context, size in
-                context.addFilter(.alphaThreshold(min: 0.5, color: .white))
-                context.addFilter(.blur(radius: 11))
-                context.drawLayer { ctx in
-                    let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                    drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
-                }
-            }
+            // Layer 2: Ethereal Clear Glass Refraction Tint (95% Transparent, Center is Clear Air)
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(isDarkMode ? 0.08 : 0.15),
+                    Color.clear,
+                    Color.cyan.opacity(isDarkMode ? 0.06 : 0.10)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
             .mask(
                 Canvas { context, size in
                     context.addFilter(.alphaThreshold(min: 0.5, color: .white))
@@ -516,46 +517,37 @@ private struct ClearSoapBubbleTile: View {
                     }
                 }
             )
-            .overlay(
-                // Clear Translucent Glass Fill (You can see the aurora through it!)
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(isDarkMode ? 0.12 : 0.22),
-                        Color.cyan.opacity(isDarkMode ? 0.08 : 0.10),
-                        Color.purple.opacity(isDarkMode ? 0.06 : 0.08),
-                        Color.white.opacity(isDarkMode ? 0.05 : 0.12)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .mask(
-                    Canvas { context, size in
-                        context.addFilter(.alphaThreshold(min: 0.5, color: .white))
-                        context.addFilter(.blur(radius: 11))
-                        context.drawLayer { ctx in
-                            let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                            drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
-                        }
-                    }
-                )
-            )
 
-            // Layer 3: Iridescent Soap Bubble Thin-Film Sheen (Swirling Spectral Interference)
+            // Layer 3: Iridescent Thin-Film Soap Sheen Along the Outer Film
             AngularGradient(
                 colors: [
-                    Color(red: 1.0, green: 0.35, blue: 0.70).opacity(0.45), // Magenta / Rose
-                    Color(red: 0.65, green: 0.30, blue: 1.00).opacity(0.40), // Violet
-                    Color(red: 0.10, green: 0.85, blue: 1.00).opacity(0.50), // Cyan
-                    Color(red: 0.20, green: 0.95, blue: 0.60).opacity(0.38), // Emerald Mint
-                    Color(red: 1.00, green: 0.85, blue: 0.20).opacity(0.42), // Golden Amber
-                    Color(red: 1.0, green: 0.35, blue: 0.70).opacity(0.45)  // Loop to Magenta
+                    Color(red: 1.00, green: 0.30, blue: 0.75).opacity(0.65), // Magenta / Rose
+                    Color(red: 0.65, green: 0.25, blue: 1.00).opacity(0.55), // Deep Violet
+                    Color(red: 0.00, green: 0.90, blue: 1.00).opacity(0.70), // Radiant Cyan
+                    Color(red: 0.15, green: 0.95, blue: 0.55).opacity(0.50), // Emerald Lime
+                    Color(red: 1.00, green: 0.85, blue: 0.20).opacity(0.58), // Golden Amber
+                    Color(red: 1.00, green: 0.30, blue: 0.75).opacity(0.65)  // Loop
                 ],
                 center: .center,
-                angle: .degrees(time * 22.0)
+                angle: .degrees(time * 20.0)
+            )
+            .mask(
+                // Hollow Ring Mask: Only shows on the edge film of the bubble, keeping center clear!
+                RadialGradient(
+                    colors: [
+                        Color.clear,
+                        Color.clear,
+                        Color.white.opacity(0.35),
+                        Color.white
+                    ],
+                    center: .center,
+                    startRadius: 16,
+                    endRadius: 40
+                )
             )
             .mask(
                 Canvas { context, size in
-                    context.addFilter(.alphaThreshold(min: 0.5, color: .white))
+                    context.addFilter(.alphaThreshold(min: 0.48, color: .white))
                     context.addFilter(.blur(radius: 11))
                     context.drawLayer { ctx in
                         let center = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -563,21 +555,20 @@ private struct ClearSoapBubbleTile: View {
                     }
                 }
             )
-            .opacity(0.55)
 
-            // Layer 4: Primary Top-Left Crescent Specular Highlight (Crisp White Soap Glint)
+            // Layer 4: Primary Top-Left Specular Glint (Bright Curved White Reflection)
             Canvas { context, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                let hlX = (center.x - 15 * p) + (c1X * 0.45 * invP)
-                let hlY = (center.y - 15 * p) + (c1Y * 0.45 * invP)
-                let hlW = (30.0 * p) + (24.0 * invP)
-                let hlH = (14.0 * p) + (12.0 * invP)
+                let hlX = (center.x - 16 * p) + (c1X * 0.45 * invP)
+                let hlY = (center.y - 16 * p) + (c1Y * 0.45 * invP)
+                let hlW = (28.0 * p) + (22.0 * invP)
+                let hlH = (13.0 * p) + (11.0 * invP)
 
-                let hlPath = Path(roundedRect: CGRect(x: hlX, y: hlY, width: hlW, height: hlH), cornerRadius: 8)
+                let hlPath = Path(roundedRect: CGRect(x: hlX, y: hlY, width: hlW, height: hlH), cornerRadius: 7)
                 context.fill(
                     hlPath,
                     with: .linearGradient(
-                        Gradient(colors: [Color.white.opacity(0.92), Color.white.opacity(0.25), Color.clear]),
+                        Gradient(colors: [Color.white.opacity(0.95), Color.white.opacity(0.30), Color.clear]),
                         startPoint: CGPoint(x: hlX, y: hlY),
                         endPoint: CGPoint(x: hlX + hlW * 0.8, y: hlY + hlH)
                     )
@@ -585,7 +576,7 @@ private struct ClearSoapBubbleTile: View {
             }
             .mask(
                 Canvas { context, size in
-                    context.addFilter(.alphaThreshold(min: 0.5, color: .white))
+                    context.addFilter(.alphaThreshold(min: 0.48, color: .white))
                     context.addFilter(.blur(radius: 11))
                     context.drawLayer { ctx in
                         let center = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -594,19 +585,19 @@ private struct ClearSoapBubbleTile: View {
                 }
             )
 
-            // Layer 5: Secondary Bottom-Right Bounce Reflection (Bubble Depth)
+            // Layer 5: Secondary Bottom-Right Bounce Reflection (Ground Bounce Glint)
             Canvas { context, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                let brX = (center.x + 4 * p) + (c3X * 0.4 * invP)
-                let brY = (center.y + 12 * p) + (c3Y * 0.4 * invP)
-                let brW = (22.0 * p) + (18.0 * invP)
-                let brH = (8.0 * p) + (7.0 * invP)
+                let brX = (center.x + 6 * p) + (c3X * 0.45 * invP)
+                let brY = (center.y + 13 * p) + (c3Y * 0.45 * invP)
+                let brW = (20.0 * p) + (16.0 * invP)
+                let brH = (8.0 * p) + (6.0 * invP)
 
                 let brPath = Path(roundedRect: CGRect(x: brX, y: brY, width: brW, height: brH), cornerRadius: 4)
                 context.fill(
                     brPath,
                     with: .linearGradient(
-                        Gradient(colors: [Color.cyan.opacity(0.50), Color.white.opacity(0.35), Color.clear]),
+                        Gradient(colors: [Color.cyan.opacity(0.65), Color.white.opacity(0.40), Color.clear]),
                         startPoint: CGPoint(x: brX, y: brY),
                         endPoint: CGPoint(x: brX + brW, y: brY + brH)
                     )
@@ -614,7 +605,7 @@ private struct ClearSoapBubbleTile: View {
             }
             .mask(
                 Canvas { context, size in
-                    context.addFilter(.alphaThreshold(min: 0.5, color: .white))
+                    context.addFilter(.alphaThreshold(min: 0.48, color: .white))
                     context.addFilter(.blur(radius: 11))
                     context.drawLayer { ctx in
                         let center = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -624,17 +615,32 @@ private struct ClearSoapBubbleTile: View {
             )
 
             // Layer 6: Ultra-Fine Crisp Soap Film Rim Light Contour
-            Canvas { context, size in
-                context.addFilter(.alphaThreshold(min: 0.5, color: .white))
-                context.addFilter(.blur(radius: 11))
-                context.drawLayer { ctx in
-                    let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                    drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
-                }
-            }
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.95),
+                    Color.cyan.opacity(0.70),
+                    Color.pink.opacity(0.50),
+                    Color.white.opacity(0.35)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .mask(
+                RadialGradient(
+                    colors: [
+                        Color.clear,
+                        Color.clear,
+                        Color.white.opacity(0.50),
+                        Color.white
+                    ],
+                    center: .center,
+                    startRadius: 22,
+                    endRadius: 38
+                )
+            )
             .mask(
                 Canvas { context, size in
-                    context.addFilter(.alphaThreshold(min: 0.5, color: .white))
+                    context.addFilter(.alphaThreshold(min: 0.50, color: .white))
                     context.addFilter(.blur(radius: 11))
                     context.drawLayer { ctx in
                         let center = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -642,35 +648,13 @@ private struct ClearSoapBubbleTile: View {
                     }
                 }
             )
-            .overlay(
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(0.95),
-                        Color.cyan.opacity(0.60),
-                        Color.pink.opacity(0.40),
-                        Color.white.opacity(0.30)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .mask(
-                    Canvas { context, size in
-                        context.addFilter(.alphaThreshold(min: 0.5, color: .white))
-                        context.addFilter(.blur(radius: 11))
-                        context.drawLayer { ctx in
-                            let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                            drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
-                        }
-                    }
-                )
-            )
-            .opacity((0.65 * invP) + (0.90 * p))
+            .opacity((0.75 * invP) + (0.95 * p))
 
             // Layer 7: Embedded Icon Glyph (Suspended Inside the Clear Soap Bubble Volume)
             Image(systemName: "cube.fill")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.white)
-                .shadow(color: Color.blue.opacity(isDarkMode ? 0.60 : 0.35), radius: 6, y: 2)
+                .shadow(color: Color.blue.opacity(isDarkMode ? 0.65 : 0.40), radius: 6, y: 2)
                 .opacity(Double(p))
                 .scaleEffect((0.80 * invP) + (1.0 * p))
         }
