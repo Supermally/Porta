@@ -64,14 +64,68 @@ public class EngineService: ObservableObject {
     public func refreshDiscoveredApplications() {
         let envs = EnvironmentManager.shared.environments
         let discovered = ApplicationDiscoveryEngine.shared.scanAllManagedEnvironments(environments: envs)
-        DispatchQueue.main.async {
-            self.universalApplications = discovered
-            self.recordActivity(
-                title: "Applications Synchronized",
-                details: "Discovered \(discovered.count) software items across \(envs.count) managed environments.",
-                category: "Discovery"
+        self.universalApplications = discovered
+
+        // Synchronize discovered games into self.games for the Games tab
+        for app in discovered where app.category == .games {
+            let steamId: String? = {
+                if case .steam(let appId) = app.launcherProvider { return appId }
+                return nil
+            }()
+
+            let gameItem = GameItem(
+                id: app.id,
+                title: app.name,
+                storefront: "Steam",
+                badge: app.compatibilityTier,
+                isNative: false,
+                isUniversalApp: false,
+                bannerColorName: "blue",
+                bannerColor: .blue,
+                runtime: "Forge Wine 10 (D3DMetal)",
+                rating: 95,
+                performanceStars: 5,
+                hardwarePreset: "Apple D3DMetal (Metal 3)",
+                targetFps: 60,
+                knownIssues: [],
+                antiCheatStatus: nil,
+                executablePath: app.executablePath,
+                installPath: app.workingDirectory,
+                displayResolution: "Native Retina",
+                configUtilityPath: nil,
+                companionPrograms: [],
+                acquisitionType: .storefrontIntegration,
+                customLaunchArgs: app.arguments,
+                isUnityGame: false,
+                engineType: "Auto",
+                analysisChecklist: [],
+                steamAppId: steamId,
+                steamHeaderImageURL: app.headerImageUrl ?? "https://cdn.cloudflare.steamstatic.com/steam/apps/\(steamId ?? "")/header.jpg",
+                localPosterPath: nil,
+                localHeroPath: nil,
+                localLogoPath: nil,
+                cloudSavePath: nil,
+                developerName: app.publisher,
+                lastPlayedText: app.formattedLastUsed,
+                supportsController: true,
+                useD3DMetal: app.useD3DMetal,
+                enableHud: app.enableHud,
+                enableEsync: app.enableEsync,
+                enableFsync: app.enableFsync
             )
+
+            if let idx = self.games.firstIndex(where: { $0.id == gameItem.id || ($0.steamAppId != nil && $0.steamAppId == steamId) }) {
+                self.games[idx] = gameItem
+            } else {
+                self.games.insert(gameItem, at: 0)
+            }
         }
+
+        self.recordActivity(
+            title: "Applications Synchronized",
+            details: "Discovered \(discovered.count) software items across \(envs.count) managed environments.",
+            category: "Discovery"
+        )
     }
 
     public func registerApplication(_ app: AppItem) {
