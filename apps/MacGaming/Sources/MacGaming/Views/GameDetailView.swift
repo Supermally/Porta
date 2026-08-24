@@ -547,19 +547,19 @@ public struct GameSettingsSheetView: View {
                             get: { game.enableHud },
                             set: { _ in engine.toggleHud(for: game.id) }
                         ))
-                        .toggleStyle(.portaGlass)
+                        .toggleStyle(.switch)
 
                         Toggle("Event Synchronization (Esync)", isOn: Binding(
                             get: { game.enableEsync },
                             set: { _ in engine.toggleEsync(for: game.id) }
                         ))
-                        .toggleStyle(.portaGlass)
+                        .toggleStyle(.switch)
 
                         Toggle("Fast Thread Synchronization (Fsync)", isOn: Binding(
                             get: { game.enableFsync },
                             set: { _ in engine.toggleFsync(for: game.id) }
                         ))
-                        .toggleStyle(.portaGlass)
+                        .toggleStyle(.switch)
 
                         Text("Tip: If a simulation game hangs during save loading or level load, disable Esync/Fsync or switch to DXVK.")
                             .font(.caption2)
