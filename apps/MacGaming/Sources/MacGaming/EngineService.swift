@@ -1492,10 +1492,10 @@ public class EngineService: ObservableObject {
                 try? regModes.run()
                 regModes.waitUntilExit()
 
-                // Set 144 DPI (150% scaling) for sharp, high-DPI text on Retina screens
+                // Set 225 DPI for sharp, high-DPI UI scaling on Retina screens
                 let reg3 = Process()
                 reg3.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
-                reg3.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Control Panel\\Desktop", "/v", "LogPixels", "/t", "REG_DWORD", "/d", "144", "/f"]
+                reg3.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Control Panel\\Desktop", "/v", "LogPixels", "/t", "REG_DWORD", "/d", "225", "/f"]
                 reg3.environment = regEnv
                 try? reg3.run()
                 reg3.waitUntilExit()
@@ -1857,14 +1857,15 @@ public class EngineService: ObservableObject {
                     .replacingOccurrences(of: "-forcedesktopscaling 2.0", with: "")
                     .replacingOccurrences(of: "--force-device-scale-factor=2", with: "")
                     .replacingOccurrences(of: "-forcedesktopscaling 1.5", with: "")
+                    .replacingOccurrences(of: "-forcedesktopscaling 1.25", with: "")
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 if !cleanedFlags.contains("-forcedesktopscaling") {
-                    cleanedFlags += " -forcedesktopscaling 1.25"
+                    cleanedFlags += " -forcedesktopscaling 2.25"
                 }
                 plistDict["Program Flags"] = cleanedFlags
             }
             plistDict.write(toFile: plistPath, atomically: true)
-            log("Calibrated Steam.app Info.plist: Retina=1, scale-factor=1.25.", level: .info, source: "Display")
+            log("Calibrated Steam.app Info.plist: Retina=1, scale-factor=2.25 (225 DPI).", level: .info, source: "Display")
         }
 
         // 2. Calibrate prefix user.reg for crisp fonts and 2560x1664 display modes
@@ -1877,16 +1878,20 @@ public class EngineService: ObservableObject {
             if regContent.contains("\"LogPixels\"=") {
                 regContent = regContent.replacingOccurrences(
                     of: "\"LogPixels\"=dword:00000060",
-                    with: "\"LogPixels\"=dword:00000078"
+                    with: "\"LogPixels\"=dword:000000e1"
+                )
+                regContent = regContent.replacingOccurrences(
+                    of: "\"LogPixels\"=dword:00000078",
+                    with: "\"LogPixels\"=dword:000000e1"
                 )
                 regContent = regContent.replacingOccurrences(
                     of: "\"LogPixels\"=dword:00000090",
-                    with: "\"LogPixels\"=dword:00000078"
+                    with: "\"LogPixels\"=dword:000000e1"
                 )
             } else {
                 regContent = regContent.replacingOccurrences(
                     of: "[Control Panel\\\\Desktop]",
-                    with: "[Control Panel\\\\Desktop]\n\"LogPixels\"=dword:00000078"
+                    with: "[Control Panel\\\\Desktop]\n\"LogPixels\"=dword:000000e1"
                 )
             }
 
@@ -1906,7 +1911,7 @@ public class EngineService: ObservableObject {
                 )
             }
             try? regContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
-            log("Calibrated Steam prefix registry: Retina=Y, 120 DPI (125%), The Sapling 2560x1664.", level: .info, source: "Display")
+            log("Calibrated Steam prefix registry: Retina=Y, 225 DPI (0xE1), The Sapling 2560x1664.", level: .info, source: "Display")
         }
     }
 
