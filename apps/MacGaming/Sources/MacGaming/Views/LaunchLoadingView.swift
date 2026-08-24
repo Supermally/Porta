@@ -441,7 +441,7 @@ private struct LaunchLoadingLightView: View {
     }
 }
 
-// MARK: - 100% Clear Iridescent Soap Bubble (Pure Glass Smooth Surface, Zero Point Spots)
+// MARK: - 100% Clear Iridescent Soap Bubble (Hollow Center, Floor Caustic Shadow)
 private struct ClearSoapBubbleTile: View {
     let time: Double
     let settleProgress: Double
@@ -485,35 +485,29 @@ private struct ClearSoapBubbleTile: View {
         let edgeR = 15.0 * p
 
         ZStack {
-            // Layer 1A: Deep Obsidian Contrast Shadow (distinct contour separation against backgrounds)
-            Canvas { context, size in
-                context.addFilter(.alphaThreshold(min: 0.5, color: Color.black.opacity(isDarkMode ? 0.65 : 0.22)))
-                context.addFilter(.blur(radius: 12))
-                context.drawLayer { ctx in
-                    let center = CGPoint(x: size.width / 2, y: size.height / 2 + 6)
-                    drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
-                }
-            }
-            .blur(radius: 10)
-
-            // Layer 1B: Soft Cyan/Blue Ambient Caustic Glow Shadow
-            Canvas { context, size in
-                let shadowColor = isDarkMode ? Color.blue.opacity(0.40) : Color(red: 0.00, green: 0.45, blue: 0.95).opacity(0.20)
-                context.addFilter(.alphaThreshold(min: 0.5, color: shadowColor))
-                context.addFilter(.blur(radius: 16))
-                context.drawLayer { ctx in
-                    let center = CGPoint(x: size.width / 2, y: size.height / 2 + 8)
-                    drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
-                }
-            }
-            .blur(radius: 12)
+            // Layer 1: Soft Floor Ground Contact Caustic Shadow (Offset far underneath so inside stays crystal clear)
+            Ellipse()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            (isDarkMode ? Color.blue.opacity(0.35) : Color(red: 0.00, green: 0.45, blue: 0.95).opacity(0.18)),
+                            Color.clear
+                        ],
+                        center: .center,
+                        startRadius: 2,
+                        endRadius: 36
+                    )
+                )
+                .frame(width: 72, height: 18)
+                .offset(y: 42)
+                .blur(radius: 8)
 
             // Layer 2: Ethereal Clear Glass Refraction (Subtle translucent body, center is see-through)
             LinearGradient(
                 colors: [
-                    Color.white.opacity(isDarkMode ? 0.10 : 0.18),
+                    Color.white.opacity(isDarkMode ? 0.09 : 0.16),
                     Color.clear,
-                    Color.cyan.opacity(isDarkMode ? 0.08 : 0.12)
+                    Color.cyan.opacity(isDarkMode ? 0.07 : 0.10)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
