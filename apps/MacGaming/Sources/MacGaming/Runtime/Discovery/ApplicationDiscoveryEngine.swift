@@ -175,6 +175,11 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
     // MARK: - Generic Environment Scanner (Start Menu, Program Files & Registry)
 
     public func scanEnvironment(_ environment: EnvironmentItem) -> [AppItem] {
+        // Steam environment and Steam app directories are scanned exclusively by scanSteamApps to avoid exposing internal daemons
+        if environment.id == "steam_env" || environment.prefixPath.contains("Steam.app") {
+            return []
+        }
+
         var items: [AppItem] = []
         let fileManager = FileManager.default
         let prefix = environment.prefixPath
@@ -194,6 +199,12 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
                     let fullPath = dir + "/" + relativePath
                     let fileName = (relativePath as NSString).lastPathComponent
                     let lowerName = fileName.lowercased()
+                    let lowerRel = relativePath.lowercased()
+
+                    // Skip anything inside Steam or Windows system internals
+                    if lowerRel.contains("steam") || lowerRel.contains("windows") || lowerRel.contains("system32") || lowerRel.contains("syswow64") {
+                        continue
+                    }
 
                     // Filter out Windows internal services, helpers, redistributables, and Wine daemons
                     let excludedPatterns = [
