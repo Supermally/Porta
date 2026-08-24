@@ -174,21 +174,32 @@ public struct MainContentView: View {
                                         .font(.system(size: 12, weight: .semibold))
                                 }
                                 .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
+                                .padding(.vertical, 7)
                                 .background(
                                     Capsule()
-                                        .fill(Color.white.opacity(0.12))
-                                        .background(.regularMaterial, in: Capsule())
-                                        .shadow(color: Color.black.opacity(0.14), radius: 10, y: 4)
+                                        .fill(Color.white.opacity(0.06))
+                                        .background(.ultraThinMaterial, in: Capsule())
+                                        .shadow(color: Color.black.opacity(0.18), radius: 10, y: 3)
                                 )
                                 .overlay(
                                     Capsule()
-                                        .stroke(Color.primary.opacity(0.10), lineWidth: 1)
+                                        .strokeBorder(
+                                            LinearGradient(
+                                                stops: [
+                                                    .init(color: Color.white.opacity(0.35), location: 0.0),
+                                                    .init(color: Color.white.opacity(0.08), location: 0.5),
+                                                    .init(color: Color.white.opacity(0.20), location: 1.0)
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1.0
+                                        )
                                 )
                             }
                             .buttonStyle(.plain)
                             .padding(.trailing, 16)
-                            .padding(.top, 68)
+                            .padding(.top, 14)
                             .transition(.scale.combined(with: .opacity))
                         }
                     }

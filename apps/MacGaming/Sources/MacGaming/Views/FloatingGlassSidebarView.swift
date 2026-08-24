@@ -191,14 +191,25 @@ public struct FloatingGlassSidebarView: View {
         }
         .frame(width: isCollapsed ? 58 : 220)
         .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color(NSColor.windowBackgroundColor).opacity(0.85))
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
-                .shadow(color: Color.black.opacity(0.14), radius: 12, y: 4)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.04))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .shadow(color: Color.black.opacity(0.22), radius: 16, x: 2, y: 6)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color.white.opacity(0.40), location: 0.0),
+                            .init(color: Color.white.opacity(0.06), location: 0.45),
+                            .init(color: Color.white.opacity(0.22), location: 1.0)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.0
+                )
         )
         .padding(.leading, 14)
         .padding(.top, 14)

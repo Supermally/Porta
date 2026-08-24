@@ -81,41 +81,6 @@ public struct LibraryView: View {
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: leadingInset)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: trailingInset)
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                Picker("View Mode", selection: $engine.libraryViewMode) {
-                    ForEach(ViewMode.allCases) { mode in
-                        Image(systemName: mode.icon).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Menu {
-                    Button {
-                        engine.openNativeFilePicker(chooseFolder: true)
-                    } label: {
-                        Label("Import Game Folder...", systemImage: "folder.badge.plus")
-                    }
-                    Button {
-                        engine.openNativeFilePicker(isUniversalApp: false, chooseFolder: false)
-                    } label: {
-                        Label("Import Executable (.exe / .app)...", systemImage: "gamecontroller")
-                    }
-                } label: {
-                    Image(systemName: "plus")
-                }
-
-                Button {
-                    engine.scanAllLaunchers()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .rotationEffect(Angle(degrees: engine.isScanning ? 360 : 0))
-                        .animation(engine.isScanning ? Animation.linear(duration: 1).repeatForever(autoreverses: false) : .default, value: engine.isScanning)
-                }
-                .disabled(engine.isScanning)
-                .help("Rescan installed games across Steam, GOG, Epic, and Mac apps")
-            }
-        }
     }
 
     // MARK: - Empty State View (None Found / None Imported)

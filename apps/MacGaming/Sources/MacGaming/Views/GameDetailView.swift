@@ -7,6 +7,7 @@ public struct GameDetailView: View {
 
     @State private var showingDeveloperDetails = false
     @State private var showingAdvancedSettings = false
+    @State private var showingSettingsSheet = false
     @State private var showingTroubleshootSheet = false
     @Namespace private var glassNamespace
 
@@ -116,28 +117,51 @@ public struct GameDetailView: View {
                 .shadow(color: Color.black.opacity(0.15), radius: 12, y: 6)
 
                 // Coordinated Liquid Glass Action Bar
-                HStack {
-                    MGActionGroup(spacing: 8) {
-                        MGPlayButton(
-                            state: engine.isLaunching ? (engine.isGameModeActive ? .running : .launching) : .idle,
-                            onPlay: { engine.launchGame(game) },
-                            onStop: { engine.stopGame() }
-                        )
-
-                        Button {
-                            showingAdvancedSettings.toggle()
-                        } label: {
-                            Label("Settings", systemImage: "gearshape")
+                HStack(spacing: 8) {
+                    Button(action: {
+                        if engine.isLaunching {
+                            engine.stopGame()
+                        } else {
+                            engine.launchGame(game)
                         }
-                        .buttonStyle(.glass)
-
-                        Button {
-                            showingTroubleshootSheet = true
-                        } label: {
-                            Label("Diagnostics", systemImage: "stethoscope")
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: engine.isLaunching ? "stop.fill" : "play.fill")
+                                .font(.system(size: 13, weight: .bold))
+                            Text(engine.isLaunching ? "Running" : "Play")
+                                .font(.system(size: 13, weight: .semibold))
                         }
-                        .buttonStyle(.glass)
+                        .frame(minWidth: 76)
+                        .padding(.vertical, 4)
                     }
+                    .buttonStyle(.portaGlass(cornerRadius: 10, isProminent: true))
+
+                    Button(action: {
+                        showingSettingsSheet = true
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "gearshape")
+                                .font(.system(size: 13, weight: .medium))
+                            Text("Settings")
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.portaGlass(cornerRadius: 10, isProminent: false))
+
+                    Button(action: {
+                        engine.runDiagnostics(for: game)
+                        showingTroubleshootSheet = true
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "stethoscope")
+                                .font(.system(size: 13, weight: .medium))
+                            Text("Diagnostics")
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.portaGlass(cornerRadius: 10, isProminent: false))
 
                     Spacer()
                 }
@@ -289,9 +313,34 @@ public struct GameDetailView: View {
             }
             .padding(24)
         }
+        .sheet(isPresented: $showingSettingsSheet) {
+            GameSettingsSheetView(game: game, engine: engine) {
+                showingSettingsSheet = false
+            }
+        }
         .sheet(isPresented: $showingTroubleshootSheet) {
             if let report = engine.activeTroubleshootReport {
                 DiagnosticsSheetView(report: report, engine: engine) {
+                    showingTroubleshootSheet = false
+                }
+            } else {
+                DiagnosticsSheetView(
+                    report: DiagnosticReportItem(
+                        summary: "\(game.title) Translation & Runtime Environment Validation",
+                        hasCriticalIssues: false,
+                        findings: [
+                            DiagnosticFindingItem(
+                                title: "Architecture & Execution",
+                                severity: "info",
+                                description: game.isNative ? "Native Apple Silicon ARM64 Mach-O" : "Apple Rosetta 2 + Translation Bridge",
+                                logSnippet: nil,
+                                recommendedAction: "No action needed.",
+                                autoFixCommand: nil
+                            )
+                        ]
+                    ),
+                    engine: engine
+                ) {
                     showingTroubleshootSheet = false
                 }
             }
@@ -381,5 +430,150 @@ struct PerformanceMetricBox: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
+    }
+}
+
+// MARK: - Game Settings & Configuration Sheet View
+public struct GameSettingsSheetView: View {
+    let game: GameItem
+    @ObservedObject var engine: EngineService
+    let onDismiss: () -> Void
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Image(systemName: "gearshape.fill")
+                    .foregroundColor(.blue)
+                    .font(.system(size: 20))
+                Text("\(game.title) Settings")
+                    .font(.system(size: 18, weight: .bold))
+                Spacer()
+                Button("Done", action: onDismiss)
+                    .keyboardShortcut(.defaultAction)
+            }
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // 1. Graphics Translation Pipeline
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Graphics Translation Engine")
+                            .font(.system(size: 13, weight: .semibold))
+                        HStack(spacing: 10) {
+                            Button(action: {
+                                engine.setGraphicsBackend(for: game.id, useD3DMetal: true)
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: game.useD3DMetal ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(game.useD3DMetal ? .blue : .secondary)
+                                    Text("Apple D3DMetal (DirectX 11/12)")
+                                        .font(.system(size: 12, weight: .medium))
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                            }
+                            .buttonStyle(.portaGlass(cornerRadius: 8, isProminent: game.useD3DMetal))
+
+                            Button(action: {
+                                engine.setGraphicsBackend(for: game.id, useD3DMetal: false)
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: !game.useD3DMetal ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(!game.useD3DMetal ? .blue : .secondary)
+                                    Text("DXVK (Vulkan)")
+                                        .font(.system(size: 12, weight: .medium))
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                            }
+                            .buttonStyle(.portaGlass(cornerRadius: 8, isProminent: !game.useD3DMetal))
+                        }
+                    }
+
+                    Divider()
+
+                    // 2. Metal Performance HUD & Synchronization
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Runtime Overlays & Synchronization")
+                            .font(.system(size: 13, weight: .semibold))
+
+                        Toggle("Metal Performance HUD (FPS & GPU Telemetry)", isOn: Binding(
+                            get: { game.enableHud },
+                            set: { _ in engine.toggleHud(for: game.id) }
+                        ))
+                        .toggleStyle(.switch)
+
+                        Toggle("Event Synchronization (Esync)", isOn: Binding(
+                            get: { game.enableEsync },
+                            set: { _ in engine.toggleEsync(for: game.id) }
+                        ))
+                        .toggleStyle(.switch)
+
+                        Toggle("Fast Thread Synchronization (Fsync)", isOn: Binding(
+                            get: { game.enableFsync },
+                            set: { _ in engine.toggleFsync(for: game.id) }
+                        ))
+                        .toggleStyle(.switch)
+                    }
+
+                    Divider()
+
+                    // 3. Prefix & Directory Shortcuts
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Container & Filesystem")
+                            .font(.system(size: 13, weight: .semibold))
+
+                        HStack(spacing: 8) {
+                            Button(action: {
+                                engine.openPrefixFolder(for: game)
+                            }) {
+                                Label("Open Prefix Folder", systemImage: "folder")
+                            }
+                            .buttonStyle(.portaGlass(cornerRadius: 8))
+
+                            Button(action: {
+                                engine.openGameFolder(for: game)
+                            }) {
+                                Label("Open Game Files", systemImage: "arrow.up.right.square")
+                            }
+                            .buttonStyle(.portaGlass(cornerRadius: 8))
+                        }
+
+                        if game.configUtilityPath != nil {
+                            Button(action: {
+                                engine.launchConfigUtility(for: game)
+                            }) {
+                                Label("Launch Configuration Utility", systemImage: "slider.horizontal.3")
+                            }
+                            .buttonStyle(.portaGlass(cornerRadius: 8))
+                        }
+                    }
+
+                    Divider()
+
+                    // 4. Library Actions
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Library Management")
+                            .font(.system(size: 13, weight: .semibold))
+
+                        Button(action: {
+                            engine.deleteImportedGame(game)
+                            onDismiss()
+                        }) {
+                            HStack {
+                                Image(systemName: "trash")
+                                Text("Remove Game from Library")
+                            }
+                            .foregroundColor(.red)
+                        }
+                        .buttonStyle(.portaGlass(cornerRadius: 8))
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .padding(20)
+        .frame(minWidth: 460, minHeight: 480)
     }
 }
