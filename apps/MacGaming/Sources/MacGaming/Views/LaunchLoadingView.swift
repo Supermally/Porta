@@ -20,7 +20,7 @@ public struct LaunchLoadingView: View {
 
     public var body: some View {
         ZStack {
-            // 1. Ultra-Deep Dark Canvas
+            // 1. Ultra-Deep Dark Space Canvas
             Color(red: 0.03, green: 0.03, blue: 0.06)
                 .ignoresSafeArea()
 
@@ -29,24 +29,23 @@ public struct LaunchLoadingView: View {
                 .ignoresSafeArea()
 
             // 3. Central Liquid Glass Brand Composition
-            VStack(spacing: 24) {
+            VStack(spacing: 26) {
                 ZStack {
-                    // Stage A: Continuous Fluid Liquid Glass Metaball Goo
-                    if !showCrispIcon {
-                        TimelineView(.animation) { timeline in
-                            let time = timeline.date.timeIntervalSinceReferenceDate
-                            HighFidelityLiquidGlassBlob(time: time, isSettled: isSettled)
-                        }
-                        .transition(.opacity)
+                    // Stage A: Calm, Continuous Fluid Liquid Glass Metaball Goo
+                    TimelineView(.animation) { timeline in
+                        let time = timeline.date.timeIntervalSinceReferenceDate
+                        HighFidelityLiquidGlassBlob(time: time, isSettled: isSettled)
                     }
+                    .opacity(showCrispIcon ? 0.0 : 1.0)
+                    .animation(.easeInOut(duration: 0.42), value: showCrispIcon)
 
                     // Stage B: Crisp Settled Liquid Glass Icon Asset
-                    if showCrispIcon {
-                        crispGlassIcon
-                            .transition(.scale(scale: 0.96).combined(with: .opacity))
-                    }
+                    crispGlassIcon
+                        .opacity(showCrispIcon ? 1.0 : 0.0)
+                        .scaleEffect(showCrispIcon ? 1.0 : 0.94)
+                        .animation(.easeInOut(duration: 0.42), value: showCrispIcon)
                 }
-                .frame(width: 90, height: 90)
+                .frame(width: 80, height: 80)
 
                 // Stage C: Brand Wordmark
                 VStack(spacing: 4) {
@@ -64,22 +63,17 @@ public struct LaunchLoadingView: View {
                 .opacity(showWordmark ? 1.0 : 0.0)
                 .offset(y: showWordmark ? 0 : 6)
 
-                // Stage D: Interactive Launch Controls
+                // Stage D: Interactive Launch & Settle Controls
                 if showEnterButton {
                     HStack(spacing: 14) {
-                        // Settle / Wobble Toggle
+                        // Settle / Wobble Action Button
                         Button(action: {
-                            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
-                                isSettled.toggle()
-                                if !isSettled {
-                                    showCrispIcon = false
-                                }
-                            }
+                            toggleSettleState()
                         }) {
                             HStack(spacing: 6) {
                                 Image(systemName: isSettled ? "water.waves" : "square.dashed")
                                     .font(.system(size: 11, weight: .bold))
-                                Text(isSettled ? "Wobble Goo" : "Settle Shape")
+                                Text(isSettled ? "Wobble Goo" : "Settle Icon")
                                     .font(.system(size: 12, weight: .semibold))
                             }
                             .padding(.horizontal, 16)
@@ -163,6 +157,31 @@ public struct LaunchLoadingView: View {
         .onAppear {
             withAnimation(.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
                 auroraPulse = true
+            }
+        }
+    }
+
+    // MARK: - Settle & Wobble Orchestration
+    private func toggleSettleState() {
+        if isSettled {
+            // Bloom back into fluid wobble
+            withAnimation(.easeInOut(duration: 0.30)) {
+                showCrispIcon = false
+            }
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
+                isSettled = false
+            }
+        } else {
+            // Settle smoothly into icon
+            withAnimation(.spring(response: 0.52, dampingFraction: 0.82)) {
+                isSettled = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                if self.isSettled {
+                    withAnimation(.easeInOut(duration: 0.38)) {
+                        self.showCrispIcon = true
+                    }
+                }
             }
         }
     }
@@ -272,18 +291,18 @@ public struct LaunchLoadingView: View {
         isEntering = true
 
         // 1. Settle fluid goo into icon shape
-        withAnimation(.spring(response: 0.40, dampingFraction: 0.75)) {
+        withAnimation(.spring(response: 0.48, dampingFraction: 0.80)) {
             self.isSettled = true
         }
 
-        // 2. Crossfade to crisp glass icon
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
-            withAnimation(.easeInOut(duration: 0.22)) {
+        // 2. Seamless crossfade to crisp glass icon
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            withAnimation(.easeInOut(duration: 0.35)) {
                 self.showCrispIcon = true
             }
 
             // 3. Cinematic handoff fade
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                 withAnimation(.easeInOut(duration: 0.35)) {
                     self.isFadingOut = true
                 }
@@ -295,7 +314,7 @@ public struct LaunchLoadingView: View {
     }
 }
 
-// MARK: - High-Fidelity Liquid Glass Metaball Blob Component
+// MARK: - High-Fidelity Liquid Glass Metaball Blob Component (Calm & Organic Harmonic Waves)
 private struct HighFidelityLiquidGlassBlob: View {
     let time: Double
     let isSettled: Bool
@@ -303,22 +322,22 @@ private struct HighFidelityLiquidGlassBlob: View {
     var body: some View {
         let settleFactor: CGFloat = isSettled ? 0.0 : 1.0
 
-        // Multi-frequency harmonic fluid physics
-        let orb1X = CGFloat(sin(time * 2.6)) * 14.0 * settleFactor
-        let orb1Y = CGFloat(cos(time * 2.1)) * 10.0 * settleFactor
-        let orb1R: CGFloat = (isSettled ? 28 : (24 + CGFloat(sin(time * 3.0)) * 3.0 * settleFactor))
+        // Gentle, calm harmonic fluid physics (Low frequencies & soft amplitudes)
+        let orb1X = CGFloat(sin(time * 1.25)) * 6.5 * settleFactor
+        let orb1Y = CGFloat(cos(time * 0.95)) * 5.0 * settleFactor
+        let orb1R: CGFloat = (isSettled ? 26 : (24 + CGFloat(sin(time * 1.40)) * 1.5 * settleFactor))
 
-        let orb2X = CGFloat(cos(time * 3.1)) * 13.0 * settleFactor
-        let orb2Y = CGFloat(sin(time * 2.5)) * 12.0 * settleFactor
-        let orb2R: CGFloat = (isSettled ? 26 : (21 + CGFloat(cos(time * 2.8)) * 3.5 * settleFactor))
+        let orb2X = CGFloat(cos(time * 1.45)) * 6.0 * settleFactor
+        let orb2Y = CGFloat(sin(time * 1.15)) * 5.5 * settleFactor
+        let orb2R: CGFloat = (isSettled ? 24 : (22 + CGFloat(cos(time * 1.30)) * 1.6 * settleFactor))
 
-        let orb3X = CGFloat(sin(time * 3.7)) * 11.0 * settleFactor
-        let orb3Y = CGFloat(-cos(time * 2.3)) * 13.0 * settleFactor
-        let orb3R: CGFloat = (isSettled ? 24 : (18 + CGFloat(sin(time * 3.6)) * 3.0 * settleFactor))
+        let orb3X = CGFloat(sin(time * 1.65)) * 5.0 * settleFactor
+        let orb3Y = CGFloat(-cos(time * 1.05)) * 6.0 * settleFactor
+        let orb3R: CGFloat = (isSettled ? 22 : (20 + CGFloat(sin(time * 1.55)) * 1.4 * settleFactor))
 
-        let orb4X = CGFloat(-cos(time * 2.9)) * 12.0 * settleFactor
-        let orb4Y = CGFloat(-sin(time * 3.4)) * 9.0 * settleFactor
-        let orb4R: CGFloat = (isSettled ? 22 : (16 + CGFloat(cos(time * 3.2)) * 2.5 * settleFactor))
+        let orb4X = CGFloat(-cos(time * 1.35)) * 5.5 * settleFactor
+        let orb4Y = CGFloat(-sin(time * 1.55)) * 4.5 * settleFactor
+        let orb4R: CGFloat = (isSettled ? 20 : (18 + CGFloat(cos(time * 1.45)) * 1.2 * settleFactor))
 
         ZStack {
             // Layer 1: Ambient Drop Shadow & Caustic Glow
@@ -379,17 +398,17 @@ private struct HighFidelityLiquidGlassBlob: View {
             Canvas { context, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
                 let hlPath = Path(ellipseIn: CGRect(
-                    x: center.x + orb1X * 0.5 - 12,
-                    y: center.y + orb1Y * 0.5 - 16,
-                    width: 24 + orb1R * 0.4,
-                    height: 14 + orb1R * 0.3
+                    x: center.x + orb1X * 0.4 - 10,
+                    y: center.y + orb1Y * 0.4 - 14,
+                    width: 22 + orb1R * 0.35,
+                    height: 12 + orb1R * 0.25
                 ))
                 context.fill(
                     hlPath,
                     with: .linearGradient(
                         Gradient(colors: [Color.white.opacity(0.75), Color.white.opacity(0.1), Color.clear]),
-                        startPoint: CGPoint(x: center.x - 10, y: center.y - 18),
-                        endPoint: CGPoint(x: center.x + 10, y: center.y)
+                        startPoint: CGPoint(x: center.x - 8, y: center.y - 16),
+                        endPoint: CGPoint(x: center.x + 8, y: center.y)
                     )
                 )
             }
@@ -442,7 +461,7 @@ private struct HighFidelityLiquidGlassBlob: View {
             )
             .opacity(0.35)
         }
-        .frame(width: 150, height: 150)
+        .frame(width: 140, height: 140)
     }
 
     private func drawOrbs(
