@@ -49,21 +49,22 @@ private struct RootAppContainerView: View {
 
     var body: some View {
         ZStack {
+            // Pre-mount main interface so it warms up silently in the background
+            MainContentView()
+                .zIndex(1)
+
+            // Instant launch loading overlay that plays the full liquid glass sequence
             if isLaunchLoading {
                 LaunchLoadingView {
-                    withAnimation(.easeInOut(duration: 0.35)) {
+                    withAnimation(.easeInOut(duration: 0.40)) {
                         isLaunchLoading = false
                     }
                 }
                 .transition(.opacity)
                 .zIndex(2)
-            } else {
-                MainContentView()
-                    .transition(.opacity)
-                    .zIndex(1)
             }
         }
-        .animation(.easeInOut(duration: 0.35), value: isLaunchLoading)
+        .animation(.easeInOut(duration: 0.40), value: isLaunchLoading)
         .background(WindowAccessor())
     }
 }
