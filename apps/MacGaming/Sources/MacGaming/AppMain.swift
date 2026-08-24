@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UserNotifications
 
 // MARK: - Native AppKit Menu Bar Action Handlers
 @MainActor
@@ -89,6 +90,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Build complete AppKit main menu hierarchy
         buildNativeAppMenu()
+
+        // Request notification permission for macOS Game Mode banners and status alerts
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
 
         // Automatically restore and activate security-scoped bookmarks asynchronously
         Task.detached(priority: .utility) {

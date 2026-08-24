@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import SwiftUI
 import CryptoKit
+@preconcurrency import UserNotifications
 
 // MARK: - Porta High-Performance Persistent Data & Artwork Cache Service
 public final class DataCacheService: @unchecked Sendable {
@@ -1239,16 +1240,52 @@ public class EngineService: ObservableObject {
         }
     }
 
+    public func activateGameMode(for sessionName: String) {
+        if activeActivityToken == nil {
+            self.activeActivityToken = ProcessInfo.processInfo.beginActivity(
+                options: [.userInitiated, .idleSystemSleepDisabled, .latencyCritical],
+                reason: "macOS Game Mode - \(sessionName)"
+            )
+        }
+        self.isGameModeActive = true
+        log("🎮 macOS Game Mode: ACTIVE (High CPU/GPU priority & low-latency controller connectivity for '\(sessionName)').", level: .info, source: "GameMode")
+        triggerGameModeNotification(title: sessionName)
+    }
+
+    public func deactivateGameMode() {
+        if let token = activeActivityToken {
+            ProcessInfo.processInfo.endActivity(token)
+            activeActivityToken = nil
+        }
+        self.isGameModeActive = false
+        log("macOS Game Mode: Deactivated.", level: .info, source: "GameMode")
+    }
+
+    public func triggerGameModeNotification(title: String) {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "🎮 Game Mode On"
+            content.subtitle = title
+            content.body = "Prioritizing CPU/GPU performance and ultra low-latency Bluetooth connectivity."
+            content.sound = .default
+            
+            let request = UNNotificationRequest(
+                identifier: "porta_game_mode_\(UUID().uuidString)",
+                content: content,
+                trigger: nil
+            )
+            center.add(request, withCompletionHandler: nil)
+        }
+    }
+
     public func launchGame(_ game: GameItem) {
         isLaunching = true
         let translationLayer = game.isNative ? "Native macOS" : (game.useD3DMetal ? "D3DMetal (DirectX 12/Metal)" : "DXVK 2.3 (Vulkan/Metal)")
         let hudStatus = game.enableHud ? "Enabled (FPS/Telemetry)" : "Disabled"
         
-        self.activeActivityToken = ProcessInfo.processInfo.beginActivity(
-            options: [.userInitiated, .idleSystemSleepDisabled, .latencyCritical],
-            reason: "Mac Gaming Active Session - \(game.title)"
-        )
-        self.isGameModeActive = true
+        activateGameMode(for: game.title)
 
         launchOutputMessage = """
         Configuring isolated prefix for '\(game.title)'...
@@ -1262,11 +1299,7 @@ public class EngineService: ObservableObject {
 
         if game.badge == .unsupported {
             self.launchOutputMessage = "Launch Blocked: \(game.antiCheatStatus ?? "Kernel driver anti-cheat prevents execution.")"
-            if let token = self.activeActivityToken {
-                ProcessInfo.processInfo.endActivity(token)
-                self.activeActivityToken = nil
-            }
-            self.isGameModeActive = false
+            deactivateGameMode()
             self.isLaunching = false
             return
         }
@@ -1281,6 +1314,7 @@ public class EngineService: ObservableObject {
                 DispatchQueue.main.async {
                     if let err = error {
                         self?.launchOutputMessage = "❌ Error launching Steam wrapper: \(err.localizedDescription)"
+                        self?.deactivateGameMode()
                     } else {
                         self?.launchOutputMessage = "🟢 Windows Steam (Wine 10 + D3DMetal + Retina) is active and running!"
                     }
@@ -1823,18 +1857,21 @@ public class EngineService: ObservableObject {
         if FileManager.default.fileExists(atPath: sikarugirSteam) {
             // Auto-calibrate Steam Wineskin wrapper to eliminate 2x/4x resolution bug
             calibrateSteamWrapperDisplaySettings()
+            activateGameMode(for: "Steam (Wine 10 + D3DMetal)")
 
             let url = URL(fileURLWithPath: sikarugirSteam)
             NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { [weak self] _, error in
                 DispatchQueue.main.async {
                     if let err = error {
                         self?.log("Failed to launch Steam: \(err.localizedDescription)", level: .error, source: "Steam")
+                        self?.deactivateGameMode()
                     } else {
                         self?.log("Steam (Wine 10 + D3DMetal • Calibrated Display Scale) launched successfully.", level: .info, source: "Steam")
                     }
                 }
             }
         } else if FileManager.default.fileExists(atPath: macSteam) {
+            activateGameMode(for: "macOS Steam")
             NSWorkspace.shared.open(URL(fileURLWithPath: macSteam))
         } else {
             syncSteamLibrary()
@@ -1845,12 +1882,14 @@ public class EngineService: ObservableObject {
         let plistPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Info.plist"
         let userRegPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/prefix/user.reg"
 
-        // 1. Calibrate Info.plist for crisp Retina High-DPI support
+        // 1. Calibrate Info.plist for crisp Retina High-DPI support and macOS Game Mode
         if FileManager.default.fileExists(atPath: plistPath),
            let plistDict = NSMutableDictionary(contentsOfFile: plistPath) {
             plistDict["Retina"] = 1
             plistDict["RetinaMode"] = 1
             plistDict["NSHighResolutionCapable"] = true
+            plistDict["LSApplicationCategoryType"] = "public.app-category.games"
+            plistDict["NSSupportsAutomaticGraphicsSwitching"] = true
             
             if let flags = plistDict["Program Flags"] as? String {
                 var cleanedFlags = flags
@@ -1865,7 +1904,7 @@ public class EngineService: ObservableObject {
                 plistDict["Program Flags"] = cleanedFlags
             }
             plistDict.write(toFile: plistPath, atomically: true)
-            log("Calibrated Steam.app Info.plist: Retina=1, scale-factor=2.25 (225 DPI).", level: .info, source: "Display")
+            log("Calibrated Steam.app Info.plist: Retina=1, scale-factor=2.25 (225 DPI), GameCategory=public.app-category.games.", level: .info, source: "Display")
         }
 
         // 2. Calibrate prefix user.reg for crisp fonts and 2560x1664 display modes
@@ -1956,6 +1995,7 @@ public class EngineService: ObservableObject {
         proc.arguments = ["-c", script]
         try? proc.run()
         proc.waitUntilExit()
+        deactivateGameMode()
     }
 
     public func openSteamStore(for appId: String) {
