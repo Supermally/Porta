@@ -23,58 +23,58 @@ public struct GameSaveInstancesView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             // Header & Actions
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    HStack(spacing: 6) {
                         Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.system(size: 15, weight: .bold))
                             .foregroundColor(.blue)
-                        Text("Save States & Progress Vault")
+                        Text("Save States")
                             .font(.headline)
                             .fontWeight(.bold)
                     }
 
-                    if let activeDir = manifest?.activeSaveDirectory ?? engine.detectSaveDirectory(for: game) {
+                    Spacer()
+
+                    Button {
+                        newCheckpointName = "Checkpoint \( (manifest?.instances.count ?? 0) + 1 )"
+                        newCheckpointNote = ""
+                        showingCreateSheet = true
+                    } label: {
                         HStack(spacing: 4) {
-                            Text("Active Save Directory:")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Button {
-                                NSWorkspace.shared.selectFile(activeDir, inFileViewerRootedAtPath: activeDir)
-                            } label: {
-                                Text(activeDir)
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                                    .underline()
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundColor(.blue)
+                            Image(systemName: "plus.circle.fill")
+                            Text("Checkpoint")
                         }
-                    } else {
-                        Text("No active save path discovered yet. Will auto-create on first snapshot.")
+                        .font(.system(size: 11, weight: .semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+
+                if let activeDir = manifest?.activeSaveDirectory ?? engine.detectSaveDirectory(for: game) {
+                    HStack(spacing: 4) {
+                        Text("Save Path:")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                        Button {
+                            NSWorkspace.shared.selectFile(activeDir, inFileViewerRootedAtPath: activeDir)
+                        } label: {
+                            Text(activeDir)
+                                .font(.system(size: 10, design: .monospaced))
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .underline()
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundColor(.blue)
                     }
+                } else {
+                    Text("No active save path discovered yet.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-
-                Spacer()
-
-                Button {
-                    newCheckpointName = "Checkpoint \( (manifest?.instances.count ?? 0) + 1 )"
-                    newCheckpointNote = ""
-                    showingCreateSheet = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Create Checkpoint")
-                    }
-                    .font(.system(size: 12, weight: .semibold))
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
             }
 
             if let feedback = statusFeedback {
@@ -95,100 +95,75 @@ public struct GameSaveInstancesView: View {
             // Instances List
             let instances = manifest?.instances ?? []
             if instances.isEmpty {
-                VStack(spacing: 12) {
+                VStack(spacing: 10) {
                     Image(systemName: "archivebox")
-                        .font(.system(size: 32))
+                        .font(.system(size: 28))
+                        .foregroundColor(.secondary.opacity(0.6))
+                    Text("No Saved Checkpoints Yet")
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
-                    Text("No save state checkpoints created yet.")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Text("Create point-in-time snapshots before boss fights, major decisions, or to preserve multiple playthroughs.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text("Create snapshots of your game progress before risky mods or bosses.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary.opacity(0.8))
                         .multilineTextAlignment(.center)
-                        .frame(maxWidth: 380)
-
-                    Button {
-                        newCheckpointName = "Initial Save State"
-                        newCheckpointNote = "First playthrough milestone"
-                        showingCreateSheet = true
-                    } label: {
-                        Text("Create First Checkpoint")
-                            .font(.system(size: 12, weight: .medium))
-                    }
-                    .buttonStyle(.bordered)
+                        .padding(.horizontal, 16)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 24)
+                .padding(.vertical, 18)
                 .background(RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(0.03)))
             } else {
-                VStack(spacing: 10) {
+                VStack(spacing: 8) {
                     ForEach(instances) { instance in
-                        HStack(spacing: 14) {
+                        HStack(alignment: .center, spacing: 10) {
                             ZStack {
                                 Circle()
                                     .fill(instance.isAutoSave ? Color.orange.opacity(0.2) : Color.blue.opacity(0.2))
-                                    .frame(width: 36, height: 36)
+                                    .frame(width: 30, height: 30)
                                 Image(systemName: instance.isAutoSave ? "shield.fill" : "bookmark.fill")
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 12))
                                     .foregroundColor(instance.isAutoSave ? .orange : .blue)
                             }
 
-                            VStack(alignment: .leading, spacing: 3) {
-                                HStack(spacing: 8) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
                                     Text(instance.name)
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .lineLimit(1)
 
                                     if instance.isAutoSave {
-                                        Text("AUTO BACKUP")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .padding(.horizontal, 5)
+                                        Text("AUTO")
+                                            .font(.system(size: 8, weight: .bold))
+                                            .padding(.horizontal, 4)
                                             .padding(.vertical, 1)
                                             .background(Color.orange.opacity(0.2))
                                             .foregroundColor(.orange)
-                                            .cornerRadius(4)
+                                            .cornerRadius(3)
                                     }
                                 }
 
                                 if !instance.note.isEmpty {
                                     Text(instance.note)
-                                        .font(.caption)
+                                        .font(.caption2)
                                         .foregroundColor(.secondary)
                                         .lineLimit(1)
                                 }
 
-                                HStack(spacing: 10) {
-                                    Text(instance.formattedDate)
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
-                                    Text("•")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
-                                    Text(instance.formattedSize)
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(.secondary)
-                                    Text("•")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
-                                    Text("\(instance.fileCount) files")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
-                                }
+                                Text("\(instance.formattedDate) • \(instance.formattedSize)")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
                             }
 
                             Spacer()
 
                             // Action buttons
-                            HStack(spacing: 8) {
+                            HStack(spacing: 6) {
                                 Button {
                                     instanceToRestore = instance
                                     showingRestoreAlert = true
                                 } label: {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "arrow.counterclockwise")
-                                        Text("Restore")
-                                    }
-                                    .font(.system(size: 11, weight: .medium))
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .font(.system(size: 11, weight: .medium))
                                 }
                                 .buttonStyle(.bordered)
                                 .help("Rollback active game save to this checkpoint")
@@ -197,26 +172,26 @@ public struct GameSaveInstancesView: View {
                                     engine.revealSaveSnapshotInFinder(instance: instance)
                                 } label: {
                                     Image(systemName: "folder")
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 11))
                                 }
-                                .buttonStyle(.bordered)
-                                .help("Reveal checkpoint folder in Finder")
+                                .buttonStyle(.plain)
+                                .foregroundColor(.secondary)
+                                .help("Reveal checkpoint directory in Finder")
 
                                 Button {
                                     engine.deleteSaveSnapshot(game: game, instance: instance)
                                     refreshManifest()
                                 } label: {
                                     Image(systemName: "trash")
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 11))
                                         .foregroundColor(.red.opacity(0.8))
                                 }
-                                .buttonStyle(.bordered)
-                                .help("Delete this save checkpoint")
+                                .buttonStyle(.plain)
+                                .help("Delete this checkpoint snapshot")
                             }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.04)))
+                        .padding(8)
+                        .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
                 }
             }

@@ -172,7 +172,7 @@ public struct GameDetailView: View {
                 }
 
                 // Performance on This Mac
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         Text("Performance on This Mac")
                             .font(.headline)
@@ -180,12 +180,13 @@ public struct GameDetailView: View {
                         Text(engine.hardware.chipName)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
 
-                    HStack(spacing: 12) {
-                        PerformanceMetricBox(title: "Target Framerate", value: "\(game.targetFps) FPS", subtitle: nil)
-                        PerformanceMetricBox(title: "Recommended Preset", value: game.hardwarePreset, subtitle: nil)
-                        PerformanceMetricBox(title: "Community Verdict", value: "\(game.rating)% Verified", subtitle: nil, isHighlighted: true)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        PerformanceMetricBox(title: "Target FPS", value: "\(game.targetFps) FPS", subtitle: nil)
+                        PerformanceMetricBox(title: "Preset", value: game.hardwarePreset, subtitle: nil)
+                        PerformanceMetricBox(title: "Verdict", value: "\(game.rating)%", subtitle: nil, isHighlighted: true)
                     }
                 }
 
@@ -204,6 +205,8 @@ public struct GameDetailView: View {
                                         .foregroundStyle(.secondary)
                                     Text(game.runtime)
                                         .font(.system(size: 11, design: .monospaced))
+                                        .lineLimit(2)
+                                        .truncationMode(.middle)
                                 }
                             }
 
@@ -214,6 +217,8 @@ public struct GameDetailView: View {
                                         .foregroundStyle(.secondary)
                                     Text(game.installPath)
                                         .font(.system(size: 11, design: .monospaced))
+                                        .lineLimit(2)
+                                        .truncationMode(.middle)
                                 }
                             }
 

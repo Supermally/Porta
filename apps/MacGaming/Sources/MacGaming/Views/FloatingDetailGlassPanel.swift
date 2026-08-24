@@ -3,11 +3,13 @@ import SwiftUI
 public struct FloatingDetailGlassPanel: View {
     @ObservedObject var engine: EngineService
     let game: GameItem
+    var panelWidth: CGFloat = 420
     let onClose: () -> Void
 
-    public init(engine: EngineService, game: GameItem, onClose: @escaping () -> Void) {
+    public init(engine: EngineService, game: GameItem, panelWidth: CGFloat = 420, onClose: @escaping () -> Void) {
         self.engine = engine
         self.game = game
+        self.panelWidth = panelWidth
         self.onClose = onClose
     }
 
@@ -18,6 +20,7 @@ public struct FloatingDetailGlassPanel: View {
                 Text(game.title)
                     .font(.system(size: 14, weight: .bold))
                     .lineLimit(1)
+                    .truncationMode(.tail)
 
                 Spacer()
 
@@ -31,17 +34,19 @@ public struct FloatingDetailGlassPanel: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 14)
-            .padding(.bottom, 6)
+            .padding(.bottom, 8)
 
             Divider()
                 .opacity(0.15)
 
             // Game Detail Content
             GameDetailView(engine: engine, game: game)
+                .clipped()
         }
-        .frame(width: 440)
+        .frame(width: panelWidth)
         .frame(maxHeight: .infinity)
         .crystalClearSidebarGlass(cornerRadius: 22)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .padding(.trailing, 14)
         .padding(.vertical, 14)
         .shadow(color: Color.black.opacity(0.18), radius: 16, x: -4, y: 6)

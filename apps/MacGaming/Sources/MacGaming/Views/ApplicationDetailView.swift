@@ -87,6 +87,7 @@ public struct ApplicationDetailView: View {
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
                 .shadow(color: Color.black.opacity(0.18), radius: 16, y: 6)
         )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18)
                 .stroke(Color.primary.opacity(0.08), lineWidth: 1)
