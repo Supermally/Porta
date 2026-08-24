@@ -1953,8 +1953,20 @@ public class EngineService: ObservableObject {
                     with: "[Software\\\\Wine\\\\Mac Driver]\n\"ForceDisplayModes\"=\"2560x1664,2560x1600,2560x1440,1920x1080,1680x1050,1470x956,1440x900,1280x800,1280x720\"\n\"DesktopResolution\"=\"2560x1664\""
                 )
             }
+
+            if regContent.contains("[Software\\\\Wine\\\\DllOverrides]") {
+                if !regContent.contains("\"winhttp\"=") {
+                    regContent = regContent.replacingOccurrences(
+                        of: "[Software\\\\Wine\\\\DllOverrides]",
+                        with: "[Software\\\\Wine\\\\DllOverrides]\n\"winhttp\"=\"native,builtin\""
+                    )
+                }
+            } else {
+                regContent += "\n[Software\\\\Wine\\\\DllOverrides]\n\"winhttp\"=\"native,builtin\"\n"
+            }
+
             try? regContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
-            log("Calibrated Steam prefix registry: Retina=Y, 225 DPI (0xE1), The Sapling 2560x1664.", level: .info, source: "Display")
+            log("Calibrated Steam prefix registry: Retina=Y, 225 DPI (0xE1), winhttp=native,builtin, The Sapling 2560x1664.", level: .info, source: "Display")
         }
     }
 
