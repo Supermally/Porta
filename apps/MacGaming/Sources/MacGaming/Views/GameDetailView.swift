@@ -509,11 +509,11 @@ public struct GameSettingsSheetView: View {
                             .foregroundStyle(.secondary)
 
                         HStack(spacing: 8) {
-                            ForEach(["Native", "1280x720", "1440x900", "1600x900", "1920x1080"], id: \.self) { res in
+                            ForEach(["2560x1664", "1920x1080", "1440x900", "1280x720", "Native"], id: \.self) { res in
                                 Button(action: {
                                     engine.setResolution(for: game.id, resolution: res)
                                 }) {
-                                    Text(res == "Native" ? "Native" : res)
+                                    Text(res == "2560x1664" ? "2560x1664 (Native)" : (res == "Native" ? "Auto" : res))
                                         .font(.system(size: 11, weight: game.displayResolution == res ? .semibold : .regular))
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 5)

@@ -1402,14 +1402,11 @@ public class EngineService: ObservableObject {
             if !game.customLaunchArgs.isEmpty {
                 let extra = game.customLaunchArgs.components(separatedBy: " ").filter { !$0.isEmpty }
                 runArgs.append(contentsOf: extra)
-            } else if isSapling {
-                // The Sapling: Constrain window size to native Mac screen and enforce stable windowed rendering
-                if game.displayResolution == "1440x900" {
-                    runArgs.append(contentsOf: ["-screen-width", "1440", "-screen-height", "900", "-screen-fullscreen", "0"])
-                } else if game.displayResolution == "1920x1080" {
-                    runArgs.append(contentsOf: ["-screen-width", "1920", "-screen-height", "1080", "-screen-fullscreen", "0"])
-                } else {
-                    runArgs.append(contentsOf: ["-screen-width", "1280", "-screen-height", "720", "-screen-fullscreen", "0"])
+            } else if isSapling || game.isUnityGame {
+                let targetRes = game.displayResolution == "Native" ? "2560x1664" : game.displayResolution
+                let parts = targetRes.components(separatedBy: "x")
+                if parts.count == 2, let w = parts.first, let h = parts.last {
+                    runArgs.append(contentsOf: ["-screen-width", w, "-screen-height", h, "-screen-fullscreen", "0"])
                 }
                 if !game.useD3DMetal {
                     runArgs.append("-force-vulkan")
@@ -1872,8 +1869,14 @@ public class EngineService: ObservableObject {
                     with: "[Control Panel\\\\Desktop]\n\"LogPixels\"=dword:00000060"
                 )
             }
+            if !regContent.contains("\"ForceDisplayModes\"=") {
+                regContent = regContent.replacingOccurrences(
+                    of: "[Software\\\\Wine\\\\Mac Driver]",
+                    with: "[Software\\\\Wine\\\\Mac Driver]\n\"ForceDisplayModes\"=\"2560x1664,2560x1600,2560x1440,1920x1080,1680x1050,1470x956,1440x900,1280x800,1280x720\"\n\"DesktopResolution\"=\"2560x1664\""
+                )
+            }
             try? regContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
-            log("Calibrated Steam prefix registry: Retina=N, 96 DPI.", level: .info, source: "Display")
+            log("Calibrated Steam prefix registry: Retina=N, 96 DPI, ForceDisplayModes=2560x1664.", level: .info, source: "Display")
         }
     }
 
@@ -1890,6 +1893,12 @@ public class EngineService: ObservableObject {
                     content = content
                         .replacingOccurrences(of: "\"Retina\"=\"Y\"", with: "\"Retina\"=\"N\"")
                         .replacingOccurrences(of: "\"RetinaMode\"=\"Y\"", with: "\"RetinaMode\"=\"N\"")
+                    if !content.contains("\"ForceDisplayModes\"=") {
+                        content = content.replacingOccurrences(
+                            of: "[Software\\\\Wine\\\\Mac Driver]",
+                            with: "[Software\\\\Wine\\\\Mac Driver]\n\"ForceDisplayModes\"=\"2560x1664,2560x1600,2560x1440,1920x1080,1680x1050,1470x956,1440x900,1280x800,1280x720\"\n\"DesktopResolution\"=\"2560x1664\""
+                        )
+                    }
                     try? content.write(toFile: fullPath, atomically: true, encoding: .utf8)
                 }
             }
