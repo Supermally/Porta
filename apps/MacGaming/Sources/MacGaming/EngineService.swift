@@ -251,18 +251,80 @@ public class EngineService: ObservableObject {
         loadNativeSpotlights()
         loadDemandCampaigns()
 
-        // Asynchronous startup initialization to guarantee zero main-thread blocking
-        Task { @MainActor [weak self] in
-            guard let self = self else { return }
-            self.probeActiveSteamSession()
-            self.scanAllLaunchers()
-            self.refreshDiscoveredApplications()
-            self.recordActivity(
-                title: "Forge Platform Initialized",
-                details: "Running on \(self.hardware.chipName) with Apple D3DMetal translation pipeline.",
-                category: "Platform",
-                severity: .info
+        // Background startup initialization to guarantee zero main-thread blocking on launch
+        Task.detached(priority: .userInitiated) { [weak self] in
+            let envs = EnvironmentManager.shared.environments
+            let discovered = ApplicationDiscoveryEngine.shared.scanAllManagedEnvironments(environments: envs)
+
+            await MainActor.run { [weak self] in
+                guard let self = self else { return }
+                self.universalApplications = discovered
+                self.syncDiscoveredGames(from: discovered)
+                self.probeActiveSteamSession()
+                self.scanAllLaunchers()
+                self.recordActivity(
+                    title: "Forge Platform Initialized",
+                    details: "Running on \(self.hardware.chipName) with Apple D3DMetal translation pipeline.",
+                    category: "Platform",
+                    severity: .info
+                )
+            }
+        }
+    }
+
+    public func syncDiscoveredGames(from discovered: [AppItem]) {
+        for app in discovered where app.category == .games {
+            let steamId: String? = {
+                if case .steam(let appId) = app.launcherProvider { return appId }
+                return nil
+            }()
+
+            let gameItem = GameItem(
+                id: app.id,
+                title: app.name,
+                storefront: "Steam",
+                badge: app.compatibilityTier,
+                isNative: false,
+                isUniversalApp: false,
+                bannerColorName: "blue",
+                bannerColor: .blue,
+                runtime: "Forge Wine 10 (D3DMetal)",
+                rating: 95,
+                performanceStars: 5,
+                hardwarePreset: "Apple D3DMetal (Metal 3)",
+                targetFps: 60,
+                knownIssues: [],
+                antiCheatStatus: nil,
+                executablePath: app.executablePath,
+                installPath: app.workingDirectory,
+                displayResolution: "Native Retina",
+                configUtilityPath: nil,
+                companionPrograms: [],
+                acquisitionType: .storefrontIntegration,
+                customLaunchArgs: app.arguments,
+                isUnityGame: false,
+                engineType: "Auto",
+                analysisChecklist: [],
+                steamAppId: steamId,
+                steamHeaderImageURL: app.headerImageUrl ?? "https://cdn.cloudflare.steamstatic.com/steam/apps/\(steamId ?? "")/header.jpg",
+                localPosterPath: nil,
+                localHeroPath: nil,
+                localLogoPath: nil,
+                cloudSavePath: nil,
+                developerName: app.publisher,
+                lastPlayedText: app.formattedLastUsed,
+                supportsController: true,
+                useD3DMetal: app.useD3DMetal,
+                enableHud: app.enableHud,
+                enableEsync: app.enableEsync,
+                enableFsync: app.enableFsync
             )
+
+            if let idx = self.games.firstIndex(where: { $0.id == gameItem.id || ($0.steamAppId != nil && $0.steamAppId == steamId) }) {
+                self.games[idx] = gameItem
+            } else {
+                self.games.insert(gameItem, at: 0)
+            }
         }
     }
 
@@ -1761,16 +1823,9 @@ public class EngineService: ObservableObject {
         let osVer = ProcessInfo.processInfo.operatingSystemVersionString
 
         let rosettaReady: Bool = {
-            let proc = Process()
-            proc.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
-            proc.arguments = ["-x86_64", "/usr/bin/true"]
-            do {
-                try proc.run()
-                proc.waitUntilExit()
-                return proc.terminationStatus == 0
-            } catch {
-                return false
-            }
+            FileManager.default.fileExists(atPath: "/Library/Apple/usr/libexec/oah/libRosettaRuntime") ||
+            FileManager.default.fileExists(atPath: "/usr/libexec/rosetta/oahd") ||
+            FileManager.default.fileExists(atPath: "/Library/Apple/System/Library/LaunchDaemons/com.apple.oahd.plist")
         }()
 
         return HostHardwareInfo(

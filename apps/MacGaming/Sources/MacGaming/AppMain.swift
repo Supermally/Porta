@@ -5,10 +5,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSWindow.allowsAutomaticWindowTabbing = false
 
-        // Automatically restore and activate security-scoped bookmarks across app launches
-        Task { @MainActor in
-            PermissionManager.shared.restoreAllSecurityScopedBookmarks()
-            PermissionManager.shared.refreshSystemPermissions()
+        // Automatically restore and activate security-scoped bookmarks asynchronously
+        Task.detached(priority: .utility) {
+            await MainActor.run {
+                PermissionManager.shared.restoreAllSecurityScopedBookmarks()
+                PermissionManager.shared.refreshSystemPermissions()
+            }
         }
 
         DispatchQueue.main.async {
@@ -46,14 +48,21 @@ struct MacGamingApp: App {
 // MARK: - Root App Container with Instant Launch Loading Transition
 private struct RootAppContainerView: View {
     @State private var isLaunchLoading: Bool = true
+    @State private var isMainContentReady: Bool = false
 
     var body: some View {
         ZStack {
-            // Pre-mount main interface so it warms up silently in the background
-            MainContentView()
-                .zIndex(1)
+            // Main interface warms up asynchronously in the background
+            if isMainContentReady || !isLaunchLoading {
+                MainContentView()
+                    .zIndex(1)
+            } else {
+                Color(red: 0.03, green: 0.03, blue: 0.06)
+                    .ignoresSafeArea()
+                    .zIndex(1)
+            }
 
-            // Instant launch loading overlay that plays the full liquid glass sequence
+            // Instant launch loading overlay that renders on frame 1 with zero main-thread blocking
             if isLaunchLoading {
                 LaunchLoadingView {
                     withAnimation(.easeInOut(duration: 0.40)) {
@@ -66,6 +75,12 @@ private struct RootAppContainerView: View {
         }
         .animation(.easeInOut(duration: 0.40), value: isLaunchLoading)
         .background(WindowAccessor())
+        .onAppear {
+            // Defer MainContentView instantiation slightly so LaunchLoadingView draws its very first frame instantly
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
+                self.isMainContentReady = true
+            }
+        }
     }
 }
 
