@@ -1,6 +1,178 @@
 import AppKit
 import Foundation
 import SwiftUI
+import CryptoKit
+
+// MARK: - Porta High-Performance Persistent Data & Artwork Cache Service
+public final class DataCacheService: @unchecked Sendable {
+    public static let shared = DataCacheService()
+
+    // MARK: - Memory Caches
+    private let imageMemoryCache = NSCache<NSString, NSImage>()
+    private let cacheQueue = DispatchQueue(label: "com.porta.cache.queue", qos: .utility)
+
+    // MARK: - File System Paths
+    private let appSupportCacheDir: URL
+    private let artworkDiskCacheDir: URL
+    private let discoveryCacheURL: URL
+
+    private init() {
+        let fileManager = FileManager.default
+        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        self.appSupportCacheDir = appSupport.appendingPathComponent("Porta/Cache", isDirectory: true)
+        self.discoveryCacheURL = appSupportCacheDir.appendingPathComponent("discovery_cache.json")
+
+        let cachesDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        self.artworkDiskCacheDir = cachesDir.appendingPathComponent("com.porta.artwork", isDirectory: true)
+
+        try? fileManager.createDirectory(at: appSupportCacheDir, withIntermediateDirectories: true)
+        try? fileManager.createDirectory(at: artworkDiskCacheDir, withIntermediateDirectories: true)
+
+        imageMemoryCache.countLimit = 120
+        imageMemoryCache.totalCostLimit = 120 * 1024 * 1024
+    }
+
+    // MARK: - 1. Application & Game Discovery Snapshot Cache
+    public struct DiscoveryCachePayload: Codable {
+        public let timestamp: Date
+        public let applications: [AppItem]
+        public let games: [GameItem]
+
+        public init(timestamp: Date = Date(), applications: [AppItem], games: [GameItem]) {
+            self.timestamp = timestamp
+            self.applications = applications
+            self.games = games
+        }
+    }
+
+    public func loadDiscoveryCache() -> DiscoveryCachePayload? {
+        guard FileManager.default.fileExists(atPath: discoveryCacheURL.path) else { return nil }
+        do {
+            let data = try Data(contentsOf: discoveryCacheURL)
+            let payload = try JSONDecoder().decode(DiscoveryCachePayload.self, from: data)
+            return payload
+        } catch {
+            return nil
+        }
+    }
+
+    public func saveDiscoveryCache(applications: [AppItem], games: [GameItem]) {
+        cacheQueue.async {
+            let payload = DiscoveryCachePayload(applications: applications, games: games)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys]
+            if let data = try? encoder.encode(payload) {
+                try? data.write(to: self.discoveryCacheURL, options: .atomic)
+            }
+        }
+    }
+
+    // MARK: - 2. Persistent Artwork Disk & Memory Caching Engine
+    public func getCachedImage(for url: URL) -> NSImage? {
+        let key = NSString(string: url.absoluteString)
+
+        if let memImage = imageMemoryCache.object(forKey: key) {
+            return memImage
+        }
+
+        let diskURL = diskCacheURL(for: url)
+        if FileManager.default.fileExists(atPath: diskURL.path),
+           let diskData = try? Data(contentsOf: diskURL),
+           let diskImage = NSImage(data: diskData) {
+            let cost = diskData.count
+            imageMemoryCache.setObject(diskImage, forKey: key, cost: cost)
+            return diskImage
+        }
+
+        return nil
+    }
+
+    public func cacheImage(_ image: NSImage, for url: URL) {
+        let key = NSString(string: url.absoluteString)
+        imageMemoryCache.setObject(image, forKey: key)
+
+        cacheQueue.async {
+            let diskURL = self.diskCacheURL(for: url)
+            if let tiffData = image.tiffRepresentation,
+               let bitmap = NSBitmapImageRep(data: tiffData),
+               let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.85]) {
+                try? jpegData.write(to: diskURL, options: .atomic)
+            }
+        }
+    }
+
+    public func prefetchArtwork(urls: [URL]) {
+        let session = URLSession.shared
+        for url in urls {
+            if self.getCachedImage(for: url) == nil {
+                session.dataTask(with: url) { [weak self] data, _, error in
+                    guard let self = self, let data = data, error == nil, let image = NSImage(data: data) else { return }
+                    self.cacheImage(image, for: url)
+                }.resume()
+            }
+        }
+    }
+
+    private func diskCacheURL(for url: URL) -> URL {
+        let hashed = SHA256.hash(data: Data(url.absoluteString.utf8))
+        let filename = hashed.compactMap { String(format: "%02x", $0) }.joined() + ".jpg"
+        return artworkDiskCacheDir.appendingPathComponent(filename)
+    }
+}
+
+// MARK: - Cached Async Image View Component
+public struct CachedArtworkImageView: View {
+    let url: URL?
+    let contentMode: ContentMode
+    let placeholder: AnyView
+
+    @State private var loadedImage: NSImage? = nil
+
+    public init(
+        url: URL?,
+        contentMode: ContentMode = .fill,
+        placeholder: AnyView = AnyView(Color.clear)
+    ) {
+        self.url = url
+        self.contentMode = contentMode
+        self.placeholder = placeholder
+    }
+
+    public var body: some View {
+        Group {
+            if let img = loadedImage {
+                Image(nsImage: img)
+                    .resizable()
+                    .aspectRatio(contentMode: contentMode)
+            } else {
+                placeholder
+            }
+        }
+        .onAppear {
+            loadImage()
+        }
+        .onChange(of: url) {
+            loadImage()
+        }
+    }
+
+    private func loadImage() {
+        guard let url = url else { return }
+
+        if let cached = DataCacheService.shared.getCachedImage(for: url) {
+            self.loadedImage = cached
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            guard let data = data, error == nil, let image = NSImage(data: data) else { return }
+            DataCacheService.shared.cacheImage(image, for: url)
+            DispatchQueue.main.async {
+                self.loadedImage = image
+            }
+        }.resume()
+    }
+}
 
 @MainActor
 public class EngineService: ObservableObject {
@@ -1228,15 +1400,28 @@ public class EngineService: ObservableObject {
                 try? reg2.run()
                 reg2.waitUntilExit()
             }
-            // Prevent Win32 IO ERROR_NOT_READY crashes in .NET apps (e.g. Toolbox Console.WriteLine on close) by providing valid pipes
+            // Prevent Win32 IO ERROR_NOT_READY crashes by providing valid non-blocking drained pipes
             let outPipe = Pipe()
             let errPipe = Pipe()
             proc.standardOutput = outPipe
             proc.standardError = errPipe
 
-            // Drain pipes asynchronously so the buffer doesn't fill up and block the process
-            outPipe.fileHandleForReading.readabilityHandler = { _ in }
-            errPipe.fileHandleForReading.readabilityHandler = { _ in }
+            // Safely consume pipe bytes to avoid buffer overflow and infinite dispatch spin
+            outPipe.fileHandleForReading.readabilityHandler = { handle in
+                _ = handle.availableData
+            }
+            errPipe.fileHandleForReading.readabilityHandler = { handle in
+                _ = handle.availableData
+            }
+
+            proc.terminationHandler = { [weak self] _ in
+                outPipe.fileHandleForReading.readabilityHandler = nil
+                errPipe.fileHandleForReading.readabilityHandler = nil
+                DispatchQueue.main.async {
+                    self?.isGameModeActive = false
+                    self?.isLaunching = false
+                }
+            }
 
             do {
                 try proc.run()
@@ -1496,17 +1681,24 @@ public class EngineService: ObservableObject {
     }
 
     public func launchSteam() {
-        if let steamApp = self.universalApplications.first(where: { $0.id == "steam_launcher" }) {
-            self.launchApplication(steamApp)
-        } else if let steamGame = self.games.first(where: { $0.id == "steam_windows_client" || $0.executablePath.lowercased().contains("steam.exe") }) {
-            self.launchGame(steamGame)
-        } else {
-            let sikarugirSteam = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app"
-            if FileManager.default.fileExists(atPath: sikarugirSteam) {
-                NSWorkspace.shared.open(URL(fileURLWithPath: sikarugirSteam))
-            } else {
-                syncSteamLibrary()
+        let sikarugirSteam = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app"
+        let macSteam = "/Applications/Steam.app"
+
+        if FileManager.default.fileExists(atPath: sikarugirSteam) {
+            let url = URL(fileURLWithPath: sikarugirSteam)
+            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { [weak self] _, error in
+                DispatchQueue.main.async {
+                    if let err = error {
+                        self?.log("Failed to launch Steam: \(err.localizedDescription)", level: .error, source: "Steam")
+                    } else {
+                        self?.log("Steam (Wine 10 + D3DMetal) launched successfully.", level: .info, source: "Steam")
+                    }
+                }
             }
+        } else if FileManager.default.fileExists(atPath: macSteam) {
+            NSWorkspace.shared.open(URL(fileURLWithPath: macSteam))
+        } else {
+            syncSteamLibrary()
         }
     }
 
