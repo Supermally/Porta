@@ -1817,13 +1817,16 @@ public class EngineService: ObservableObject {
         let macSteam = "/Applications/Steam.app"
 
         if FileManager.default.fileExists(atPath: sikarugirSteam) {
+            // Auto-calibrate Steam Wineskin wrapper to eliminate 2x/4x resolution bug
+            calibrateSteamWrapperDisplaySettings()
+
             let url = URL(fileURLWithPath: sikarugirSteam)
             NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { [weak self] _, error in
                 DispatchQueue.main.async {
                     if let err = error {
                         self?.log("Failed to launch Steam: \(err.localizedDescription)", level: .error, source: "Steam")
                     } else {
-                        self?.log("Steam (Wine 10 + D3DMetal) launched successfully.", level: .info, source: "Steam")
+                        self?.log("Steam (Wine 10 + D3DMetal • Calibrated Display Scale) launched successfully.", level: .info, source: "Steam")
                     }
                 }
             }
@@ -1832,6 +1835,67 @@ public class EngineService: ObservableObject {
         } else {
             syncSteamLibrary()
         }
+    }
+
+    public func calibrateSteamWrapperDisplaySettings() {
+        let plistPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Info.plist"
+        let userRegPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/prefix/user.reg"
+
+        // 1. Calibrate Info.plist
+        if FileManager.default.fileExists(atPath: plistPath),
+           let plistDict = NSMutableDictionary(contentsOfFile: plistPath) {
+            plistDict["Retina"] = 0
+            plistDict["RetinaMode"] = 0
+            
+            if let flags = plistDict["Program Flags"] as? String {
+                let cleanedFlags = flags
+                    .replacingOccurrences(of: "-forcedesktopscaling 2.0", with: "")
+                    .replacingOccurrences(of: "--force-device-scale-factor=2", with: "")
+                    .replacingOccurrences(of: "  ", with: " ")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                plistDict["Program Flags"] = cleanedFlags
+            }
+            plistDict.write(toFile: plistPath, atomically: true)
+            log("Calibrated Steam.app Info.plist: Retina=0, scale-factor=1.0.", level: .info, source: "Display")
+        }
+
+        // 2. Calibrate prefix user.reg
+        if FileManager.default.fileExists(atPath: userRegPath),
+           var regContent = try? String(contentsOfFile: userRegPath, encoding: .utf8) {
+            regContent = regContent
+                .replacingOccurrences(of: "\"Retina\"=\"Y\"", with: "\"Retina\"=\"N\"")
+                .replacingOccurrences(of: "\"RetinaMode\"=\"Y\"", with: "\"RetinaMode\"=\"N\"")
+
+            if !regContent.contains("\"LogPixels\"=") {
+                regContent = regContent.replacingOccurrences(
+                    of: "[Control Panel\\\\Desktop]",
+                    with: "[Control Panel\\\\Desktop]\n\"LogPixels\"=dword:00000060"
+                )
+            }
+            try? regContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
+            log("Calibrated Steam prefix registry: Retina=N, 96 DPI.", level: .info, source: "Display")
+        }
+    }
+
+    public func calibrateAllPrefixDisplays() {
+        calibrateSteamWrapperDisplaySettings()
+        
+        let prefixesDir = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/MacGaming/prefixes"
+        guard let enumerator = FileManager.default.enumerator(atPath: prefixesDir) else { return }
+        
+        while let file = enumerator.nextObject() as? String {
+            if file.hasSuffix("user.reg") {
+                let fullPath = prefixesDir + "/" + file
+                if var content = try? String(contentsOfFile: fullPath, encoding: .utf8) {
+                    content = content
+                        .replacingOccurrences(of: "\"Retina\"=\"Y\"", with: "\"Retina\"=\"N\"")
+                        .replacingOccurrences(of: "\"RetinaMode\"=\"Y\"", with: "\"RetinaMode\"=\"N\"")
+                    try? content.write(toFile: fullPath, atomically: true, encoding: .utf8)
+                }
+            }
+        }
+        launchOutputMessage = "🖥️ Display Scaling Calibrated: Wine prefixes reset to native 1x resolution (fixed 2x/4x scaling multiplier)."
+        log("Calibrated all active Wine prefixes to standard 1x display scaling.", level: .info, source: "Display")
     }
 
     public func stopSteam() {
