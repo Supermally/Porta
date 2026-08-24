@@ -295,20 +295,19 @@ public struct ApplicationsView: View {
                         Button(action: { engine.launchApplication(app) }) {
                             Image(systemName: "play.fill")
                                 .font(.system(size: 11))
-                                .padding(7)
+                                .padding(4)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                        .buttonStyle(.portaGlass(cornerRadius: 7, isProminent: true))
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
                     .background(
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(engine.selectedApplication?.id == app.id ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.04))
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .stroke(
                                 engine.selectedApplication?.id == app.id
                                     ? Color.blue.opacity(0.4)
@@ -353,14 +352,14 @@ public struct ApplicationsView: View {
                     Button("Clear Search") {
                         searchQuery = ""
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.portaGlass(cornerRadius: 10))
                 }
 
                 if selectedCategory != .all {
                     Button("Show All Categories") {
                         selectedCategory = .all
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.portaGlass(cornerRadius: 10))
                 }
 
                 Button(action: { showingInstallSheet = true }) {
@@ -369,13 +368,12 @@ public struct ApplicationsView: View {
                         Text("Install Software…")
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
+                .buttonStyle(.portaGlass(cornerRadius: 10, isProminent: true))
 
                 Button(action: { engine.refreshDiscoveredApplications() }) {
                     Image(systemName: "arrow.clockwise")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.portaGlass(cornerRadius: 10))
                 .help("Rescan managed environments")
             }
             .padding(.top, 6)

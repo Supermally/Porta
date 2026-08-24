@@ -250,7 +250,7 @@ private struct SidebarNavItem: View {
             .padding(.horizontal, isCollapsed ? 8 : 12)
             .padding(.vertical, 7)
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(isSelected ? Color.blue.opacity(0.14) : (isHovered ? Color.secondary.opacity(0.08) : Color.clear))
             )
             .scaleEffect(isPressed ? 0.97 : 1.0)

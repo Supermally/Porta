@@ -273,7 +273,7 @@ public struct GameDetailView: View {
                                     }
                                     .foregroundColor(.red)
                                 }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.portaGlass(cornerRadius: 8))
                             }
                         }
                         .padding(14)

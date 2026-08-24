@@ -57,10 +57,9 @@ public struct ApplicationDetailView: View {
                                 .font(.system(size: 14, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 3)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+                    .buttonStyle(.portaGlass(cornerRadius: 12, isProminent: true))
 
                     Divider()
 
@@ -109,9 +108,9 @@ public struct ApplicationDetailView: View {
                 } placeholder: {
                     heroPlaceholder
                 }
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(
                             LinearGradient(
                                 colors: [Color.white.opacity(0.35), Color.clear],
