@@ -20,11 +20,11 @@ public struct LaunchLoadingView: View {
     }
 }
 
-// MARK: - 1. Dark Mode Launch Loading View (Deep Space Obsidian Aesthetic)
+// MARK: - 1. Dark Mode Launch Loading View (Deep Space Soap Bubble)
 private struct LaunchLoadingDarkView: View {
     let onFinish: () -> Void
 
-    @State private var settleProgress: Double = 0.0 // 0.0 = fluid goo, 1.0 = settled icon squircle
+    @State private var settleProgress: Double = 0.0 // 0.0 = fluid bubble, 1.0 = settled icon squircle
     @State private var showWordmark: Bool = true
     @State private var showEnterButton: Bool = true
     @State private var isEntering: Bool = false
@@ -42,14 +42,14 @@ private struct LaunchLoadingDarkView: View {
             darkAuroraBackground
                 .ignoresSafeArea()
 
-            // 3. Central Liquid Glass Brand Composition
+            // 3. Central Liquid Soap Bubble Brand Composition
             VStack(spacing: 26) {
-                // Morphing Liquid Glass Tile
+                // Clear Morphing Soap Bubble Tile
                 TimelineView(.animation) { timeline in
                     let time = timeline.date.timeIntervalSinceReferenceDate
-                    MorphingLiquidGlassTile(time: time, settleProgress: settleProgress, isDarkMode: true)
+                    ClearSoapBubbleTile(time: time, settleProgress: settleProgress, isDarkMode: true)
                 }
-                .frame(width: 80, height: 80)
+                .frame(width: 84, height: 84)
 
                 // Brand Wordmark
                 VStack(spacing: 4) {
@@ -75,9 +75,9 @@ private struct LaunchLoadingDarkView: View {
                             toggleMorph()
                         }) {
                             HStack(spacing: 6) {
-                                Image(systemName: settleProgress > 0.5 ? "water.waves" : "square.dashed")
+                                Image(systemName: settleProgress > 0.5 ? "bubbles.and.sparkles" : "square.dashed")
                                     .font(.system(size: 11, weight: .bold))
-                                Text(settleProgress > 0.5 ? "Wobble Goo" : "Morph to Icon")
+                                Text(settleProgress > 0.5 ? "Wobble Bubble" : "Settle to Icon")
                                     .font(.system(size: 12, weight: .semibold))
                             }
                             .padding(.horizontal, 16)
@@ -234,7 +234,7 @@ private struct LaunchLoadingDarkView: View {
     }
 }
 
-// MARK: - 2. Light Mode Launch Loading View (Frosted Crystal Alabaster Aesthetic)
+// MARK: - 2. Light Mode Launch Loading View (Frosted Crystal Soap Bubble)
 private struct LaunchLoadingLightView: View {
     let onFinish: () -> Void
 
@@ -248,22 +248,22 @@ private struct LaunchLoadingLightView: View {
 
     var body: some View {
         ZStack {
-            // 1. Frosted Pearl Alabaster Canvas
+            // 1. Frosted Pearl Canvas
             Color(red: 0.96, green: 0.97, blue: 0.99)
                 .ignoresSafeArea()
 
-            // 2. High-Fidelity Ambient Pastel Aurora Glow
+            // 2. High-Fidelity Ambient Pastel Aurora
             lightAuroraBackground
                 .ignoresSafeArea()
 
-            // 3. Central Liquid Glass Brand Composition
+            // 3. Central Soap Bubble Brand Composition
             VStack(spacing: 26) {
-                // Morphing Liquid Glass Tile
+                // Clear Morphing Soap Bubble Tile
                 TimelineView(.animation) { timeline in
                     let time = timeline.date.timeIntervalSinceReferenceDate
-                    MorphingLiquidGlassTile(time: time, settleProgress: settleProgress, isDarkMode: false)
+                    ClearSoapBubbleTile(time: time, settleProgress: settleProgress, isDarkMode: false)
                 }
-                .frame(width: 80, height: 80)
+                .frame(width: 84, height: 84)
 
                 // Brand Wordmark
                 VStack(spacing: 4) {
@@ -289,9 +289,9 @@ private struct LaunchLoadingLightView: View {
                             toggleMorph()
                         }) {
                             HStack(spacing: 6) {
-                                Image(systemName: settleProgress > 0.5 ? "water.waves" : "square.dashed")
+                                Image(systemName: settleProgress > 0.5 ? "bubbles.and.sparkles" : "square.dashed")
                                     .font(.system(size: 11, weight: .bold))
-                                Text(settleProgress > 0.5 ? "Wobble Goo" : "Morph to Icon")
+                                Text(settleProgress > 0.5 ? "Wobble Bubble" : "Settle to Icon")
                                     .font(.system(size: 12, weight: .semibold))
                             }
                             .padding(.horizontal, 16)
@@ -441,8 +441,8 @@ private struct LaunchLoadingLightView: View {
     }
 }
 
-// MARK: - Morphing Liquid Glass Tile (Adaptive for Dark & Light Themes)
-private struct MorphingLiquidGlassTile: View {
+// MARK: - Clear Iridescent Soap Bubble Tile (Clear Glass/Soap Refraction & Thin-Film Spectrum)
+private struct ClearSoapBubbleTile: View {
     let time: Double
     let settleProgress: Double
     var isDarkMode: Bool = true
@@ -451,7 +451,7 @@ private struct MorphingLiquidGlassTile: View {
         let p = CGFloat(settleProgress)
         let invP = 1.0 - p
 
-        // Organic Harmonic Wobble Offsets
+        // Gentle, calming harmonic bubble wobbles
         let w1X = CGFloat(sin(time * 1.25)) * 7.0
         let w1Y = CGFloat(cos(time * 0.95)) * 6.0
 
@@ -464,7 +464,7 @@ private struct MorphingLiquidGlassTile: View {
         let w4X = CGFloat(-cos(time * 1.30)) * 6.0
         let w4Y = CGFloat(-sin(time * 1.50)) * 5.5
 
-        // Morphing Corner Coordinates:
+        // Morphing 4-Corner Bubble Coordinates:
         let c1X = (-16.0 * p) + (w1X * invP)
         let c1Y = (-16.0 * p) + (w1Y * invP)
         let c1R = (17.5 * p) + (24.0 * invP)
@@ -485,19 +485,19 @@ private struct MorphingLiquidGlassTile: View {
         let edgeR = 15.0 * p
 
         ZStack {
-            // Layer 1: Ambient Drop Shadow & Blue Caustic Glow
+            // Layer 1: Soft Ambient Caustic Bubble Shadow
             Canvas { context, size in
-                let shadowColor = isDarkMode ? Color.blue.opacity(0.65) : Color(red: 0.10, green: 0.35, blue: 0.85).opacity(0.35)
+                let shadowColor = isDarkMode ? Color.blue.opacity(0.35) : Color(red: 0.10, green: 0.35, blue: 0.85).opacity(0.18)
                 context.addFilter(.alphaThreshold(min: 0.5, color: shadowColor))
-                context.addFilter(.blur(radius: 12))
+                context.addFilter(.blur(radius: 14))
                 context.drawLayer { ctx in
-                    let center = CGPoint(x: size.width / 2, y: size.height / 2 + (4 * p) + (2 * invP))
+                    let center = CGPoint(x: size.width / 2, y: size.height / 2 + 5)
                     drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
                 }
             }
-            .blur(radius: isDarkMode ? 10 : 8)
+            .blur(radius: 8)
 
-            // Layer 2: Main Liquid Glass Body
+            // Layer 2: Crystal-Clear Translucent Soap Glass Volume
             Canvas { context, size in
                 context.addFilter(.alphaThreshold(min: 0.5, color: .white))
                 context.addFilter(.blur(radius: 11))
@@ -517,20 +517,14 @@ private struct MorphingLiquidGlassTile: View {
                 }
             )
             .overlay(
+                // Clear Translucent Glass Fill (You can see the aurora through it!)
                 LinearGradient(
-                    colors: isDarkMode
-                        ? [
-                            Color(red: 0.35, green: 0.70, blue: 1.0),
-                            Color(red: 0.16, green: 0.46, blue: 0.98),
-                            Color(red: 0.40, green: 0.16, blue: 0.94),
-                            Color(red: 0.10, green: 0.85, blue: 0.80)
-                        ]
-                        : [
-                            Color(red: 0.20, green: 0.65, blue: 1.0),
-                            Color(red: 0.05, green: 0.45, blue: 0.98),
-                            Color(red: 0.30, green: 0.15, blue: 0.90),
-                            Color(red: 0.05, green: 0.75, blue: 0.80)
-                        ],
+                    colors: [
+                        Color.white.opacity(isDarkMode ? 0.12 : 0.22),
+                        Color.cyan.opacity(isDarkMode ? 0.08 : 0.10),
+                        Color.purple.opacity(isDarkMode ? 0.06 : 0.08),
+                        Color.white.opacity(isDarkMode ? 0.05 : 0.12)
+                    ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -546,19 +540,44 @@ private struct MorphingLiquidGlassTile: View {
                 )
             )
 
-            // Layer 3: Inner Specular Glass Reflection
+            // Layer 3: Iridescent Soap Bubble Thin-Film Sheen (Swirling Spectral Interference)
+            AngularGradient(
+                colors: [
+                    Color(red: 1.0, green: 0.35, blue: 0.70).opacity(0.45), // Magenta / Rose
+                    Color(red: 0.65, green: 0.30, blue: 1.00).opacity(0.40), // Violet
+                    Color(red: 0.10, green: 0.85, blue: 1.00).opacity(0.50), // Cyan
+                    Color(red: 0.20, green: 0.95, blue: 0.60).opacity(0.38), // Emerald Mint
+                    Color(red: 1.00, green: 0.85, blue: 0.20).opacity(0.42), // Golden Amber
+                    Color(red: 1.0, green: 0.35, blue: 0.70).opacity(0.45)  // Loop to Magenta
+                ],
+                center: .center,
+                angle: .degrees(time * 22.0)
+            )
+            .mask(
+                Canvas { context, size in
+                    context.addFilter(.alphaThreshold(min: 0.5, color: .white))
+                    context.addFilter(.blur(radius: 11))
+                    context.drawLayer { ctx in
+                        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                        drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
+                    }
+                }
+            )
+            .opacity(0.55)
+
+            // Layer 4: Primary Top-Left Crescent Specular Highlight (Crisp White Soap Glint)
             Canvas { context, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                let hlX = (center.x - 14 * p) + (c1X * 0.4 * invP)
-                let hlY = (center.y - 14 * p) + (c1Y * 0.4 * invP)
-                let hlW = (28.0 * p) + (22.0 * invP)
+                let hlX = (center.x - 15 * p) + (c1X * 0.45 * invP)
+                let hlY = (center.y - 15 * p) + (c1Y * 0.45 * invP)
+                let hlW = (30.0 * p) + (24.0 * invP)
                 let hlH = (14.0 * p) + (12.0 * invP)
 
-                let hlPath = Path(roundedRect: CGRect(x: hlX, y: hlY, width: hlW, height: hlH), cornerRadius: 6)
+                let hlPath = Path(roundedRect: CGRect(x: hlX, y: hlY, width: hlW, height: hlH), cornerRadius: 8)
                 context.fill(
                     hlPath,
                     with: .linearGradient(
-                        Gradient(colors: [Color.white.opacity(0.70), Color.white.opacity(0.15), Color.clear]),
+                        Gradient(colors: [Color.white.opacity(0.92), Color.white.opacity(0.25), Color.clear]),
                         startPoint: CGPoint(x: hlX, y: hlY),
                         endPoint: CGPoint(x: hlX + hlW * 0.8, y: hlY + hlH)
                     )
@@ -575,7 +594,36 @@ private struct MorphingLiquidGlassTile: View {
                 }
             )
 
-            // Layer 4: Specular Rim Light Bevel Stroke
+            // Layer 5: Secondary Bottom-Right Bounce Reflection (Bubble Depth)
+            Canvas { context, size in
+                let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                let brX = (center.x + 4 * p) + (c3X * 0.4 * invP)
+                let brY = (center.y + 12 * p) + (c3Y * 0.4 * invP)
+                let brW = (22.0 * p) + (18.0 * invP)
+                let brH = (8.0 * p) + (7.0 * invP)
+
+                let brPath = Path(roundedRect: CGRect(x: brX, y: brY, width: brW, height: brH), cornerRadius: 4)
+                context.fill(
+                    brPath,
+                    with: .linearGradient(
+                        Gradient(colors: [Color.cyan.opacity(0.50), Color.white.opacity(0.35), Color.clear]),
+                        startPoint: CGPoint(x: brX, y: brY),
+                        endPoint: CGPoint(x: brX + brW, y: brY + brH)
+                    )
+                )
+            }
+            .mask(
+                Canvas { context, size in
+                    context.addFilter(.alphaThreshold(min: 0.5, color: .white))
+                    context.addFilter(.blur(radius: 11))
+                    context.drawLayer { ctx in
+                        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                        drawMetaballGeometry(in: ctx, center: center, c1: (c1X, c1Y, c1R), c2: (c2X, c2Y, c2R), c3: (c3X, c3Y, c3R), c4: (c4X, c4Y, c4R), centerR: centerR, edgeR: edgeR, p: p)
+                    }
+                }
+            )
+
+            // Layer 6: Ultra-Fine Crisp Soap Film Rim Light Contour
             Canvas { context, size in
                 context.addFilter(.alphaThreshold(min: 0.5, color: .white))
                 context.addFilter(.blur(radius: 11))
@@ -596,7 +644,12 @@ private struct MorphingLiquidGlassTile: View {
             )
             .overlay(
                 LinearGradient(
-                    colors: [Color.white.opacity(0.80), Color.white.opacity(0.20), Color.clear],
+                    colors: [
+                        Color.white.opacity(0.95),
+                        Color.cyan.opacity(0.60),
+                        Color.pink.opacity(0.40),
+                        Color.white.opacity(0.30)
+                    ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -611,13 +664,13 @@ private struct MorphingLiquidGlassTile: View {
                     }
                 )
             )
-            .opacity((0.35 * invP) + (0.80 * p))
+            .opacity((0.65 * invP) + (0.90 * p))
 
-            // Layer 5: Embedded Icon Glyph
+            // Layer 7: Embedded Icon Glyph (Suspended Inside the Clear Soap Bubble Volume)
             Image(systemName: "cube.fill")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.white)
-                .shadow(color: Color.black.opacity(isDarkMode ? 0.40 : 0.25), radius: 5, y: 2)
+                .shadow(color: Color.blue.opacity(isDarkMode ? 0.60 : 0.35), radius: 6, y: 2)
                 .opacity(Double(p))
                 .scaleEffect((0.80 * invP) + (1.0 * p))
         }
