@@ -251,7 +251,13 @@ public class EngineService: ObservableObject {
         loadNativeSpotlights()
         loadDemandCampaigns()
 
-        // Background startup initialization to guarantee zero main-thread blocking on launch
+        // 1. Instant Cache Hydration: Load cached applications and games with 0ms delay
+        if let cache = DataCacheService.shared.loadDiscoveryCache() {
+            self.universalApplications = cache.applications
+            self.games = cache.games
+        }
+
+        // 2. Background startup verification: Update library if changes occurred and save snapshot
         Task.detached(priority: .userInitiated) { [weak self] in
             let envs = EnvironmentManager.shared.environments
             let discovered = ApplicationDiscoveryEngine.shared.scanAllManagedEnvironments(environments: envs)
@@ -262,6 +268,21 @@ public class EngineService: ObservableObject {
                 self.syncDiscoveredGames(from: discovered)
                 self.probeActiveSteamSession()
                 self.scanAllLaunchers()
+
+                // Save snapshot to persistent cache
+                DataCacheService.shared.saveDiscoveryCache(applications: self.universalApplications, games: self.games)
+
+                // Prefetch artwork for all Steam games
+                let artworkURLs = self.games.compactMap { game -> URL? in
+                    if let appId = game.steamAppId, !appId.isEmpty {
+                        return URL(string: "https://cdn.cloudflare.steamstatic.com/steam/apps/\(appId)/library_600x900.jpg")
+                    } else if let header = game.steamHeaderImageURL {
+                        return URL(string: header)
+                    }
+                    return nil
+                }
+                DataCacheService.shared.prefetchArtwork(urls: artworkURLs)
+
                 self.recordActivity(
                     title: "Forge Platform Initialized",
                     details: "Running on \(self.hardware.chipName) with Apple D3DMetal translation pipeline.",
