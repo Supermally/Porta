@@ -35,7 +35,8 @@ public struct SettingsView: View {
                 // 1. Apple Liquid Glass Configuration Card
                 settingsCard(title: "Liquid Glass Material & Optics", icon: "sparkles") {
                     VStack(alignment: .leading, spacing: 18) {
-                        MGGlassToggle("Enable Apple Liquid Glass", isOn: $engine.glassConfig.enabled)
+                        Toggle("Enable Apple Liquid Glass", isOn: $engine.glassConfig.enabled)
+                            .toggleStyle(.switch)
 
                         if engine.glassConfig.enabled {
                             Divider().opacity(0.3)
@@ -171,7 +172,8 @@ public struct SettingsView: View {
                 // 2. Developer Visual Debug Mode & Morphing Test
                 settingsCard(title: "Developer Liquid Glass Diagnostics & Morph Test", icon: "wrench.and.screwdriver") {
                     VStack(alignment: .leading, spacing: 14) {
-                        MGGlassToggle("Enable Visual Debug Diagnostic Mode", isOn: $isDebugModeEnabled)
+                        Toggle("Enable Visual Debug Diagnostic Mode", isOn: $isDebugModeEnabled)
+                            .toggleStyle(.switch)
 
                         if isDebugModeEnabled {
                             Divider().opacity(0.3)
@@ -253,10 +255,14 @@ public struct SettingsView: View {
 
                         Divider().opacity(0.3)
 
-                        MGGlassToggle("Eventfd Synchronization (Esync)", isOn: $enableEsync)
-                        MGGlassToggle("Futex Synchronization (Fsync)", isOn: $enableFsync)
-                        MGGlassToggle("Persist Shader Pre-Caching on Disk", isOn: $shaderCacheEnabled)
-                        MGGlassToggle("Metal Performance HUD Overlay", isOn: $enableMetalHud)
+                        Toggle("Eventfd Synchronization (Esync)", isOn: $enableEsync)
+                            .toggleStyle(.switch)
+                        Toggle("Futex Synchronization (Fsync)", isOn: $enableFsync)
+                            .toggleStyle(.switch)
+                        Toggle("Persist Shader Pre-Caching on Disk", isOn: $shaderCacheEnabled)
+                            .toggleStyle(.switch)
+                        Toggle("Metal Performance HUD Overlay", isOn: $enableMetalHud)
+                            .toggleStyle(.switch)
                     }
                 }
 
