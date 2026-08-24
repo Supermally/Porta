@@ -127,7 +127,7 @@ public struct DeveloperConsoleView: View {
                                 HStack(alignment: .top, spacing: 10) {
                                     Text(timeFormatter.string(from: log.timestamp))
                                         .font(.system(size: 11, weight: .regular, design: .monospaced))
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(Color(red: 0.60, green: 0.68, blue: 0.78))
                                         .frame(width: 85, alignment: .leading)
 
                                     Text(log.level.rawValue)
@@ -137,18 +137,22 @@ public struct DeveloperConsoleView: View {
                                         .padding(.vertical, 1)
                                         .background(
                                             RoundedRectangle(cornerRadius: 4)
-                                                .fill(log.level.color.opacity(0.15))
+                                                .fill(log.level.color.opacity(0.20))
                                         )
                                         .frame(width: 50, alignment: .center)
 
                                     Text("[\(log.source)]")
                                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                                        .foregroundColor(.primary.opacity(0.8))
+                                        .foregroundColor(Color(red: 0.40, green: 0.75, blue: 1.0))
                                         .frame(minWidth: 70, alignment: .leading)
 
                                     Text(log.message)
                                         .font(.system(size: 11, weight: .regular, design: .monospaced))
-                                        .foregroundColor(log.level == .error ? .red : .primary)
+                                        .foregroundColor(
+                                            log.level == .error
+                                                ? Color(red: 1.0, green: 0.42, blue: 0.42)
+                                                : (log.level == .warning ? Color(red: 1.0, green: 0.82, blue: 0.35) : Color(red: 0.92, green: 0.95, blue: 0.98))
+                                        )
                                         .textSelection(.enabled)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
@@ -160,7 +164,7 @@ public struct DeveloperConsoleView: View {
                     }
                     .padding(.vertical, 10)
                 }
-                .background(Color(red: 0.04, green: 0.06, blue: 0.09))
+                .background(Color(red: 0.05, green: 0.07, blue: 0.10))
                 .onChange(of: engine.consoleLogs.count) { _, _ in
                     if let last = engine.consoleLogs.last {
                         withAnimation {

@@ -209,7 +209,7 @@ public struct ApplicationsView: View {
 
     // MARK: - Grid View
     private var gridContent: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 180, maximum: 240), spacing: 18)], spacing: 18) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 200, maximum: 260), spacing: 22)], spacing: 22) {
             ForEach(filteredApplications) { app in
                 LiquidGlassAppCard(
                     app: app,
@@ -232,7 +232,8 @@ public struct ApplicationsView: View {
                 }
             }
         }
-        .padding(24)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 20)
     }
 
     // MARK: - List View

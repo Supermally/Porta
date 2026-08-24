@@ -32,7 +32,7 @@ public struct FloatingDetailGlassPanel: View {
                 .buttonStyle(.plain)
                 .help("Close inspector")
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 18)
             .padding(.top, 14)
             .padding(.bottom, 8)
 
@@ -47,8 +47,8 @@ public struct FloatingDetailGlassPanel: View {
         .frame(maxHeight: .infinity)
         .crystalClearSidebarGlass(cornerRadius: 22)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .padding(.trailing, 14)
-        .padding(.vertical, 14)
+        .padding(.trailing, 18)
+        .padding(.vertical, 16)
         .shadow(color: Color.black.opacity(0.18), radius: 16, x: -4, y: 6)
         .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
