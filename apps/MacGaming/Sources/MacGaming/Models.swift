@@ -87,36 +87,53 @@ public enum ViewMode: String, CaseIterable, Identifiable, Sendable {
 }
 
 public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
+    case home = "Home"
+    case applications = "Applications"
+    case games = "Games"
+    case runtimes = "Runtimes"
+    case downloads = "Downloads"
+    case activity = "Activity"
+    case debugLab = "Debug Lab"
+    case settings = "Settings"
+    
+    // Legacy Navigation Compatibility
     case library = "Library"
     case discover = "Discover"
     case compatibility = "Compatibility"
-    case downloads = "Downloads"
     case console = "Console"
-    case debugLab = "Debug Lab"
-    case settings = "Settings"
 
     public var id: String { rawValue }
     public var icon: String {
         switch self {
+        case .home: return "house.fill"
+        case .applications: return "square.grid.2x2.fill"
+        case .games: return "gamecontroller.fill"
+        case .runtimes: return "cpu.fill"
+        case .downloads: return "arrow.down.circle.fill"
+        case .activity: return "chart.bar.xaxis"
+        case .debugLab: return "testtube.2"
+        case .settings: return "gearshape.fill"
         case .library: return "square.stack.3d.up.fill"
         case .discover: return "sparkles"
         case .compatibility: return "checklist.checked"
-        case .downloads: return "arrow.down.circle.fill"
         case .console: return "terminal.fill"
-        case .debugLab: return "testtube.2"
-        case .settings: return "gearshape.fill"
         }
     }
 
     public var keyboardShortcut: KeyEquivalent {
         switch self {
+        case .home: return "1"
+        case .applications: return "2"
+        case .games: return "3"
+        case .runtimes: return "4"
+        case .downloads: return "5"
+        case .activity: return "6"
+        case .debugLab: return "t"
+        case .settings: return ","
         case .library: return "1"
         case .discover: return "2"
         case .compatibility: return "3"
-        case .downloads: return "4"
         case .console: return "d"
-        case .debugLab: return "t"
-        case .settings: return ","
         }
     }
 }
