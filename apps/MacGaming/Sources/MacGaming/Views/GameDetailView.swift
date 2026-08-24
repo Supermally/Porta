@@ -521,6 +521,19 @@ public struct GameSettingsSheetView: View {
                                 .buttonStyle(.portaGlass(cornerRadius: 7, isProminent: game.displayResolution == res))
                             }
                         }
+
+                        Button(action: {
+                            engine.calibrateAllPrefixDisplays()
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "display.and.arrow.down")
+                                Text("Calibrate 1x Scaling (Fix 2x Multiplier & 5880x3824)")
+                            }
+                            .font(.system(size: 11, weight: .medium))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.portaGlass(cornerRadius: 6))
                     }
 
                     Divider()
