@@ -1138,14 +1138,9 @@ public class EngineService: ObservableObject {
             // Automatically sanitize OpenGL shaders to avoid texture unit bleeding (e.g. ViewCube texture leaking onto untextured BFRES models)
             Self.sanitizeShadersIfNeeded(at: resolvedExecPath)
 
-            // Special flags for Steam.exe to run without black screens or CEF sandbox crashes, with high-res Retina scaling
+            // Optimized high-performance flags for Steam.exe (hardware accelerated, smooth 60fps UI)
             if game.executablePath.lowercased().contains("steam.exe") {
                 runArgs.append("-no-cef-sandbox")
-                runArgs.append("-cef-disable-gpu")
-                runArgs.append("-cef-disable-d3d11")
-                runArgs.append("-cef-force-software-rendering")
-                runArgs.append("-forcedesktopscaling")
-                runArgs.append("2.0")
                 runArgs.append("-allosarches")
             }
 

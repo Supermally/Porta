@@ -513,11 +513,6 @@ public struct DebugLabView: View {
                 runner,
                 steamExeURL.path,
                 "-no-cef-sandbox",
-                "-cef-disable-gpu",
-                "-cef-disable-d3d11",
-                "-cef-force-software-rendering",
-                "-forcedesktopscaling",
-                "2.0",
                 "-allosarches"
             ]
 
