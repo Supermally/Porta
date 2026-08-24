@@ -210,6 +210,7 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
                     let excludedPatterns = [
                         "unins", "uninst", "helper", "crash", "update", "steam.exe", "steamwebhelper",
                         "steamservice", "steamerrorreporter", "winedevice", "wineserver", "explorer.exe",
+                        "iexplore", "internet explorer", "wine", "winebrowser", "winemine", "wordpad",
                         "services.exe", "svchost", "winlogon", "msiexec", "dxdiag", "rundll32",
                         "regedit", "reg.exe", "cmd.exe", "conhost", "taskkill", "tasklist",
                         "winemenubuilder", "winhlp32", "wordpad", "write.exe", "control.exe",
@@ -222,7 +223,7 @@ public final class ApplicationDiscoveryEngine: ObservableObject, @unchecked Send
                         "d3d11", "d3d12", "unitycrash", "install", "setup.exe", "autorun"
                     ]
 
-                    let shouldExclude = excludedPatterns.contains { lowerName.contains($0) }
+                    let shouldExclude = excludedPatterns.contains { lowerName.contains($0) || lowerRel.contains($0) }
                     if shouldExclude {
                         continue
                     }
