@@ -7,18 +7,10 @@ public struct MainContentView: View {
     @State private var isSidebarCollapsed: Bool = false
     @State private var isTopBarCollapsed: Bool = false
     @State private var isDetailPanelOpen: Bool = true
-    @State private var isLaunchLoading: Bool = true
 
     public var body: some View {
         Group {
-            if isLaunchLoading {
-                LaunchLoadingView {
-                    withAnimation(.easeInOut(duration: 0.35)) {
-                        isLaunchLoading = false
-                    }
-                }
-                .transition(.opacity)
-            } else if !setupManager.isSetupCompleted {
+            if !setupManager.isSetupCompleted {
                 SetupView(setupManager: setupManager)
                     .transition(.opacity)
             } else {
@@ -26,7 +18,6 @@ public struct MainContentView: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.35), value: isLaunchLoading)
         .animation(.easeInOut(duration: 0.3), value: setupManager.isSetupCompleted)
     }
 

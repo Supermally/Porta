@@ -250,15 +250,20 @@ public class EngineService: ObservableObject {
         loadCatalogEntries()
         loadNativeSpotlights()
         loadDemandCampaigns()
-        probeActiveSteamSession()
-        scanAllLaunchers()
-        refreshDiscoveredApplications()
-        recordActivity(
-            title: "Forge Platform Initialized",
-            details: "Running on \(hardware.chipName) with Apple D3DMetal translation pipeline.",
-            category: "Platform",
-            severity: .info
-        )
+
+        // Asynchronous startup initialization to guarantee zero main-thread blocking
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            self.probeActiveSteamSession()
+            self.scanAllLaunchers()
+            self.refreshDiscoveredApplications()
+            self.recordActivity(
+                title: "Forge Platform Initialized",
+                details: "Running on \(self.hardware.chipName) with Apple D3DMetal translation pipeline.",
+                category: "Platform",
+                severity: .info
+            )
+        }
     }
 
     public var filteredGames: [GameItem] {
