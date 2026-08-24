@@ -53,10 +53,12 @@ public struct GlassEffectContainer<Content: View>: View {
     @Environment(\.liquidGlassConfiguration) private var config
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
+    public let shape: GlassShapeOption
     public let spacing: CGFloat
     public let content: Content
 
-    public init(spacing: CGFloat = LiquidGlassTokens.standardSpacing, @ViewBuilder content: () -> Content) {
+    public init(shape: GlassShapeOption = .capsule, spacing: CGFloat = LiquidGlassTokens.standardSpacing, @ViewBuilder content: () -> Content) {
+        self.shape = shape
         self.spacing = spacing
         self.content = content()
     }
@@ -67,7 +69,13 @@ public struct GlassEffectContainer<Content: View>: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
-        .background(
+        .background(containerBackground)
+    }
+
+    @ViewBuilder
+    private var containerBackground: some View {
+        switch shape {
+        case .capsule:
             ZStack {
                 if config.enabled && !reduceTransparency {
                     Capsule()
@@ -83,7 +91,41 @@ public struct GlassEffectContainer<Content: View>: View {
                 }
             }
             .shadow(color: Color.black.opacity(0.08), radius: 8, y: 3)
-        )
+
+        case .rect(let radius):
+            ZStack {
+                if config.enabled && !reduceTransparency {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(Color.white.opacity(config.variant == .clear ? 0.02 : 0.08))
+                        .background(config.variant == .clear ? .ultraThinMaterial : .regularMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.8)
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                }
+            }
+            .shadow(color: Color.black.opacity(0.08), radius: 8, y: 3)
+
+        case .circle:
+            ZStack {
+                if config.enabled && !reduceTransparency {
+                    Circle()
+                        .fill(Color.white.opacity(config.variant == .clear ? 0.02 : 0.08))
+                        .background(config.variant == .clear ? .ultraThinMaterial : .regularMaterial, in: Circle())
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.8)
+                        )
+                } else {
+                    Circle()
+                        .fill(Color(NSColor.controlBackgroundColor))
+                }
+            }
+            .shadow(color: Color.black.opacity(0.08), radius: 8, y: 3)
+        }
     }
 }
 
@@ -128,11 +170,11 @@ public struct LiquidGlassViewModifier: ViewModifier {
                 .shadow(color: Color.black.opacity(0.08), radius: 4, y: 2)
 
         case .rect(let radius):
-            RoundedRectangle(cornerRadius: max(radius, 16), style: .continuous)
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(glassFillColor)
-                .background(materialBackground, in: RoundedRectangle(cornerRadius: max(radius, 16), style: .continuous))
+                .background(materialBackground, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: max(radius, 16), style: .continuous)
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
                         .strokeBorder(strokeGradient, lineWidth: 0.8)
                 )
                 .shadow(color: Color.black.opacity(0.08), radius: 4, y: 2)
@@ -245,5 +287,39 @@ public extension View {
 
     func glassEffectUnion(id: String, namespace: Namespace.ID) -> some View {
         self.matchedGeometryEffect(id: id, in: namespace, isSource: true)
+    }
+}
+
+// MARK: - 7. Concentric Porta Glass Button Styles
+public struct PortaGlassButtonStyle: ButtonStyle {
+    public let cornerRadius: CGFloat
+    public let isProminent: Bool
+
+    public init(cornerRadius: CGFloat = 10, isProminent: Bool = false) {
+        self.cornerRadius = cornerRadius
+        self.isProminent = isProminent
+    }
+
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(isProminent ? Color.blue : Color.primary.opacity(configuration.isPressed ? 0.12 : 0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .strokeBorder(isProminent ? Color.white.opacity(0.3) : Color.primary.opacity(0.08), lineWidth: 0.8)
+                    )
+            )
+            .foregroundColor(isProminent ? .white : .primary)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.75), value: configuration.isPressed)
+    }
+}
+
+public extension ButtonStyle where Self == PortaGlassButtonStyle {
+    static func portaGlass(cornerRadius: CGFloat = 10, isProminent: Bool = false) -> PortaGlassButtonStyle {
+        PortaGlassButtonStyle(cornerRadius: cornerRadius, isProminent: isProminent)
     }
 }

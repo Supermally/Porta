@@ -39,7 +39,7 @@ public struct SetupView: View {
     private var welcomeScreen: some View {
         VStack(spacing: 24) {
             ZStack {
-                RoundedRectangle(cornerRadius: 18)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [Color.blue, Color.indigo],
@@ -50,23 +50,25 @@ public struct SetupView: View {
                     .frame(width: 72, height: 72)
 
                 Image(systemName: "cube.fill")
-                    .font(.system(size: 36))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.white)
             }
-            .shadow(color: Color.blue.opacity(0.3), radius: 10, y: 4)
+            .shadow(color: Color.blue.opacity(0.35), radius: 12, y: 4)
 
-            VStack(spacing: 6) {
+            VStack(spacing: 8) {
                 Text("Welcome to Porta")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
 
-                Text("Run Windows software seamlessly on macOS.")
-                    .font(.system(size: 15, weight: .medium))
+                Text("A seamless, native environment for running Windows applications and games on Apple Silicon.")
+                    .font(.system(size: 13))
                     .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
             }
 
-            Text("Porta configures an optimized Windows compatibility runtime powered by the Forge Engine, Apple Silicon unified memory, and Apple D3DMetal.")
+            Text("Porta uses the Forge Engine with Apple D3DMetal translation to deliver high performance without virtual machines.")
                 .font(.system(size: 12))
-                .foregroundColor(.secondary)
+                .foregroundColor(.secondary.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
 
@@ -79,10 +81,9 @@ public struct SetupView: View {
             }) {
                 Text("Get Started")
                     .font(.system(size: 14, weight: .semibold))
-                    .frame(width: 140, height: 32)
+                    .frame(width: 140, height: 20)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(.portaGlass(cornerRadius: 12, isProminent: true))
             .keyboardShortcut(.defaultAction)
         }
     }
@@ -184,10 +185,9 @@ public struct SetupView: View {
             }) {
                 Text("Enter Porta")
                     .font(.system(size: 14, weight: .semibold))
-                    .frame(width: 140, height: 32)
+                    .frame(width: 140, height: 20)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(.portaGlass(cornerRadius: 12, isProminent: true))
             .keyboardShortcut(.defaultAction)
         }
     }

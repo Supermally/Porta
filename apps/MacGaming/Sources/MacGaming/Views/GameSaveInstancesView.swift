@@ -49,8 +49,7 @@ public struct GameSaveInstancesView: View {
                         }
                         .font(.system(size: 11, weight: .semibold))
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+                    .buttonStyle(.portaGlass(cornerRadius: 8, isProminent: true))
                 }
 
                 if let activeDir = manifest?.activeSaveDirectory ?? engine.detectSaveDirectory(for: game) {
@@ -164,8 +163,9 @@ public struct GameSaveInstancesView: View {
                                 } label: {
                                     Image(systemName: "arrow.counterclockwise")
                                         .font(.system(size: 11, weight: .medium))
+                                        .padding(2)
                                 }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.portaGlass(cornerRadius: 6))
                                 .help("Rollback active game save to this checkpoint")
 
                                 Button {
@@ -173,9 +173,9 @@ public struct GameSaveInstancesView: View {
                                 } label: {
                                     Image(systemName: "folder")
                                         .font(.system(size: 11))
+                                        .padding(2)
                                 }
-                                .buttonStyle(.plain)
-                                .foregroundColor(.secondary)
+                                .buttonStyle(.portaGlass(cornerRadius: 6))
                                 .help("Reveal checkpoint directory in Finder")
 
                                 Button {
@@ -184,16 +184,22 @@ public struct GameSaveInstancesView: View {
                                 } label: {
                                     Image(systemName: "trash")
                                         .font(.system(size: 11))
+                                        .padding(2)
                                         .foregroundColor(.red.opacity(0.8))
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.portaGlass(cornerRadius: 6))
                                 .help("Delete this checkpoint snapshot")
                             }
                         }
-                        .padding(8)
-                        .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.secondary.opacity(0.05))
+                        )
                     }
                 }
+                .padding(14)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         }
         .padding(16)
@@ -202,7 +208,7 @@ public struct GameSaveInstancesView: View {
             refreshManifest()
         }
         .sheet(isPresented: $showingCreateSheet) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 16) {
                 Text("Create Save Checkpoint")
                     .font(.headline)
                     .fontWeight(.bold)
@@ -215,7 +221,7 @@ public struct GameSaveInstancesView: View {
                     Text("Checkpoint Name")
                         .font(.caption)
                         .fontWeight(.semibold)
-                    TextField("e.g. Before Final Boss, Chapter 4 Start", text: $newCheckpointName)
+                    TextField("e.g. Chapter 4 Boss, Before Modding", text: $newCheckpointName)
                         .textFieldStyle(.roundedBorder)
                 }
 
@@ -231,7 +237,7 @@ public struct GameSaveInstancesView: View {
                     Button("Cancel") {
                         showingCreateSheet = false
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.portaGlass(cornerRadius: 8))
 
                     Spacer()
 
@@ -245,8 +251,7 @@ public struct GameSaveInstancesView: View {
                         refreshManifest()
                         showingCreateSheet = false
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+                    .buttonStyle(.portaGlass(cornerRadius: 8, isProminent: true))
                 }
                 .padding(.top, 8)
             }
