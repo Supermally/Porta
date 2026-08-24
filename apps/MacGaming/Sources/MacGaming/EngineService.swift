@@ -1449,8 +1449,8 @@ public class EngineService: ObservableObject {
             env["WINE_OPENGL_VERSION"] = "4.1"
             env["MESA_GL_VERSION_OVERRIDE"] = "4.1COMPAT"
             env["MESA_GLSL_VERSION_OVERRIDE"] = "410"
-            env["WINE_RETINA"] = "0"
-            env["WINE_ENABLE_HIDPI"] = "0"
+            env["WINE_RETINA"] = "1"
+            env["WINE_ENABLE_HIDPI"] = "1"
             env["WINE_LARGE_ADDRESS_AWARE"] = "1"
             env["STAGING_SHARED_MEMORY"] = "1"
 
@@ -1466,7 +1466,7 @@ public class EngineService: ObservableObject {
             env["MVK_ALLOW_METAL_EVENTS"] = "1"
             proc.environment = env
 
-            // Configure OpenGL 4.1 Core profile and correct display scaling (prevent 4x super-sampled 5880x3824 bug)
+            // Configure OpenGL 4.1 Core profile, crisp Retina rendering, and calibrated physical display modes
             DispatchQueue.global(qos: .utility).async {
                 let reg1 = Process()
                 reg1.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
@@ -1477,18 +1477,25 @@ public class EngineService: ObservableObject {
                 try? reg1.run()
                 reg1.waitUntilExit()
 
-                // Set Retina mode to 'N' so Wine reports true native display points without 4x doubling
+                // Enable Retina High-DPI mode with capped physical display modes to prevent 4x scaling
                 let reg2 = Process()
                 reg2.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
-                reg2.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Software\\Wine\\Mac Driver", "/v", "Retina", "/t", "REG_SZ", "/d", "N", "/f"]
+                reg2.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Software\\Wine\\Mac Driver", "/v", "Retina", "/t", "REG_SZ", "/d", "Y", "/f"]
                 reg2.environment = regEnv
                 try? reg2.run()
                 reg2.waitUntilExit()
 
-                // Set standard 96 DPI in Windows desktop registry to avoid oversized windows
+                let regModes = Process()
+                regModes.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
+                regModes.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Software\\Wine\\Mac Driver", "/v", "ForceDisplayModes", "/t", "REG_SZ", "/d", "2560x1664,2560x1600,2560x1440,1920x1080,1680x1050,1440x900,1280x800,1280x720", "/f"]
+                regModes.environment = regEnv
+                try? regModes.run()
+                regModes.waitUntilExit()
+
+                // Set 144 DPI (150% scaling) for sharp, high-DPI text on Retina screens
                 let reg3 = Process()
                 reg3.executableURL = URL(fileURLWithPath: "/usr/bin/arch")
-                reg3.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Control Panel\\Desktop", "/v", "LogPixels", "/t", "REG_DWORD", "/d", "96", "/f"]
+                reg3.arguments = ["-x86_64", runner, "reg", "add", "HKCU\\Control Panel\\Desktop", "/v", "LogPixels", "/t", "REG_DWORD", "/d", "144", "/f"]
                 reg3.environment = regEnv
                 try? reg3.run()
                 reg3.waitUntilExit()
@@ -1838,35 +1845,43 @@ public class EngineService: ObservableObject {
         let plistPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Info.plist"
         let userRegPath = FileManager.default.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/prefix/user.reg"
 
-        // 1. Calibrate Info.plist
+        // 1. Calibrate Info.plist for Retina High-DPI support
         if FileManager.default.fileExists(atPath: plistPath),
            let plistDict = NSMutableDictionary(contentsOfFile: plistPath) {
-            plistDict["Retina"] = 0
-            plistDict["RetinaMode"] = 0
+            plistDict["Retina"] = 1
+            plistDict["RetinaMode"] = 1
+            plistDict["NSHighResolutionCapable"] = true
             
             if let flags = plistDict["Program Flags"] as? String {
-                let cleanedFlags = flags
+                var cleanedFlags = flags
                     .replacingOccurrences(of: "-forcedesktopscaling 2.0", with: "")
                     .replacingOccurrences(of: "--force-device-scale-factor=2", with: "")
-                    .replacingOccurrences(of: "  ", with: " ")
                     .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !cleanedFlags.contains("-forcedesktopscaling") {
+                    cleanedFlags += " -forcedesktopscaling 1.5"
+                }
                 plistDict["Program Flags"] = cleanedFlags
             }
             plistDict.write(toFile: plistPath, atomically: true)
-            log("Calibrated Steam.app Info.plist: Retina=0, scale-factor=1.0.", level: .info, source: "Display")
+            log("Calibrated Steam.app Info.plist: Retina=1, scale-factor=1.5.", level: .info, source: "Display")
         }
 
-        // 2. Calibrate prefix user.reg
+        // 2. Calibrate prefix user.reg for crisp fonts and 2560x1664 display modes
         if FileManager.default.fileExists(atPath: userRegPath),
            var regContent = try? String(contentsOfFile: userRegPath, encoding: .utf8) {
             regContent = regContent
-                .replacingOccurrences(of: "\"Retina\"=\"Y\"", with: "\"Retina\"=\"N\"")
-                .replacingOccurrences(of: "\"RetinaMode\"=\"Y\"", with: "\"RetinaMode\"=\"N\"")
+                .replacingOccurrences(of: "\"Retina\"=\"N\"", with: "\"Retina\"=\"Y\"")
+                .replacingOccurrences(of: "\"RetinaMode\"=\"N\"", with: "\"RetinaMode\"=\"Y\"")
 
-            if !regContent.contains("\"LogPixels\"=") {
+            if regContent.contains("\"LogPixels\"=") {
+                regContent = regContent.replacingOccurrences(
+                    of: "\"LogPixels\"=dword:00000060",
+                    with: "\"LogPixels\"=dword:00000090"
+                )
+            } else {
                 regContent = regContent.replacingOccurrences(
                     of: "[Control Panel\\\\Desktop]",
-                    with: "[Control Panel\\\\Desktop]\n\"LogPixels\"=dword:00000060"
+                    with: "[Control Panel\\\\Desktop]\n\"LogPixels\"=dword:00000090"
                 )
             }
             if !regContent.contains("\"ForceDisplayModes\"=") {
@@ -1876,7 +1891,7 @@ public class EngineService: ObservableObject {
                 )
             }
             try? regContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
-            log("Calibrated Steam prefix registry: Retina=N, 96 DPI, ForceDisplayModes=2560x1664.", level: .info, source: "Display")
+            log("Calibrated Steam prefix registry: Retina=Y, 144 DPI (150%), ForceDisplayModes=2560x1664.", level: .info, source: "Display")
         }
     }
 
