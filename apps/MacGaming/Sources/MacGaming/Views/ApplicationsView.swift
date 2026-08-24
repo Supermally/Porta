@@ -396,102 +396,15 @@ private struct LiquidGlassAppCard: View {
 
     var body: some View {
         Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 10) {
-                // Header Artwork or Stylized Banner
-                ZStack(alignment: .topTrailing) {
-                    if let urlStr = app.headerImageUrl ?? app.iconUrl, let url = URL(string: urlStr) {
-                        CachedArtworkImageView(
-                            url: url,
-                            contentMode: .fill,
-                            placeholder: AnyView(fallbackBanner)
-                        )
-                        .frame(height: 110)
-                        .cornerRadius(10)
-                        .clipped()
-                    } else {
-                        fallbackBanner
-                    }
-
-                    // Favorite Indicator
-                    if app.isFavorite {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 11))
-                            .foregroundColor(.yellow)
-                            .padding(6)
-                            .background(Circle().fill(Color.black.opacity(0.45)))
-                            .padding(6)
-                    }
-
-                    // Hover Play Button Overlay
-                    if isHovered {
-                        VStack {
-                            Spacer()
-                            HStack {
-                                Spacer()
-                                Button(action: onLaunch) {
-                                    Image(systemName: "play.fill")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.white)
-                                        .padding(8)
-                                        .background(Circle().fill(Color.blue))
-                                        .shadow(color: Color.blue.opacity(0.5), radius: 6, y: 2)
-                                }
-                                .buttonStyle(.plain)
-                                .padding(8)
-                            }
-                        }
-                        .transition(.opacity)
-                    }
-                }
-                .frame(height: 110)
-
-                // Info Footer
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(app.name)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-
-                    Text(app.publisher)
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-
-                    HStack {
-                        Text(app.category.rawValue)
-                            .font(.system(size: 10, weight: .semibold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.12))
-                            .foregroundColor(.secondary)
-                            .cornerRadius(4)
-
-                        Spacer()
-
-                        Text(app.graphicsApi.contains("D3DMetal") ? "D3DMetal" : (app.graphicsApi.contains("12") ? "DirectX 12" : "DirectX 11"))
-                            .font(.system(size: 10))
-                            .foregroundColor(.secondary.opacity(0.8))
-                    }
-                    .padding(.top, 2)
-                }
+            VStack(alignment: .leading, spacing: 8) {
+                headerArtworkView
+                infoFooterView
             }
             .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? Color.blue.opacity(0.14) : (isHovered ? Color.secondary.opacity(0.08) : Color.secondary.opacity(0.03)))
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(
-                        isSelected
-                            ? LinearGradient(colors: [Color.blue.opacity(0.8), Color.indigo.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                            : (isHovered
-                                ? LinearGradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                                : LinearGradient(colors: [Color.white.opacity(0.10), Color.clear], startPoint: .topLeading, endPoint: .bottomTrailing)),
-                        lineWidth: isSelected ? 1.5 : 1.0
-                    )
-            )
+            .frame(height: 190)
+            .frame(maxWidth: .infinity)
+            .background(cardBackground)
+            .overlay(cardBorder)
             .shadow(color: isSelected ? Color.blue.opacity(0.2) : (isHovered ? Color.black.opacity(0.1) : Color.clear), radius: 10, y: 4)
             .scaleEffect(isPressed ? 0.97 : (isHovered ? 1.02 : 1.0))
         }
@@ -504,9 +417,108 @@ private struct LiquidGlassAppCard: View {
         )
     }
 
+    private var headerArtworkView: some View {
+        ZStack(alignment: .topTrailing) {
+            if let urlStr = app.headerImageUrl ?? app.iconUrl, let url = URL(string: urlStr) {
+                CachedArtworkImageView(
+                    url: url,
+                    contentMode: .fill,
+                    placeholder: AnyView(fallbackBanner)
+                )
+                .frame(maxWidth: .infinity, maxHeight: 110)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            } else {
+                fallbackBanner
+            }
+
+            if app.isFavorite {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 11))
+                    .foregroundColor(.yellow)
+                    .padding(6)
+                    .background(Circle().fill(Color.black.opacity(0.45)))
+                    .padding(6)
+            }
+
+            if isHovered {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: onLaunch) {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white)
+                                .padding(8)
+                                .background(Circle().fill(Color.blue))
+                                .shadow(color: Color.blue.opacity(0.5), radius: 6, y: 2)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(8)
+                    }
+                }
+                .transition(.opacity)
+            }
+        }
+        .frame(height: 110)
+        .frame(maxWidth: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private var infoFooterView: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(app.name)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+
+            Text(app.publisher)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+
+            HStack {
+                Text(app.category.rawValue)
+                    .font(.system(size: 10, weight: .semibold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.12))
+                    .foregroundColor(.secondary)
+                    .cornerRadius(4)
+
+                Spacer()
+
+                Text(app.graphicsApi.contains("D3DMetal") ? "D3DMetal" : (app.graphicsApi.contains("12") ? "DirectX 12" : "DirectX 11"))
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary.opacity(0.8))
+            }
+            .padding(.top, 2)
+        }
+        .frame(height: 54, alignment: .topLeading)
+    }
+
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(isSelected ? Color.blue.opacity(0.14) : (isHovered ? Color.secondary.opacity(0.08) : Color.secondary.opacity(0.03)))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private var cardBorder: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .stroke(
+                isSelected
+                    ? LinearGradient(colors: [Color.blue.opacity(0.8), Color.indigo.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    : (isHovered
+                        ? LinearGradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        : LinearGradient(colors: [Color.white.opacity(0.10), Color.clear], startPoint: .topLeading, endPoint: .bottomTrailing)),
+                lineWidth: isSelected ? 1.5 : 1.0
+            )
+    }
+
     private var fallbackBanner: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.blue.opacity(0.25), Color.indigo.opacity(0.35)],
@@ -514,11 +526,13 @@ private struct LiquidGlassAppCard: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(height: 110)
+                .frame(maxWidth: .infinity, maxHeight: 110)
 
             Image(systemName: app.category.icon)
                 .font(.system(size: 32))
                 .foregroundColor(.blue)
         }
+        .frame(height: 110)
+        .frame(maxWidth: .infinity)
     }
 }

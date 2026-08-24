@@ -74,17 +74,24 @@ public struct HomeView: View {
         return ZStack(alignment: .bottomLeading) {
             // Background Artwork or Ambient Mesh
             if let topApp = topApp, let urlStr = topApp.headerImageUrl ?? topApp.iconUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { image in
-                    image.resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 140)
-                        .clipped()
-                } placeholder: {
+                ZStack {
                     heroAmbientBackground
+                    HStack {
+                        Spacer()
+                        AsyncImage(url: url) { image in
+                            image.resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxHeight: 120)
+                                .padding(.trailing, 24)
+                                .opacity(0.85)
+                        } placeholder: {
+                            EmptyView()
+                        }
+                    }
                 }
                 .overlay(
                     LinearGradient(
-                        colors: [Color.black.opacity(0.85), Color.black.opacity(0.35)],
+                        colors: [Color.black.opacity(0.85), Color.black.opacity(0.25)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
