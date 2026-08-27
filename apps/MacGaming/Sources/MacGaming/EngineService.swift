@@ -2031,6 +2031,31 @@ public class EngineService: ObservableObject {
             try? fileMgr.moveItem(atPath: overwatchD3D12Dir, toPath: overwatchD3D12Disabled)
             log("Bypassed Microsoft Agility SDK in Overwatch to route DirectX 12 via Apple D3DMetal.", level: .info, source: "Graphics")
         }
+
+        // 5. Pre-configure Overwatch Settings_v0.ini to ensure window renders immediately on macOS
+        let overwatchSettingsDir = fileMgr.homeDirectoryForCurrentUser.path + "/Documents/Overwatch/Settings"
+        let overwatchSettingsFile = overwatchSettingsDir + "/Settings_v0.ini"
+        try? fileMgr.createDirectory(atPath: overwatchSettingsDir, withIntermediateDirectories: true)
+        let defaultOverwatchConfig = """
+        [MovieExport.1]
+        [Render.13]
+        FullScreenRefresh = "60"
+        FullScreenResolution = "2560x1664"
+        GFSDK = "0"
+        LimitToDisplayRefresh = "1"
+        MaxFrameLatency = "1"
+        MaxWorldFPS = "60"
+        ShowFPSCounter = "1"
+        WindowedFullscreen = "1"
+        WindowedResolution = "2560x1664"
+        WindowMode = "1"
+        [Subtitles.1]
+        Subtitles = "1"
+        """
+        if !fileMgr.fileExists(atPath: overwatchSettingsFile) {
+            try? defaultOverwatchConfig.write(toFile: overwatchSettingsFile, atomically: true, encoding: .utf8)
+            log("Configured Overwatch Settings_v0.ini for windowed 2560x1664 display.", level: .info, source: "Display")
+        }
     }
 
     public func calibrateAllPrefixDisplays() {
