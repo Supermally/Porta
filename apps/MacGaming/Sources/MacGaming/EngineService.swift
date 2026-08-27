@@ -1979,14 +1979,14 @@ public class EngineService: ObservableObject {
         let appFrameworksDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Frameworks"
 
         if fileMgr.fileExists(atPath: d3dMetalDir) {
-            // Deploy Unix .so libraries
-            let unixSrc = d3dMetalDir + "/wine/x86_64-unix"
-            if let items = try? fileMgr.contentsOfDirectory(atPath: unixSrc) {
-                for item in items {
-                    let src = unixSrc + "/" + item
-                    let dst = wineUnixLibDir + "/" + item
+            // Deploy Unix .so libraries as direct binaries from libd3dshared.dylib
+            let d3dsharedSrc = d3dMetalDir + "/external/libd3dshared.dylib"
+            if fileMgr.fileExists(atPath: d3dsharedSrc) {
+                let unixSoNames = ["atidxx64.so", "d3d11.so", "d3d12.so", "dxgi.so", "nvapi64.so", "nvngx.so"]
+                for soName in unixSoNames {
+                    let dst = wineUnixLibDir + "/" + soName
                     try? fileMgr.removeItem(atPath: dst)
-                    try? fileMgr.copyItem(atPath: src, toPath: dst)
+                    try? fileMgr.copyItem(atPath: d3dsharedSrc, toPath: dst)
                 }
             }
 
@@ -2005,7 +2005,6 @@ public class EngineService: ObservableObject {
             }
 
             // Deploy libd3dshared.dylib and D3DMetal.framework to rpath locations
-            let d3dsharedSrc = d3dMetalDir + "/external/libd3dshared.dylib"
             if fileMgr.fileExists(atPath: d3dsharedSrc) {
                 for targetDir in [wineLibDir, wineUnixLibDir, appFrameworksDir] {
                     let dst = targetDir + "/libd3dshared.dylib"
