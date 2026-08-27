@@ -1284,6 +1284,15 @@ public class EngineService: ObservableObject {
         }
     }
 
+    public func exportGameAsMacApp(_ game: GameItem) -> URL? {
+        let bundleURL = AppBundleGenerator.shared.generateBundle(for: game)
+        if let url = bundleURL {
+            log("Generated native macOS application bundle for '\(game.title)' at: \(url.path)", level: .info, source: "AppBundle")
+            launchOutputMessage = "Created native macOS app: \(url.lastPathComponent) in Applications/Porta Games"
+        }
+        return bundleURL
+    }
+
     public func launchGame(_ game: GameItem) {
         isLaunching = true
         let translationLayer = game.isNative ? "Native macOS" : (game.useD3DMetal ? "D3DMetal (DirectX 12/Metal)" : "DXVK 2.3 (Vulkan/Metal)")
