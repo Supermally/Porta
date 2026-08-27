@@ -171,6 +171,24 @@ public struct GameDetailView: View {
                     .buttonStyle(.portaGlass(cornerRadius: 10, isProminent: false))
                     .fixedSize(horizontal: true, vertical: false)
 
+                    Button(action: {
+                        if let bundleURL = engine.exportGameAsMacApp(game) {
+                            NSWorkspace.shared.activateFileViewerSelecting([bundleURL])
+                        }
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "app.gift")
+                                .font(.system(size: 13, weight: .medium))
+                            Text("Create Mac App")
+                                .font(.system(size: 13, weight: .medium))
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.portaGlass(cornerRadius: 10, isProminent: false))
+                    .fixedSize(horizontal: true, vertical: false)
+
                     Spacer()
                 }
 
