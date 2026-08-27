@@ -2035,12 +2035,29 @@ public class EngineService: ObservableObject {
             log("Ensured D3DMetal DirectX 12 and DXVK DirectX 11 translation layers are active for all Steam games.", level: .info, source: "Graphics")
         }
 
-        // 4. Bypass Microsoft DirectX 12 Agility SDK in games like Overwatch to force Apple D3DMetal
-        let overwatchD3D12Dir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/prefix/drive_c/Program Files (x86)/Steam/steamapps/common/Overwatch/D3D12"
-        let overwatchD3D12Disabled = overwatchD3D12Dir + ".disabled"
-        if fileMgr.fileExists(atPath: overwatchD3D12Dir) {
-            try? fileMgr.moveItem(atPath: overwatchD3D12Dir, toPath: overwatchD3D12Disabled)
-            log("Bypassed Microsoft Agility SDK in Overwatch to route DirectX 12 via Apple D3DMetal.", level: .info, source: "Graphics")
+        // 4. Deploy Apple D3DMetal DirectX 12 Agility SDK bridge directly into Overwatch directory
+        let overwatchDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/prefix/drive_c/Program Files (x86)/Steam/steamapps/common/Overwatch"
+        let overwatchD3D12Dir = overwatchDir + "/D3D12"
+        let d3d12CoreSrc = wineWinLibDir + "/d3d12core.dll"
+        let d3d12Src = d3dMetalDir + "/wine/x86_64-windows/d3d12.dll"
+        let dxgiSrc = d3dMetalDir + "/wine/x86_64-windows/dxgi.dll"
+        if fileMgr.fileExists(atPath: overwatchDir) {
+            try? fileMgr.createDirectory(atPath: overwatchD3D12Dir, withIntermediateDirectories: true)
+            if fileMgr.fileExists(atPath: d3d12CoreSrc) {
+                try? fileMgr.removeItem(atPath: overwatchD3D12Dir + "/D3D12Core.dll")
+                try? fileMgr.copyItem(atPath: d3d12CoreSrc, toPath: overwatchD3D12Dir + "/D3D12Core.dll")
+                try? fileMgr.removeItem(atPath: overwatchDir + "/d3d12core.dll")
+                try? fileMgr.copyItem(atPath: d3d12CoreSrc, toPath: overwatchDir + "/d3d12core.dll")
+            }
+            if fileMgr.fileExists(atPath: d3d12Src) {
+                try? fileMgr.removeItem(atPath: overwatchDir + "/d3d12.dll")
+                try? fileMgr.copyItem(atPath: d3d12Src, toPath: overwatchDir + "/d3d12.dll")
+            }
+            if fileMgr.fileExists(atPath: dxgiSrc) {
+                try? fileMgr.removeItem(atPath: overwatchDir + "/dxgi.dll")
+                try? fileMgr.copyItem(atPath: dxgiSrc, toPath: overwatchDir + "/dxgi.dll")
+            }
+            log("Deployed Apple D3DMetal DirectX 12 Agility SDK bridge into Overwatch.", level: .info, source: "Graphics")
         }
 
         // 5. Pre-configure Overwatch Settings_v0.ini to ensure window renders immediately on macOS
