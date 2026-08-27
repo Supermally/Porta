@@ -189,6 +189,9 @@ public struct GameDetailView: View {
                     }
                 }
 
+                // Startup & Shader Pipeline Insights Card
+                StartupInsightsCard(gameTitle: game.title, isLaunching: engine.isLaunching)
+
                 // Compatibility Breakdown Section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Compatibility")
@@ -659,5 +662,87 @@ public struct GameSettingsSheetView: View {
         }
         .padding(20)
         .frame(minWidth: 460, minHeight: 480)
+    }
+}
+
+// MARK: - Startup Insights Card
+struct StartupInsightsCard: View {
+    let gameTitle: String
+    let isLaunching: Bool
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles.tv")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.cyan)
+                Text("Startup & Shader Insights")
+                    .font(.system(size: 13, weight: .bold))
+                Spacer()
+                Text("Apple D3DMetal Active")
+                    .font(.system(size: 10, weight: .semibold))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Color.cyan.opacity(0.15), in: Capsule())
+                    .foregroundColor(.cyan)
+            }
+            
+            // 3-Stage Pipeline Progression
+            HStack(spacing: 8) {
+                pipelineStage(step: "1", title: "Wine Bridge", subtitle: "DirectX 12 Active", isDone: true)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.secondary)
+                pipelineStage(step: "2", title: "Metal Caching", subtitle: "One-time compile", isDone: isLaunching)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.secondary)
+                pipelineStage(step: "3", title: "Game Ready", subtitle: "Main Menu", isDone: false)
+            }
+            
+            // Helpful user notice
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundColor(.blue)
+                    .padding(.top, 1)
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("First-Time Launch Guidance")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text("Modern DirectX 12 games compile Pipeline State Objects (PSOs) on first launch. A temporary black screen during the first 2–3 minutes is completely normal while Apple Silicon caches Metal 3 shaders. Future launches open instantly!")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(10)
+            .background(Color.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .padding(14)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
+        )
+    }
+    
+    private func pipelineStage(step: String, title: String, subtitle: String, isDone: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 4) {
+                Text(step)
+                    .font(.system(size: 9, weight: .bold))
+                    .frame(width: 14, height: 14)
+                    .background(isDone ? Color.green : Color.secondary.opacity(0.3), in: Circle())
+                    .foregroundColor(.white)
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+            }
+            Text(subtitle)
+                .font(.system(size: 9))
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
