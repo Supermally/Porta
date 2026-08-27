@@ -2021,7 +2021,18 @@ public class EngineService: ObservableObject {
                     try? fileMgr.copyItem(atPath: frameworkSrc, toPath: dst)
                 }
             }
-            log("Ensured D3DMetal DirectX 12 translation layer is active for all Steam games.", level: .info, source: "Graphics")
+
+            // Deploy DXVK for DirectX 11 translation (allows games requesting DX11 to initialize without timing out)
+            let dxvkDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Frameworks/renderer/dxvk/wine/x86_64-windows"
+            if fileMgr.fileExists(atPath: dxvkDir + "/d3d11.dll") {
+                let dxvkD3D11 = dxvkDir + "/d3d11.dll"
+                try? fileMgr.removeItem(atPath: system32Dir + "/d3d11.dll")
+                try? fileMgr.copyItem(atPath: dxvkD3D11, toPath: system32Dir + "/d3d11.dll")
+                try? fileMgr.removeItem(atPath: wineWinLibDir + "/d3d11.dll")
+                try? fileMgr.copyItem(atPath: dxvkD3D11, toPath: wineWinLibDir + "/d3d11.dll")
+            }
+
+            log("Ensured D3DMetal DirectX 12 and DXVK DirectX 11 translation layers are active for all Steam games.", level: .info, source: "Graphics")
         }
 
         // 4. Bypass Microsoft DirectX 12 Agility SDK in games like Overwatch to force Apple D3DMetal
