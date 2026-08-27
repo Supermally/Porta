@@ -1979,15 +1979,18 @@ public class EngineService: ObservableObject {
         let appFrameworksDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Frameworks"
 
         if fileMgr.fileExists(atPath: d3dMetalDir) {
-            // Deploy Unix .so libraries as direct binaries from libd3dshared.dylib
+            // Deploy Unix .so libraries as direct binaries from libd3dshared.dylib (excluding atidxx64 to avoid AMD driver assertion conflicts)
             let d3dsharedSrc = d3dMetalDir + "/external/libd3dshared.dylib"
             if fileMgr.fileExists(atPath: d3dsharedSrc) {
-                let unixSoNames = ["atidxx64.so", "d3d11.so", "d3d12.so", "dxgi.so", "nvapi64.so", "nvngx.so"]
+                let unixSoNames = ["d3d11.so", "d3d12.so", "dxgi.so", "nvapi64.so", "nvngx.so"]
                 for soName in unixSoNames {
                     let dst = wineUnixLibDir + "/" + soName
                     try? fileMgr.removeItem(atPath: dst)
                     try? fileMgr.copyItem(atPath: d3dsharedSrc, toPath: dst)
                 }
+                // Ensure atidxx64 is explicitly removed
+                try? fileMgr.removeItem(atPath: wineUnixLibDir + "/atidxx64.so")
+                try? fileMgr.removeItem(atPath: system32Dir + "/atidxx64.dll")
             }
 
             // Deploy Windows .dll libraries to wine/lib and prefix system32
@@ -2022,17 +2025,7 @@ public class EngineService: ObservableObject {
                 }
             }
 
-            // Deploy DXVK for DirectX 11 translation (allows games requesting DX11 to initialize without timing out)
-            let dxvkDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Frameworks/renderer/dxvk/wine/x86_64-windows"
-            if fileMgr.fileExists(atPath: dxvkDir + "/d3d11.dll") {
-                let dxvkD3D11 = dxvkDir + "/d3d11.dll"
-                try? fileMgr.removeItem(atPath: system32Dir + "/d3d11.dll")
-                try? fileMgr.copyItem(atPath: dxvkD3D11, toPath: system32Dir + "/d3d11.dll")
-                try? fileMgr.removeItem(atPath: wineWinLibDir + "/d3d11.dll")
-                try? fileMgr.copyItem(atPath: dxvkD3D11, toPath: wineWinLibDir + "/d3d11.dll")
-            }
-
-            log("Ensured D3DMetal DirectX 12 and DXVK DirectX 11 translation layers are active for all Steam games.", level: .info, source: "Graphics")
+            log("Ensured D3DMetal DirectX 12 translation layer is active for all Steam games.", level: .info, source: "Graphics")
         }
 
         // 4. Deploy Apple D3DMetal DirectX 12 Agility SDK bridge directly into Overwatch directory
@@ -2060,7 +2053,7 @@ public class EngineService: ObservableObject {
             log("Deployed Apple D3DMetal DirectX 12 Agility SDK bridge into Overwatch.", level: .info, source: "Graphics")
         }
 
-        // 5. Pre-configure Overwatch Settings_v0.ini to ensure window renders immediately on macOS
+        // 5. Pre-configure Overwatch Settings_v0.ini to match exact 1470x956 macOS AppKit window bounds
         let overwatchSettingsDir = fileMgr.homeDirectoryForCurrentUser.path + "/Documents/Overwatch/Settings"
         let overwatchSettingsFile = overwatchSettingsDir + "/Settings_v0.ini"
         try? fileMgr.createDirectory(atPath: overwatchSettingsDir, withIntermediateDirectories: true)
@@ -2068,7 +2061,7 @@ public class EngineService: ObservableObject {
         [MovieExport.1]
         [Render.13]
         FullScreenRefresh = "60"
-        FullScreenResolution = "2560x1664"
+        FullScreenResolution = "1470x956"
         GFSDK = "0"
         GraphicsAPI = "2"
         LimitToDisplayRefresh = "1"
@@ -2077,14 +2070,14 @@ public class EngineService: ObservableObject {
         ShowFPSCounter = "1"
         ShowIntro = "0"
         WindowedFullscreen = "1"
-        WindowedResolution = "2560x1664"
+        WindowedResolution = "1470x956"
         WindowMode = "1"
         [Subtitles.1]
         Subtitles = "1"
         """
         if !fileMgr.fileExists(atPath: overwatchSettingsFile) {
             try? defaultOverwatchConfig.write(toFile: overwatchSettingsFile, atomically: true, encoding: .utf8)
-            log("Configured Overwatch Settings_v0.ini for windowed 2560x1664 display.", level: .info, source: "Display")
+            log("Configured Overwatch Settings_v0.ini for windowed 1470x956 display.", level: .info, source: "Display")
         }
     }
 
