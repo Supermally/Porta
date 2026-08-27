@@ -1968,6 +1968,70 @@ public class EngineService: ObservableObject {
             try? regContent.write(toFile: userRegPath, atomically: true, encoding: .utf8)
             log("Calibrated Steam prefix registry: Retina=Y, 225 DPI (0xE1), winhttp=native,builtin, The Sapling 2560x1664.", level: .info, source: "Display")
         }
+
+        // 3. Ensure D3DMetal (Apple Game Porting Toolkit Metal 3 DirectX 12) is deployed and linked into Wine
+        let fileMgr = FileManager.default
+        let d3dMetalDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Frameworks/renderer/d3dmetal"
+        let wineUnixLibDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/wine/lib/wine/x86_64-unix"
+        let wineWinLibDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/wine/lib/wine/x86_64-windows"
+        let system32Dir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/prefix/drive_c/windows/system32"
+        let wineLibDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/wine/lib"
+        let appFrameworksDir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/Frameworks"
+
+        if fileMgr.fileExists(atPath: d3dMetalDir) {
+            // Deploy Unix .so libraries
+            let unixSrc = d3dMetalDir + "/wine/x86_64-unix"
+            if let items = try? fileMgr.contentsOfDirectory(atPath: unixSrc) {
+                for item in items {
+                    let src = unixSrc + "/" + item
+                    let dst = wineUnixLibDir + "/" + item
+                    try? fileMgr.removeItem(atPath: dst)
+                    try? fileMgr.copyItem(atPath: src, toPath: dst)
+                }
+            }
+
+            // Deploy Windows .dll libraries to wine/lib and prefix system32
+            let winSrc = d3dMetalDir + "/wine/x86_64-windows"
+            if let items = try? fileMgr.contentsOfDirectory(atPath: winSrc) {
+                for item in items {
+                    let src = winSrc + "/" + item
+                    let dstWin = wineWinLibDir + "/" + item
+                    let dstSys32 = system32Dir + "/" + item
+                    try? fileMgr.removeItem(atPath: dstWin)
+                    try? fileMgr.copyItem(atPath: src, toPath: dstWin)
+                    try? fileMgr.removeItem(atPath: dstSys32)
+                    try? fileMgr.copyItem(atPath: src, toPath: dstSys32)
+                }
+            }
+
+            // Deploy libd3dshared.dylib and D3DMetal.framework to rpath locations
+            let d3dsharedSrc = d3dMetalDir + "/external/libd3dshared.dylib"
+            if fileMgr.fileExists(atPath: d3dsharedSrc) {
+                for targetDir in [wineLibDir, wineUnixLibDir, appFrameworksDir] {
+                    let dst = targetDir + "/libd3dshared.dylib"
+                    try? fileMgr.removeItem(atPath: dst)
+                    try? fileMgr.copyItem(atPath: d3dsharedSrc, toPath: dst)
+                }
+            }
+
+            let frameworkSrc = d3dMetalDir + "/external/D3DMetal.framework"
+            if fileMgr.fileExists(atPath: frameworkSrc) {
+                for targetDir in [wineLibDir, appFrameworksDir] {
+                    let dst = targetDir + "/D3DMetal.framework"
+                    try? fileMgr.removeItem(atPath: dst)
+                    try? fileMgr.copyItem(atPath: frameworkSrc, toPath: dst)
+                }
+            }
+            log("Ensured D3DMetal DirectX 12 translation layer is active for all Steam games.", level: .info, source: "Graphics")
+        }
+
+        // 4. Bypass Microsoft DirectX 12 Agility SDK in games like Overwatch to force Apple D3DMetal
+        let overwatchD3D12Dir = fileMgr.homeDirectoryForCurrentUser.path + "/Applications/Sikarugir/Steam.app/Contents/SharedSupport/prefix/drive_c/Program Files (x86)/Steam/steamapps/common/Overwatch/D3D12"
+        let overwatchD3D12Disabled = overwatchD3D12Dir + ".disabled"
+        if fileMgr.fileExists(atPath: overwatchD3D12Dir) {
+            try? fileMgr.moveItem(atPath: overwatchD3D12Dir, toPath: overwatchD3D12Disabled)
+            log("Bypassed Microsoft Agility SDK in Overwatch to route DirectX 12 via Apple D3DMetal.", level: .info, source: "Graphics")
+        }
     }
 
     public func calibrateAllPrefixDisplays() {
