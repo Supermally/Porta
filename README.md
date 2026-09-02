@@ -16,6 +16,79 @@
 
 ---
 
+## System Requirements
+
+- **Hardware**: Apple Silicon Mac (M1, M2, M3, M4 or later).
+- **Operating System**: macOS 13.0 (Ventura), macOS 14.0 (Sonoma), macOS 15.0 (Sequoia), or macOS 26+.
+- **Rosetta 2**: Required for translating x86_64 binaries (`softwareupdate --install-rosetta --agree-to-license`).
+
+---
+
+## Installation & Setup
+
+### Option 1: Pre-Built Release (Recommended)
+
+1. Download the latest release package from the [**Releases Page**](https://github.com/Supermally/Porta/releases).
+2. Move `Porta.app` into your `/Applications` folder.
+3. Open `Porta.app`.
+
+> [!TIP]
+> **macOS Gatekeeper Note**: If macOS displays an *“unverified developer”* or *“cannot be opened”* dialog on early access builds, right-click `Porta.app` in Finder, click **Open**, and confirm. Alternatively, run:
+> ```bash
+> xattr -cr /Applications/Porta.app
+> ```
+
+---
+
+### Option 2: Build from Source
+
+#### Prerequisites
+
+- **Xcode 15+** or **Xcode Command Line Tools**:
+  ```bash
+  xcode-select --install
+  ```
+- **Rosetta 2**:
+  ```bash
+  softwareupdate --install-rosetta --agree-to-license
+  ```
+- **Rust & Cargo**:
+  ```bash
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  ```
+
+#### Clone & Run
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/Supermally/Porta.git
+   cd Porta
+   ```
+
+2. **Build the Forge Engine (Rust)**:
+   ```bash
+   cargo build --release
+   ```
+
+3. **Launch Porta (SwiftUI)**:
+   ```bash
+   cd apps/Porta
+   swift run
+   ```
+
+---
+
+## First-Time Launch
+
+When you launch Porta for the first time:
+
+1. Click **Get Started** on the welcome screen.
+2. Porta will automatically download, cryptographically verify (via SHA-256), and extract the required translation runtimes (*Wine Staging, DXVK, and MoltenVK*).
+3. Click **Enter Porta** once installation completes.
+4. Drag & drop Windows `.exe` files or click **Add → Import** to add games to your library!
+
+---
+
 ## Architecture Overview
 
 Porta is split into two integrated layers:
@@ -36,51 +109,10 @@ Porta/
 │   ├── profiles/            # Game compatibility profile definitions
 │   └── analyzer/            # Binary inspection & recipe synthesis
 ├── runtime/                 # Wine/D3DMetal translation patches & scripts
-├── README.md                # Project overview
+├── README.md                # Project overview & install guide
 ├── FAQ.md                   # Frequently Asked Questions & Early Access Notes
 └── LICENSE.md               # MIT License
 ```
-
----
-
-## System Requirements
-
-- **Mac**: Apple Silicon Mac (M1, M2, M3, M4 or later).
-- **Operating System**: macOS 13.0 (Ventura), macOS 14.0 (Sonoma), macOS 15.0 (Sequoia), or macOS 26+.
-- **Rosetta 2**: Required for translating x86_64 binaries (`softwareupdate --install-rosetta --agree-to-license`).
-
----
-
-## Building from Source
-
-### Prerequisites
-
-- **Xcode 15+** or **Xcode Command Line Tools** (`xcode-select --install`)
-- **Rust & Cargo** (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`)
-- **Swift 6.0+**
-
-### Build Commands
-
-1. **Build the Forge Rust Engine**:
-   ```bash
-   cargo build --release
-   ```
-
-2. **Run Engine Tests**:
-   ```bash
-   cargo test
-   ```
-
-3. **Build the Porta SwiftUI App**:
-   ```bash
-   cd apps/Porta
-   swift build
-   ```
-
-4. **Launch the Application**:
-   ```bash
-   swift run
-   ```
 
 ---
 
