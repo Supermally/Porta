@@ -4,7 +4,7 @@
 
 ### Is Porta finalized or production-ready?
 No. **Porta is currently in active Early Access / Alpha development.** 
-While many Windows games and applications run with near-native performance, you may encounter unexpected graphical glitches, audio synchronization latency, missing DirectX dependencies, or unexpected crashes. 
+While many Windows games and applications run with near-native performance, you may encounter unexpected graphical glitches, audio synchronization latency, missing DirectX dependencies, or unexpected crashes depending on the title.
 
 We are continuously refining the **Forge Engine** translation subsystem, improving shader caching, and expanding storefront integration.
 
@@ -36,51 +36,9 @@ Go to **Settings** → **Graphics & Compatibility Runtime** and toggle **Metal P
 
 ---
 
-## 4. Submitting to Apple Notary Service (Distribution Guide)
+## 4. Reporting Issues & Feedback
 
-If you are distributing `.dmg` or `.app` releases to external users, macOS Gatekeeper requires the binary to be signed and notarized by Apple.
-
-### Step 1: Sign the Application Bundle
-Sign with your Apple Developer ID certificate:
-```bash
-codesign --deep --force --verify --verbose \
-  --options runtime \
-  --sign "Developer ID Application: Your Name (TEAM_ID)" \
-  "build/Porta.app"
-```
-
-### Step 2: Package into a ZIP or DMG
-```bash
-ditto -c -k --keepParent "build/Porta.app" "build/Porta.zip"
-```
-
-### Step 3: Submit to Apple Notary Service
-Store your notary credentials in the macOS keychain:
-```bash
-xcrun notarytool store-credentials "PORTA_NOTARY" \
-  --apple-id "your-apple-id@example.com" \
-  --team-id "YOUR_TEAM_ID" \
-  --password "xxxx-xxxx-xxxx-xxxx" # (Apple App-Specific Password)
-```
-
-Submit for notarization:
-```bash
-xcrun notarytool submit "build/Porta.zip" \
-  --keychain-profile "PORTA_NOTARY" \
-  --wait
-```
-
-### Step 4: Staple the Ticket to the App
-```bash
-xcrun stapler staple "build/Porta.app"
-```
-The application is now fully notarized and will open seamlessly on any Mac without Gatekeeper warnings.
-
----
-
-## 5. Reporting Issues & Feedback
-
-Please open an issue on GitHub with:
+Please open an issue on the [GitHub Issues tracker](https://github.com/Supermally/Porta/issues) with:
 - macOS version and Apple Silicon chip (e.g., macOS 15.1, M3 Max)
 - Target game / application executable name
 - Console log snippet from **Settings → Developer Console** or `~/Library/Application Support/Porta/logs`

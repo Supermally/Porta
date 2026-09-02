@@ -24,7 +24,7 @@ Porta is split into two integrated layers:
 2. **Forge Engine (`crates/`)**: Modular Rust engine providing application discovery, DirectX translation governance, MSVC and anti-cheat troubleshooting, and C-FFI bridging (`crates/bridge`).
 
 ```
-mac-gaming/
+Porta/
 ├── apps/
 │   ├── Porta/               # Native macOS SwiftUI application
 │   └── cli/                 # Forge command-line interface (forge)
@@ -37,7 +37,8 @@ mac-gaming/
 │   └── analyzer/            # Binary inspection & recipe synthesis
 ├── runtime/                 # Wine/D3DMetal translation patches & scripts
 ├── README.md                # Project overview
-└── FAQ.md                   # Frequently Asked Questions & Early Access Notes
+├── FAQ.md                   # Frequently Asked Questions & Early Access Notes
+└── LICENSE.md               # MIT License
 ```
 
 ---
@@ -65,7 +66,7 @@ mac-gaming/
    cargo build --release
    ```
 
-2. **Run Tests**:
+2. **Run Engine Tests**:
    ```bash
    cargo test
    ```
@@ -86,18 +87,31 @@ mac-gaming/
 ## Security & Package Integrity
 
 - **SHA-256 Checksums**: All external runtime packages (Wine builds, DXVK bundles) are cryptographically validated against SHA-256 hashes prior to extraction.
-- **User-Space Operation**: Porta operates without kernel extensions (`kexts`) or `sudo` privileges.
-- **AppKit Sandboxing**: File access is governed by macOS Security-Scoped Bookmarks.
+- **User-Space Operation**: Porta operates entirely in user space without requiring kernel extensions (`kexts`) or `sudo` privileges.
+- **AppKit Sandboxing**: File and directory access is governed strictly by macOS Security-Scoped Bookmarks.
 
 ---
 
-## Early Access & Notes
+## Early Access & Project Status
 
 > [!WARNING]
 > **Porta is currently in active development (Early Access).** Some features, game profiles, and translation layers are not finalized. Please refer to [FAQ.md](FAQ.md) for known limitations, troubleshooting tips, and development notes.
 
 ---
 
-## License & Acknowledgements
+## Acknowledgements & Credits
 
-Porta is released under the MIT License. Special thanks to the Wine, DXVK, MoltenVK, and Sikarugir projects for their foundational compatibility research.
+Porta and Forge Engine build upon the remarkable work of the open-source compatibility and graphics translation communities:
+
+- [**Wine Project (WineHQ)**](https://www.winehq.org) — The core compatibility layer enabling Windows applications to run on POSIX-compliant systems.
+- [**Gcenx / macOS Wine Builds**](https://github.com/Gcenx/macOS_Wine_builds) — Dedicated Wine Staging builds and tooling for macOS.
+- [**DXVK**](https://github.com/doitsujin/dxvk) & [**DXVK-macOS**](https://github.com/Gcenx/DXVK-macOS) — Vulkan-based translation layer for Direct3D 9/10/11.
+- [**MoltenVK**](https://github.com/KhronosGroup/MoltenVK) (The Khronos Group) — Vulkan implementation on top of Apple Metal.
+- [**Apple Game Porting Toolkit (D3DMetal)**](https://developer.apple.com/games/) — Apple's DirectX 11/12 to Metal translation runtime.
+- [**Sikarugir**](https://github.com/Sikarugir) — Research into macOS Wine 10 and WoW64 process orchestration.
+
+---
+
+## License
+
+Porta is licensed under the [MIT License](LICENSE.md).
