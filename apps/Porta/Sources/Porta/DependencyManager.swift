@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import CryptoKit
 
 public enum DependencyCategory: String, CaseIterable, Identifiable, Sendable {
     case runtime = "Compatibility Runtime"
@@ -39,6 +40,7 @@ public struct DependencyItem: Identifiable, Equatable {
     public let descriptionText: String
     public var version: String
     public var downloadURL: URL?
+    public var expectedSha256: String?
     public var localPath: String
     public var status: DependencyStatus
 
@@ -49,6 +51,7 @@ public struct DependencyItem: Identifiable, Equatable {
         descriptionText: String,
         version: String,
         downloadURL: URL?,
+        expectedSha256: String? = nil,
         localPath: String,
         status: DependencyStatus = .notInstalled
     ) {
@@ -58,12 +61,13 @@ public struct DependencyItem: Identifiable, Equatable {
         self.descriptionText = descriptionText
         self.version = version
         self.downloadURL = downloadURL
+        self.expectedSha256 = expectedSha256
         self.localPath = localPath
         self.status = status
     }
 
     public static func == (lhs: DependencyItem, rhs: DependencyItem) -> Bool {
-        lhs.id == rhs.id && lhs.status == rhs.status && lhs.version == rhs.version
+        lhs.id == rhs.id && lhs.status == rhs.status && lhs.version == rhs.version && lhs.expectedSha256 == rhs.expectedSha256
     }
 }
 
@@ -122,6 +126,7 @@ public class DependencyManager: NSObject, ObservableObject {
                 descriptionText: "High-performance Wine Staging translation runner for macOS.",
                 version: "11.15",
                 downloadURL: URL(string: "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.15/wine-staging-11.15-osx64.tar.xz"),
+                expectedSha256: "a8c50d0e14fb7982a21506287e1e41e1990fe77c74fa2a32da7dbcf7b21de1e2",
                 localPath: winePath
             ),
             DependencyItem(
@@ -131,6 +136,7 @@ public class DependencyManager: NSObject, ObservableObject {
                 descriptionText: "DirectX 11 to Metal GPU acceleration bridge.",
                 version: "1.10.3",
                 downloadURL: URL(string: "https://github.com/Gcenx/DXVK-macOS/releases/download/v1.10.3-20230507-repack/dxvk-macOS-async-v1.10.3-20230507-repack.tar.gz"),
+                expectedSha256: "acd1520ad105d8ef124a09c8e11a259a5dc8bdc565ad18e0e52693f9807b2477",
                 localPath: dxvkPath
             ),
             DependencyItem(
@@ -140,6 +146,7 @@ public class DependencyManager: NSObject, ObservableObject {
                 descriptionText: "Vulkan on Metal translation and controller runtime extensions.",
                 version: "1.2.8",
                 downloadURL: nil, // Bundled directly with Wine Staging
+                expectedSha256: nil,
                 localPath: moltenVKPath
             )
         ]
@@ -243,6 +250,24 @@ public class DependencyManager: NSObject, ObservableObject {
             let errorMsg = "Couldn't download \(dep.name)"
             self.dependencies[index].status = .failed(message: errorMsg, technicalDetails: error.localizedDescription)
             throw NSError(domain: "Porta.DependencyManager", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMsg])
+        }
+
+        // 1.5 Package Integrity Verification (SHA-256)
+        if let expectedHash = dep.expectedSha256, !expectedHash.isEmpty {
+            self.dependencies[index].status = .verifying
+            self.activeTaskDescription = "Verifying package checksum for \(dep.name)..."
+            do {
+                let actualHash = try computeSHA256(for: targetArchive)
+                if actualHash.lowercased() != expectedHash.lowercased() {
+                    try? FileManager.default.removeItem(at: targetArchive)
+                    let mismatchMsg = "SHA-256 integrity mismatch for \(dep.name) (Expected: \(expectedHash), Computed: \(actualHash))"
+                    self.dependencies[index].status = .failed(message: "Integrity check failed", technicalDetails: mismatchMsg)
+                    throw NSError(domain: "Porta.Integrity", code: 403, userInfo: [NSLocalizedDescriptionKey: mismatchMsg])
+                }
+            } catch {
+                self.dependencies[index].status = .failed(message: "Integrity check failed", technicalDetails: error.localizedDescription)
+                throw error
+            }
         }
 
         // 2. Install / Extract
@@ -373,5 +398,23 @@ public class DependencyManager: NSObject, ObservableObject {
             self.downloadTasks[url.absoluteString] = task
             task.resume()
         }
+    }
+
+    /// Computes the SHA-256 hexadecimal checksum for a file on disk using Apple CryptoKit
+    public func computeSHA256(for fileURL: URL) throws -> String {
+        let handle = try FileHandle(forReadingFrom: fileURL)
+        defer { try? handle.close() }
+        var hasher = SHA256()
+        let bufferSize = 1024 * 1024 // 1 MB buffer
+        while autoreleasepool(invoking: {
+            let chunk = handle.readData(ofLength: bufferSize)
+            if !chunk.isEmpty {
+                hasher.update(data: chunk)
+                return true
+            }
+            return false
+        }) {}
+        let digest = hasher.finalize()
+        return digest.map { String(format: "%02hhx", $0) }.joined()
     }
 }
