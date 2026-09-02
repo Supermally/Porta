@@ -53,7 +53,7 @@ impl GogStorefrontManager {
         let search_roots = [
             dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join("GOG Games"),
             PathBuf::from("/Applications"),
-            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join("Library/Application Support/MacGaming/prefixes"),
+            dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")).join("Library/Application Support/Forge/prefixes"),
         ];
 
         for root in &search_roots {

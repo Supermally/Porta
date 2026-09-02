@@ -1,5 +1,5 @@
 [package]
-name = "mac-gaming-profiles"
+name = "forge-profiles"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

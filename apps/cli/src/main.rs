@@ -1,17 +1,17 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::*;
-use mac_gaming_core::diagnostics::HostSystemDiagnostics;
-use mac_gaming_core::{
-    BenchmarkEngine, BenchmarkMetric, LaunchOverrideOptions, MacGamingEngine, Troubleshooter,
+use forge_core::diagnostics::HostSystemDiagnostics;
+use forge_core::{
+    BenchmarkEngine, BenchmarkMetric, LaunchOverrideOptions, ForgeEngine, Troubleshooter,
 };
-use mac_gaming_profiles::CompatibilityStatus;
+use forge_profiles::CompatibilityStatus;
 use std::path::PathBuf;
 use tabled::{Table, Tabled};
 
 #[derive(Parser)]
-#[command(name = "mac-gaming")]
-#[command(about = "Mac Gaming - High-performance unified game compatibility engine for macOS", long_about = None)]
+#[command(name = "forge")]
+#[command(about = "Forge - High-performance unified game compatibility engine for macOS", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -135,7 +135,7 @@ fn main() -> Result<()> {
         }
 
         Commands::Scan { storefront, path } => {
-            let engine = MacGamingEngine::init()?;
+            let engine = ForgeEngine::init()?;
             println!("{}", "Scanning for installed games and software...".bright_blue());
 
             if let Some(custom_dir) = path {
@@ -182,11 +182,11 @@ fn main() -> Result<()> {
         }
 
         Commands::Import { path, title } => {
-            let engine = MacGamingEngine::init()?;
+            let engine = ForgeEngine::init()?;
             println!("Importing game: {}", path.display());
             let game = engine.import_custom_game(&path, title.as_deref())?;
 
-            println!("{}", "Game successfully imported into Mac Gaming!".bright_green().bold());
+            println!("{}", "Game successfully imported into Forge!".bright_green().bold());
             println!("  ID: {}", game.id.cyan());
             println!("  Title: {}", game.title.bold());
             println!("  Storefront: {}", game.storefront.display_name());
@@ -195,7 +195,7 @@ fn main() -> Result<()> {
         }
 
         Commands::ImportApp { path, title } => {
-            let engine = MacGamingEngine::init()?;
+            let engine = ForgeEngine::init()?;
             println!("Importing universal application: {}", path.display());
             let app = engine.import_universal_application(&path, title.as_deref())?;
 
@@ -228,9 +228,9 @@ fn main() -> Result<()> {
             } else {
                 for (i, finding) in report.findings.iter().enumerate() {
                     let sev_colored = match finding.severity {
-                        mac_gaming_core::DiagnosticSeverity::Critical => "CRITICAL".bright_red().bold(),
-                        mac_gaming_core::DiagnosticSeverity::Warning => "WARNING".bright_yellow().bold(),
-                        mac_gaming_core::DiagnosticSeverity::Info => "INFO".bright_blue().bold(),
+                        forge_core::DiagnosticSeverity::Critical => "CRITICAL".bright_red().bold(),
+                        forge_core::DiagnosticSeverity::Warning => "WARNING".bright_yellow().bold(),
+                        forge_core::DiagnosticSeverity::Info => "INFO".bright_blue().bold(),
                     };
 
                     println!("{}. [{}] {}", i + 1, sev_colored, finding.title.bold());
@@ -248,7 +248,7 @@ fn main() -> Result<()> {
         }
 
         Commands::Benchmark { game_id, target_fps } => {
-            let engine = MacGamingEngine::init()?;
+            let engine = ForgeEngine::init()?;
             println!("{}", "══════════════════════════════════════════════".bright_cyan());
             println!("       HARDWARE BENCHMARK & TELEMETRY         ");
             println!("{}", "══════════════════════════════════════════════".bright_cyan());
@@ -281,11 +281,11 @@ fn main() -> Result<()> {
         }
 
         Commands::List => {
-            let engine = MacGamingEngine::init()?;
+            let engine = ForgeEngine::init()?;
             let games = engine.get_all_games()?;
 
             if games.is_empty() {
-                println!("{}", "No games or apps indexed yet. Run `mac-gaming scan` to discover installed software.".yellow());
+                println!("{}", "No games or apps indexed yet. Run `forge scan` to discover installed software.".yellow());
                 return Ok(());
             }
 
@@ -321,7 +321,7 @@ fn main() -> Result<()> {
         }
 
         Commands::Info { game_id } => {
-            let engine = MacGamingEngine::init()?;
+            let engine = ForgeEngine::init()?;
             let games = engine.get_all_games()?;
             let game = games.iter().find(|g| g.id == game_id);
 
@@ -382,7 +382,7 @@ fn main() -> Result<()> {
             esync,
             fsync,
         } => {
-            let engine = MacGamingEngine::init()?;
+            let engine = ForgeEngine::init()?;
 
             let override_opts = LaunchOverrideOptions {
                 force_d3dmetal: if d3dmetal { Some(true) } else { None },
@@ -418,7 +418,7 @@ fn main() -> Result<()> {
         Commands::InitProfiles { source_dir } => {
             let target_dir = dirs::home_dir()
                 .unwrap_or_else(|| PathBuf::from("."))
-                .join("Library/Application Support/MacGaming/profiles");
+                .join("Library/Application Support/Forge/profiles");
             std::fs::create_dir_all(&target_dir)?;
 
             let src = source_dir.unwrap_or_else(|| PathBuf::from("profiles"));
@@ -441,8 +441,8 @@ fn main() -> Result<()> {
         }
 
         Commands::Sync => {
-            let mut engine = MacGamingEngine::init()?;
-            println!("{}", "Connecting to Mac Gaming Community Repository...".bright_blue());
+            let mut engine = ForgeEngine::init()?;
+            println!("{}", "Connecting to Forge Community Repository...".bright_blue());
             let result = engine.sync_community_profiles()?;
             println!("{}", "✓ Community synchronization complete!".bright_green().bold());
             println!("  Profiles Synchronized: {}", result.updated_profiles_count);

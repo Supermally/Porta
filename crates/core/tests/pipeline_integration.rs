@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use mac_gaming_core::{
-        CrashCategory, LaunchOverrideOptions, MacGamingEngine, Troubleshooter,
+    use forge_core::{
+        CrashCategory, LaunchOverrideOptions, ForgeEngine, Troubleshooter,
     };
-    use mac_gaming_profiles::CompatibilityStatus;
+    use forge_profiles::CompatibilityStatus;
     use std::fs::{create_dir_all, File};
     use std::io::Write;
     use tempfile::tempdir;
@@ -69,10 +69,10 @@ mod tests {
         create_dir_all(bg3_game_dir.join("Baldur's Gate 3.app")).unwrap();
 
         // Initialize Engine with storage in temp directory
-        let engine = MacGamingEngine::init_with_storage(temp_dir.path()).unwrap();
+        let engine = ForgeEngine::init_with_storage(temp_dir.path()).unwrap();
 
         // Scan Steam
-        let games = mac_gaming_scanner::SteamScanner::scan_steam(&steam_dir).unwrap();
+        let games = forge_scanner::SteamScanner::scan_steam(&steam_dir).unwrap();
         assert_eq!(games.len(), 2);
 
         for g in &games {
@@ -102,7 +102,7 @@ mod tests {
         let game_file = temp_dir.path().join("IndieGame.exe");
         File::create(&game_file).unwrap();
 
-        let engine = MacGamingEngine::init_with_storage(temp_dir.path()).unwrap();
+        let engine = ForgeEngine::init_with_storage(temp_dir.path()).unwrap();
         let imported = engine
             .import_custom_game(&game_file, Some("My Custom Indie Game"))
             .unwrap();

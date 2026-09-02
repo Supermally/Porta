@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     
     // Simulate IPC named-pipe connection
     std::cout << "[CEF Test] IPC Connection established via Mach ports." << std::endl;
-    std::cout << "[CEF Test] All Chromium processes running successfully on MacGaming Runtime." << std::endl;
+    std::cout << "[CEF Test] All Chromium processes running successfully on Porta Runtime." << std::endl;
     
     return 0;
 }

@@ -1,4 +1,4 @@
-use mac_gaming_profiles::ProfileStore;
+use forge_profiles::ProfileStore;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -29,7 +29,7 @@ impl CommunitySyncClient {
     pub fn new() -> Self {
         let cache_dir = dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("Library/Application Support/MacGaming/community_profiles");
+            .join("Library/Application Support/Forge/community_profiles");
         Self { cache_dir }
     }
 

@@ -1,13 +1,13 @@
 [package]
-name = "mac-gaming-prefix"
+name = "forge-prefix"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 
 [dependencies]
-mac-gaming-profiles = { path = "../profiles" }
-mac-gaming-scanner = { path = "../scanner" }
+forge-profiles = { path = "../profiles" }
+forge-scanner = { path = "../scanner" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

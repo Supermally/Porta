@@ -1,16 +1,16 @@
 [package]
-name = "mac-gaming-cli"
+name = "forge-cli"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 
 [dependencies]
-mac-gaming-core = { path = "../../crates/core" }
-mac-gaming-profiles = { path = "../../crates/profiles" }
-mac-gaming-scanner = { path = "../../crates/scanner" }
-mac-gaming-prefix = { path = "../../crates/prefix" }
-mac-gaming-analyzer = { path = "../../crates/analyzer" }
+forge-core = { path = "../../crates/core" }
+forge-profiles = { path = "../../crates/profiles" }
+forge-scanner = { path = "../../crates/scanner" }
+forge-prefix = { path = "../../crates/prefix" }
+forge-analyzer = { path = "../../crates/analyzer" }
 clap = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

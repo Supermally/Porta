@@ -1,7 +1,7 @@
 --- a/server/process.c
 +++ b/server/process.c
 @@ -1,3 +1,5 @@
-+/* MacGaming Runtime - Mach Task & Thread mapping hooks */
++/* Porta Runtime - Mach Task & Thread mapping hooks */
 +
  #include "config.h"
  #include "wine/port.h"
