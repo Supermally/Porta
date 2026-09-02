@@ -4,8 +4,8 @@ pub mod runtime;
 pub use provisioner::{DependencyStatus, PrefixProvisioner, ProvisioningPlan};
 pub use runtime::{RuntimeEnvironment, RuntimeManager};
 
-use mac_gaming_profiles::{CompatibilityProfile, RuntimeConfig};
-use mac_gaming_scanner::DiscoveredGame;
+use forge_profiles::{CompatibilityProfile, RuntimeConfig};
+use forge_scanner::DiscoveredGame;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -48,7 +48,7 @@ impl PrefixManager {
     pub fn new() -> Self {
         let base_prefix_dir = dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("Library/Application Support/MacGaming/prefixes");
+            .join("Library/Application Support/Forge/prefixes");
         Self { base_prefix_dir }
     }
 

@@ -5,7 +5,7 @@
 #include <iostream>
 
 extern "C" {
-    void MacGaming_InjectSteamOverlay() {
+    void Porta_InjectSteamOverlay() {
         std::cout << "[Steam Overlay] Hooked into Present() swapchain. Ready to composite CEF texture." << std::endl;
     }
 }

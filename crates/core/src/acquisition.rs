@@ -51,7 +51,7 @@ impl WindowsLauncherManager {
     pub fn new() -> Self {
         let base = dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("Library/Application Support/MacGaming/launchers");
+            .join("Library/Application Support/Forge/launchers");
         Self {
             base_launchers_dir: base,
         }

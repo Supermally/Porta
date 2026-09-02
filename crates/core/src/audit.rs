@@ -1,5 +1,5 @@
-use mac_gaming_profiles::CompatibilityStatus;
-use mac_gaming_scanner::DiscoveredGame;
+use forge_profiles::CompatibilityStatus;
+use forge_scanner::DiscoveredGame;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -72,7 +72,7 @@ impl LibraryAuditEngine {
         let translation_reliance_pct = ((total - native_count) as f32 / total as f32) * 100.0;
 
         let headline_insight = format!(
-            "{:.0}% of your game library does not have a native macOS version and relies on Mac Gaming compatibility technologies.",
+            "{:.0}% of your game library does not have a native macOS version and relies on Forge compatibility technologies.",
             translation_reliance_pct
         );
 
@@ -102,7 +102,7 @@ impl LibraryAuditEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mac_gaming_scanner::Storefront;
+    use forge_scanner::Storefront;
     use std::path::PathBuf;
 
     #[test]

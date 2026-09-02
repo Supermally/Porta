@@ -5,8 +5,8 @@ pub mod vdf;
 pub use steam_deep::{DeepSteamManager, SteamGameDetails, SteamLibraryFolder, SteamUserAccount};
 pub use storefronts::{EpicHeroicGameDetails, EpicHeroicStorefrontManager, GogGameDetails, GogStorefrontManager};
 
-use mac_gaming_analyzer::{BinaryAnalysisReport, BinaryAnalyzer};
-use mac_gaming_profiles::CompatibilityStatus;
+use forge_analyzer::{BinaryAnalysisReport, BinaryAnalyzer};
+use forge_profiles::CompatibilityStatus;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -218,7 +218,7 @@ impl SteamScanner {
             let mut detected_status = CompatibilityStatus::Compatible;
 
             if let Some(ref rep) = analysis {
-                if rep.anti_cheat == mac_gaming_analyzer::AntiCheatSignature::Vanguard {
+                if rep.anti_cheat == forge_analyzer::AntiCheatSignature::Vanguard {
                     detected_status = CompatibilityStatus::Unsupported;
                 }
             }

@@ -4,15 +4,15 @@ set -e
 WRAPPER="$HOME/Applications/Sikarugir/Steam.app"
 LAUNCH="$WRAPPER/Contents/MacOS/Sikarugir"
 PLIST="$WRAPPER/Contents/Info.plist"
-STEAM_SETUP="$HOME/Library/Application Support/MacGaming/prefixes/steam_test/SteamSetup.exe"
+STEAM_SETUP="$HOME/Library/Application Support/Porta/prefixes/steam_test/SteamSetup.exe"
 
 # If Steam isn't installed yet, copy it or run silent installer
 if [[ ! -f "$WRAPPER/Contents/drive_c/Program Files (x86)/Steam/steam.exe" ]]; then
   echo "==> Setting up Steam files in wrapper..."
   mkdir -p "$WRAPPER/Contents/drive_c/Program Files (x86)/Steam"
-  if [[ -d "$HOME/Library/Application Support/MacGaming/prefixes/steam_test/drive_c/Program Files (x86)/Steam" ]]; then
+  if [[ -d "$HOME/Library/Application Support/Porta/prefixes/steam_test/drive_c/Program Files (x86)/Steam" ]]; then
     echo "==> Reusing downloaded Steam client from existing prefix..."
-    cp -R "$HOME/Library/Application Support/MacGaming/prefixes/steam_test/drive_c/Program Files (x86)/Steam/"* "$WRAPPER/Contents/drive_c/Program Files (x86)/Steam/"
+    cp -R "$HOME/Library/Application Support/Porta/prefixes/steam_test/drive_c/Program Files (x86)/Steam/"* "$WRAPPER/Contents/drive_c/Program Files (x86)/Steam/"
   fi
 fi
 

@@ -1,15 +1,15 @@
 [package]
-name = "mac-gaming-core"
+name = "forge-core"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 
 [dependencies]
-mac-gaming-profiles = { path = "../profiles" }
-mac-gaming-analyzer = { path = "../analyzer" }
-mac-gaming-scanner = { path = "../scanner" }
-mac-gaming-prefix = { path = "../prefix" }
+forge-profiles = { path = "../profiles" }
+forge-analyzer = { path = "../analyzer" }
+forge-scanner = { path = "../scanner" }
+forge-prefix = { path = "../prefix" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }

@@ -1,4 +1,5 @@
-use mac_gaming_core::{LaunchOverrideOptions, MacGamingEngine};
+/// C-FFI Bridge for ForgeEngine: Exposes a stable C ABI for consumption by the Swift frontend (Porta).
+use forge_core::{LaunchOverrideOptions, ForgeEngine};
 use serde_json::json;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
@@ -24,15 +25,15 @@ fn c_str_to_str<'a>(ptr: *const c_char) -> Option<&'a str> {
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_engine_new() -> *mut MacGamingEngine {
-    match MacGamingEngine::init() {
+pub extern "C" fn forge_engine_new() -> *mut ForgeEngine {
+    match ForgeEngine::init() {
         Ok(engine) => Box::into_raw(Box::new(engine)),
         Err(_) => std::ptr::null_mut(),
     }
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_engine_free(handle: *mut MacGamingEngine) {
+pub extern "C" fn forge_engine_free(handle: *mut ForgeEngine) {
     if !handle.is_null() {
         unsafe {
             let _ = Box::from_raw(handle);
@@ -41,7 +42,7 @@ pub extern "C" fn mac_gaming_engine_free(handle: *mut MacGamingEngine) {
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_free_string(s: *mut c_char) {
+pub extern "C" fn forge_free_string(s: *mut c_char) {
     if !s.is_null() {
         unsafe {
             let _ = CString::from_raw(s);
@@ -50,7 +51,7 @@ pub extern "C" fn mac_gaming_free_string(s: *mut c_char) {
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_diagnostics_json(handle: *mut MacGamingEngine) -> *mut c_char {
+pub extern "C" fn forge_diagnostics_json(handle: *mut ForgeEngine) -> *mut c_char {
     if handle.is_null() {
         return error_to_c_string("Engine handle is null");
     }
@@ -59,7 +60,7 @@ pub extern "C" fn mac_gaming_diagnostics_json(handle: *mut MacGamingEngine) -> *
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_scan_all_json(handle: *mut MacGamingEngine) -> *mut c_char {
+pub extern "C" fn forge_scan_all_json(handle: *mut ForgeEngine) -> *mut c_char {
     if handle.is_null() {
         return error_to_c_string("Engine handle is null");
     }
@@ -71,8 +72,8 @@ pub extern "C" fn mac_gaming_scan_all_json(handle: *mut MacGamingEngine) -> *mut
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_scan_storefront_json(
-    handle: *mut MacGamingEngine,
+pub extern "C" fn forge_scan_storefront_json(
+    handle: *mut ForgeEngine,
     storefront_str: *const c_char,
 ) -> *mut c_char {
     if handle.is_null() {
@@ -99,7 +100,7 @@ pub extern "C" fn mac_gaming_scan_storefront_json(
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_get_all_games_json(handle: *mut MacGamingEngine) -> *mut c_char {
+pub extern "C" fn forge_get_all_games_json(handle: *mut ForgeEngine) -> *mut c_char {
     if handle.is_null() {
         return error_to_c_string("Engine handle is null");
     }
@@ -111,8 +112,8 @@ pub extern "C" fn mac_gaming_get_all_games_json(handle: *mut MacGamingEngine) ->
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_import_game_json(
-    handle: *mut MacGamingEngine,
+pub extern "C" fn forge_import_game_json(
+    handle: *mut ForgeEngine,
     path_ptr: *const c_char,
     title_ptr: *const c_char,
 ) -> *mut c_char {
@@ -133,8 +134,8 @@ pub extern "C" fn mac_gaming_import_game_json(
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_import_universal_app_json(
-    handle: *mut MacGamingEngine,
+pub extern "C" fn forge_import_universal_app_json(
+    handle: *mut ForgeEngine,
     path_ptr: *const c_char,
     title_ptr: *const c_char,
 ) -> *mut c_char {
@@ -155,8 +156,8 @@ pub extern "C" fn mac_gaming_import_universal_app_json(
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_prepare_launch_json(
-    handle: *mut MacGamingEngine,
+pub extern "C" fn forge_prepare_launch_json(
+    handle: *mut ForgeEngine,
     game_id_ptr: *const c_char,
     force_d3dmetal: bool,
     force_dxvk: bool,
@@ -189,8 +190,8 @@ pub extern "C" fn mac_gaming_prepare_launch_json(
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_troubleshoot_json(
-    handle: *mut MacGamingEngine,
+pub extern "C" fn forge_troubleshoot_json(
+    handle: *mut ForgeEngine,
     log_text_ptr: *const c_char,
 ) -> *mut c_char {
     if handle.is_null() {
@@ -203,7 +204,7 @@ pub extern "C" fn mac_gaming_troubleshoot_json(
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_sync_community_profiles_json(handle: *mut MacGamingEngine) -> *mut c_char {
+pub extern "C" fn forge_sync_community_profiles_json(handle: *mut ForgeEngine) -> *mut c_char {
     if handle.is_null() {
         return error_to_c_string("Engine handle is null");
     }
@@ -215,8 +216,8 @@ pub extern "C" fn mac_gaming_sync_community_profiles_json(handle: *mut MacGaming
 }
 
 #[no_mangle]
-pub extern "C" fn mac_gaming_check_provisioning_json(
-    handle: *mut MacGamingEngine,
+pub extern "C" fn forge_check_provisioning_json(
+    handle: *mut ForgeEngine,
     game_id_ptr: *const c_char,
 ) -> *mut c_char {
     if handle.is_null() {
@@ -240,22 +241,22 @@ mod tests {
 
     #[test]
     fn test_bridge_engine_lifecycle_and_troubleshoot() {
-        let handle = mac_gaming_engine_new();
+        let handle = forge_engine_new();
         assert!(!handle.is_null());
 
-        let diag_ptr = mac_gaming_diagnostics_json(handle);
+        let diag_ptr = forge_diagnostics_json(handle);
         assert!(!diag_ptr.is_null());
         let diag_str = unsafe { CStr::from_ptr(diag_ptr).to_str().unwrap() };
         assert!(diag_str.contains("chip_name"));
-        mac_gaming_free_string(diag_ptr);
+        forge_free_string(diag_ptr);
 
         let log = CString::new("0024:err:module:import_dll Library MSVCP140.dll not found").unwrap();
-        let report_ptr = mac_gaming_troubleshoot_json(handle, log.as_ptr());
+        let report_ptr = forge_troubleshoot_json(handle, log.as_ptr());
         assert!(!report_ptr.is_null());
         let report_str = unsafe { CStr::from_ptr(report_ptr).to_str().unwrap() };
         assert!(report_str.contains("Missing Microsoft Visual C++ Runtime"));
-        mac_gaming_free_string(report_ptr);
+        forge_free_string(report_ptr);
 
-        mac_gaming_engine_free(handle);
+        forge_engine_free(handle);
     }
 }

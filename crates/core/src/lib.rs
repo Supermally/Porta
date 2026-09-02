@@ -1,3 +1,4 @@
+/// ForgeEngine Core implementation: Handles prefix management, game discovery, and execution lifecycle.
 pub mod acquisition;
 pub mod audit;
 pub mod benchmark;
@@ -17,12 +18,12 @@ pub use developer::{DeveloperEcosystemManager, NativeDeveloperSpotlight, StudioD
 pub use community::{CommunitySyncClient, CommunitySyncError, CommunitySyncResult};
 use database::LocalDatabase;
 use diagnostics::HostSystemDiagnostics;
-pub use mac_gaming_prefix::{
+pub use forge_prefix::{
     DependencyStatus, LaunchEnvironment, LaunchOverrideOptions, PrefixManager, PrefixProvisioner,
     ProvisioningPlan,
 };
-pub use mac_gaming_profiles::{CompatibilityProfile, ProfileStore};
-pub use mac_gaming_scanner::{
+pub use forge_profiles::{CompatibilityProfile, ProfileStore};
+pub use forge_scanner::{
     BattleNetScanner, CustomGameImporter, DiscoveredGame, EaAppScanner, EpicScanner, GogScanner,
     ItchScanner, LocalGameScanner, MultiStorefrontScanner, SteamScanner, Storefront,
     UbisoftScanner, UniversalAppScanner,
@@ -37,25 +38,25 @@ pub enum EngineError {
     #[error("Database error: {0}")]
     Database(#[from] rusqlite::Error),
     #[error("Scanner error: {0}")]
-    Scanner(#[from] mac_gaming_scanner::ScannerError),
+    Scanner(#[from] forge_scanner::ScannerError),
     #[error("Prefix error: {0}")]
-    Prefix(#[from] mac_gaming_prefix::PrefixError),
+    Prefix(#[from] forge_prefix::PrefixError),
     #[error("Profile error: {0}")]
-    Profile(#[from] mac_gaming_profiles::ProfileError),
+    Profile(#[from] forge_profiles::ProfileError),
     #[error("Community sync error: {0}")]
     Community(#[from] community::CommunitySyncError),
     #[error("Game not found: {0}")]
     GameNotFound(String),
 }
 
-pub struct MacGamingEngine {
+pub struct ForgeEngine {
     pub diagnostics: HostSystemDiagnostics,
     pub profile_store: ProfileStore,
     pub prefix_manager: PrefixManager,
     pub database: LocalDatabase,
 }
 
-impl MacGamingEngine {
+impl ForgeEngine {
     pub fn init() -> Result<Self, EngineError> {
         let diagnostics = HostSystemDiagnostics::probe();
         let mut profile_store = ProfileStore::new();
@@ -63,7 +64,7 @@ impl MacGamingEngine {
         // Load built-in / curated profiles
         let curated_profiles_dir = dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("Library/Application Support/MacGaming/profiles");
+            .join("Library/Application Support/Forge/profiles");
         let _ = profile_store.load_from_directory(curated_profiles_dir);
 
         // Also check if workspace profiles directory exists
@@ -76,7 +77,7 @@ impl MacGamingEngine {
 
         let db_path = dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("Library/Application Support/MacGaming/library.db");
+            .join("Library/Application Support/Forge/library.db");
         let database = LocalDatabase::open_or_create(db_path)?;
 
         Ok(Self {

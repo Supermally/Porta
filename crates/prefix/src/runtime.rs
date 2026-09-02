@@ -94,8 +94,8 @@ impl RuntimeManager {
         // Always include a virtual fallback runtime for environments without local runner
         if discovered.is_empty() {
             discovered.push(RuntimeEnvironment {
-                id: "mac-gaming-default".to_string(),
-                name: "Mac Gaming Default Runtime (Auto-Resolved)".to_string(),
+                id: "forge-default".to_string(),
+                name: "Forge Default Runtime (Auto-Resolved)".to_string(),
                 runner_path: PathBuf::from("/opt/homebrew/bin/wine64"),
                 version: "Auto".to_string(),
                 supports_d3dmetal: true,
