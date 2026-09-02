@@ -1,5 +1,5 @@
-use mac_gaming_profiles::CompatibilityStatus;
-use mac_gaming_scanner::{DiscoveredGame, Storefront};
+use forge_profiles::CompatibilityStatus;
+use forge_scanner::{DiscoveredGame, Storefront};
 use rusqlite::{params, Connection, Result};
 use std::path::{Path, PathBuf};
 

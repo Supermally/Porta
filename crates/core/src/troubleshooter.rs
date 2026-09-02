@@ -103,7 +103,7 @@ impl Troubleshooter {
                 log_snippet: Self::extract_relevant_line(log_text, &["initializeenginegraphics", "failed to initialize graphics", "d3d12", "device_removed", "metal device"]),
                 recommended_action: "Toggle 'DXVK (Vulkan)' in Translation Controls or force DirectX 12 mode with Apple D3DMetal."
                     .to_string(),
-                auto_fix_command: Some("mac-gaming config --dxvk=true --override-d3d11=native".to_string()),
+                auto_fix_command: Some("forge config --dxvk=true --override-d3d11=native".to_string()),
             });
         }
 
@@ -141,7 +141,7 @@ impl Troubleshooter {
                 description: "This game utilizes a Windows kernel-mode driver anti-cheat which cannot execute within Wine/macOS sandboxes."
                     .to_string(),
                 log_snippet: Self::extract_relevant_line(log_text, &["easyanticheat", "battleye", "bedaisy", "vgc"]),
-                recommended_action: "Launch with single-player / offline flags (e.g. -eac_launcher=0) or check the Mac Gaming Community DB."
+                recommended_action: "Launch with single-player / offline flags (e.g. -eac_launcher=0) or check the Forge Community DB."
                     .to_string(),
                 auto_fix_command: None,
             });

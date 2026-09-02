@@ -1,5 +1,5 @@
 From 0000000000000000000000000000000000000002 Mon Sep 17 00:00:00 2001
-From: Apple Gaming Compatibility Runtime Team <runtime@macgaming.apple>
+From: Apple Gaming Compatibility Runtime Team <runtime@porta.apple>
 Date: Sun, 23 Aug 2026 00:00:00 +0000
 Subject: [PATCH] server: Emulate eventfd synchronization using macOS kqueue and Mach ports
 

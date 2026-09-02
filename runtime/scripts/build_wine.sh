@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Building MacGaming Wine (ARM64 & WoW64)"
+echo "Building Porta Wine (ARM64 & WoW64)"
 cd "$(dirname "$0")/../wine"
 
 # Basic configure for new WoW64 mode on macOS

@@ -16,7 +16,7 @@ echo "--> [1/4] Running Patch Integrity & Structure Test..."
 
 # Test 2: Swift App & Runtime Compilation Test
 echo "--> [2/4] Testing Swift Application & Runtime Modules..."
-cd "${RUNTIME_ROOT}/../apps/MacGaming"
+cd "${RUNTIME_ROOT}/../apps/Porta"
 swift build -c release
 
 # Test 3: Prefix Manager & Graphics Engine Verification

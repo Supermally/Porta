@@ -389,7 +389,7 @@ impl BinaryAnalyzer {
 
         CompatibilityRecipe {
             verdict,
-            recommended_runtime: "Mac Gaming Compatibility Runtime (D3DMetal 2.0)".to_string(),
+            recommended_runtime: "Forge Compatibility Runtime (D3DMetal 2.0)".to_string(),
             recommended_backend: backend,
             required_dll_overrides: dll_overrides,
             recommended_launch_args: launch_args,

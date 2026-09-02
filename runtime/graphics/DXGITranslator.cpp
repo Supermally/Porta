@@ -1,4 +1,4 @@
-// Stage 3 - MacGaming Graphics Runtime
+// Stage 3 - Porta Graphics Runtime
 // DXGI translation layer stub bridging Wine to D3DMetalContext (Swift)
 
 #include <iostream>

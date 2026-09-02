@@ -1,5 +1,5 @@
 [package]
-name = "mac-gaming-analyzer"
+name = "forge-analyzer"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
