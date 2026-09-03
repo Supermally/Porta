@@ -234,6 +234,48 @@ pub extern "C" fn forge_check_provisioning_json(
     }
 }
 
+// MARK: - ACX (Anti-Cheat Compatibility eXecution Layer) C-FFI
+
+#[no_mangle]
+pub extern "C" fn forge_acx_host_capabilities_json() -> *mut c_char {
+    let matrix = acx::capabilities::HostCapabilities::current_host_matrix();
+    let serializable: std::collections::HashMap<String, String> = matrix
+        .into_iter()
+        .map(|(k, v)| {
+            let val_str = match v {
+                acx::capabilities::CapabilityStatus::Supported => "Supported".to_string(),
+                acx::capabilities::CapabilityStatus::Limited(desc) => format!("Limited ({})", desc),
+                acx::capabilities::CapabilityStatus::Unavailable => "Unavailable (Fail-Closed)".to_string(),
+            };
+            (k.as_str().to_string(), val_str)
+        })
+        .collect();
+    to_c_string(&serializable)
+}
+
+#[no_mangle]
+pub extern "C" fn forge_acx_daemon_is_running() -> bool {
+    let socket = acx::ipc::default_socket_path();
+    socket.exists()
+}
+
+#[no_mangle]
+pub extern "C" fn forge_acx_run_compliance_test_json() -> *mut c_char {
+    let req = acx::capabilities::CapabilityNegotiationRequest {
+        client_version: "0.1.0".into(),
+        anti_cheat_id: "PortaInProcessTester".into(),
+        game_id: "SelfCheck".into(),
+        requested_capabilities: vec![
+            acx::capabilities::AcxCapability::ProcessQuery,
+            acx::capabilities::AcxCapability::CodeIntegrity,
+            acx::capabilities::AcxCapability::KernelDriver,
+        ],
+        strict_requirement: false,
+    };
+    let response = acx::capabilities::HostCapabilities::negotiate(&req);
+    to_c_string(&response)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

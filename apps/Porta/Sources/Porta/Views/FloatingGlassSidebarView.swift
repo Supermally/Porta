@@ -175,6 +175,17 @@ public struct FloatingGlassSidebarView: View {
                     engine.activeTab = .console
                 }
                 .keyboardShortcut("d", modifiers: .command)
+
+                SidebarNavItem(
+                    title: "ACX Security",
+                    icon: "shield.lefthalf.filled",
+                    badgeText: "v0.1",
+                    isCollapsed: isCollapsed,
+                    isSelected: engine.activeTab == .acx
+                ) {
+                    engine.activeTab = .acx
+                }
+                .keyboardShortcut("a", modifiers: [.command, .shift])
                 #endif
 
                 SidebarNavItem(

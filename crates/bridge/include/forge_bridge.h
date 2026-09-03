@@ -33,6 +33,11 @@ char* forge_troubleshoot_json(ForgeEngineHandle handle, const char* log_text);
 char* forge_sync_community_profiles_json(ForgeEngineHandle handle);
 char* forge_check_provisioning_json(ForgeEngineHandle handle, const char* game_id);
 
+// ACX (Anti-Cheat Compatibility eXecution Layer)
+char* forge_acx_host_capabilities_json(void);
+bool forge_acx_daemon_is_running(void);
+char* forge_acx_run_compliance_test_json(void);
+
 #ifdef __cplusplus
 }
 #endif

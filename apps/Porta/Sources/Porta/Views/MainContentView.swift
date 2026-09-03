@@ -83,6 +83,10 @@ public struct MainContentView: View {
                         DebugLabView(engine: engine)
                             .padding(.leading, effectiveLeadingPadding)
                             .padding(.trailing, 20)
+                    case .acx:
+                        ACXDiagnosticsView(engine: engine)
+                            .padding(.leading, effectiveLeadingPadding)
+                            .padding(.trailing, 20)
                     case .settings:
                         SettingsView(engine: engine)
                             .padding(.leading, effectiveLeadingPadding)

@@ -6,7 +6,10 @@ members = [
     "crates/prefix",
     "crates/profiles",
     "crates/bridge",
+    "crates/acx",
     "apps/cli",
+    "apps/acx-host",
+    "apps/acx-test-client",
 ]
 resolver = "2"
 

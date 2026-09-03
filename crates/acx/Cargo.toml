@@ -1,0 +1,16 @@
+[package]
+name = "acx"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "ACX (Anti-Cheat Compatibility eXecution Layer) Core Engine"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+dirs = { workspace = true }
+sha2 = "0.10"

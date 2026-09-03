@@ -14,6 +14,8 @@ forge-profiles = { path = "../profiles" }
 forge-scanner = { path = "../scanner" }
 forge-prefix = { path = "../prefix" }
 forge-analyzer = { path = "../analyzer" }
+acx = { path = "../acx" }
+dirs = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

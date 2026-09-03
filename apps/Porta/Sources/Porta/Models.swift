@@ -93,6 +93,7 @@ public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
     case runtimes = "Runtimes"
     case downloads = "Downloads"
     case activity = "Activity"
+    case acx = "ACX Security"
     case debugLab = "Debug Lab"
     case settings = "Settings"
     
@@ -111,6 +112,7 @@ public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
         case .runtimes: return "cpu.fill"
         case .downloads: return "arrow.down.circle.fill"
         case .activity: return "chart.bar.xaxis"
+        case .acx: return "shield.lefthalf.filled"
         case .debugLab: return "testtube.2"
         case .settings: return "gearshape.fill"
         case .library: return "square.stack.3d.up.fill"
@@ -128,6 +130,7 @@ public enum NavigationTab: String, CaseIterable, Identifiable, Sendable {
         case .runtimes: return "4"
         case .downloads: return "5"
         case .activity: return "6"
+        case .acx: return "a"
         case .debugLab: return "t"
         case .settings: return ","
         case .library: return "1"
